@@ -2,7 +2,7 @@ name: slack notification for push
 on:
   push:
     branches:
-      - main
+      - dev
 jobs:
   slack_notification:
     name: push notification
