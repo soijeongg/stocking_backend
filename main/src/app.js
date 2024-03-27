@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import LogMiddleware from './middlewares/log.middleware.js';
 import notFoundErrorHandler from './middlewares/notFoundError.middleware.js';
 import generalErrorHandler from './middlewares/generalError.middleware.js';
-
+import router from './routes/index.js';
 dotenv.config();
 
 const app = express();
@@ -17,7 +17,7 @@ app.use(express.urlencoded({ extended: false }));
 app.get('/', (req, res) => {
   res.send('<h1>Monstory</h1>');
 });
-
+app.use('/api', router);
 app.use(notFoundErrorHandler);
 app.use(generalErrorHandler);
 
