@@ -2,11 +2,14 @@ export class OrderController {
   constructor(orderService) {
     this.orderService = orderService;
   }
+  // test단계에서는 실제로 data가 존재하는지 확인 잘하셔야합니다. //
+  // joi는 대충 만들어만 놓고 적용은 안했습니다. //
+  // 거의 모든 에러 겪었으니 문의사항은 언제든지 환영 //
 
   /**
    * 주문 조회 요청
    * @param {*} req X
-   * @param {*} res data쫘르륵
+   * @param {*} res 조회된 data
    * @returns
    */
   getOrder = async (req, res) => {
@@ -22,9 +25,8 @@ export class OrderController {
 
   /**
    * 주문 생성 요청
-   * @param {*} req body: data쫘르륵
-   *                param: X
-   * @param {*} res message하나 띡
+   * @param {*} req body: 생성data
+   * @param {*} res 생성된 data
    * @returns
    */
   postOrder = async (req, res) => {
@@ -41,9 +43,9 @@ export class OrderController {
 
   /**
    * 주문 정정 요청
-   * @param {*} req body: data쪼끔
-   *                param: X
-   * @param {*} res 주문이 어떻게 정정되었는지.
+   * @param {*} req body: 정정data
+   *                param: orderId
+   * @param {*} res 성공/실패 메시지
    * @returns
    */
   updateOrder = async (req, res) => {
@@ -62,8 +64,8 @@ export class OrderController {
 
   /**
    * 주문 삭제 요청
-   * @param {*} req 없음
-   * @param {*} res message하나 띡
+   * @param {*} req params: orderId
+   * @param {*} res 성공/실패 메시지
    * @returns
    */
   deleteOrder = async (req, res) => {
@@ -71,7 +73,7 @@ export class OrderController {
       //let { userId } = res.locals.user;
       let userId = 1;
       // const OrderId = req.params.orderId;
-      let orderId = 12;
+      let orderId = 15; // 이거 삭제할때마다 확인해서 수정하셔야해요!
       const deleteOrder = await this.orderService.deleteOrder(userId, orderId);
       return res.json({ deleteOrder });
     } catch (error) {
