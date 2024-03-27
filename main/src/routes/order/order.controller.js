@@ -73,7 +73,7 @@ export class OrderController {
       //let { userId } = res.locals.user;
       let userId = 1;
       // const OrderId = req.params.orderId;
-      let orderId = 15; // 이거 삭제할때마다 확인해서 수정하셔야해요!
+      let orderId = 11; // 이거 삭제할때마다 확인해서 수정하셔야해요!
       const deleteOrder = await this.orderService.deleteOrder(userId, orderId);
       return res.json({ deleteOrder });
     } catch (error) {

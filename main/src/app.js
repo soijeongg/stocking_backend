@@ -5,7 +5,7 @@ import LogMiddleware from './middlewares/log.middleware.js';
 import notFoundErrorHandler from './middlewares/notFoundError.middleware.js';
 import generalErrorHandler from './middlewares/generalError.middleware.js';
 import router from './routes/index.js';
-dotenv.config();
+dotenv.config({ path: 'src/.env' });
 
 const app = express();
 const PORT = process.env.PORT;
