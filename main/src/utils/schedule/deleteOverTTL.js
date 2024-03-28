@@ -15,5 +15,4 @@ async function deleteOverTTL() {
     console.error('TTL을 지난 데이터를 삭제하는 동안 오류가 발생했습니다:', error);
   }
 }
-deleteOverTTL();
 export { deleteOverTTL };
