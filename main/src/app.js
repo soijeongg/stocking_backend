@@ -6,7 +6,6 @@ import LogMiddleware from './middlewares/log.middleware.js';
 import notFoundErrorHandler from './middlewares/notFoundError.middleware.js';
 import generalErrorHandler from './middlewares/generalError.middleware.js';
 import router from './routes/index.js';
-import schedule from 'node-schedule';
 import { prisma } from './utils/prisma/index.js';
 import cors from 'cors';
 import passportConfig from './utils/passportConfig/index.js';
@@ -15,7 +14,6 @@ import expressSession from 'express-session';
 import expressMySQLSession from 'express-mysql-session';
 import passport from 'passport';
 //import RedisStore from 'connect-redis';
-
 
 import { depositEveryday } from './utils/schedule/depositEveryday.js';
 import { getAccessToken, getStockPrices, stockCode } from './utils/schedule/currentUpdate.js';
@@ -84,18 +82,17 @@ app.use('/api', router);
 //   await getStockPrices(stockCode);
 // }
 
-
-    // 각 사용자의 잔액에 1000만 원을 추가함
-    await Promise.all(
-      users.map(async (user) => {
-        await prisma.user.update({
-          where: { userId: user.userId },
-          data: {
-            currentMoney: BigInt(user.currentMoney) + BigInt(10000000), // 1000만 원 추가
-          },
-        });
-      })
-    );
+/* 각 사용자의 잔액에 1000만 원을 추가함
+await Promise.all(
+  users.map(async (user) => {
+    await prisma.user.update({
+      where: { userId: user.userId },
+      data: {
+        currentMoney: BigInt(user.currentMoney) + BigInt(10000000), // 1000만 원 추가
+      },
+    });
+  })
+);
 
 // /**
 //  * @description
@@ -141,10 +138,8 @@ schedule.scheduleJob('0 0 0 * * *', () => {
   depositEveryday();
 });
 
-
 app.use(notFoundErrorHandler);
 app.use(generalErrorHandler);
-
 
 app.listen(PORT, () => {
   console.log(PORT, '포트로 서버가 열렸어요!');
