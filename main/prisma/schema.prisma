@@ -80,14 +80,14 @@ model Stock {
 
 model Order {
   orderId    Int      @id @default(autoincrement()) @unique @map("orderId")
+  updatedAt  DateTime @default(now()) @map("updatedAt")
+  isSold     Boolean  @default(false) @map("isSold")
   userId     Int      @map("userId")
   companyId  Int      @map("companyId")
   type       Type     @map("type")
-  updatedAt  DateTime @default(now()) @map("updatedAt")
   timeToLive DateTime @map("timeToLive")
   price      Int      @map("price")
   quantity   Int      @map("quantity")
-  isSold     Boolean  @default(false) @map("isSold")
   User       User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
   Company    Company  @relation(fields: [companyId], references: [companyId], onDelete: Cascade)
   
