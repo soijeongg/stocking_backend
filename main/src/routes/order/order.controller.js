@@ -15,7 +15,7 @@ export class OrderController {
   /**
    * 주문 조회 요청
    * @param {*} req params: 어떤 데이터가 필요한지.
-   *                        기본 정렬:0, 시간별 정렬(오래된 순): 1,시간별 정렬(최신순):2, 회사별 정렬(a부터): 3, 회사별 정렬(z부터): 4,
+   *                        기본 정렬:0, 시간별 정렬(오래된 순): 1, 시간별 정렬(최신순):2, 회사별 정렬(a부터): 3, 회사별 정렬(z부터): 4,
    *                        매수/ 매도(매수 먼저):5,매수/ 매도(매도 먼저):6, 체결여부(true먼저):7, 체결여부(false먼저):8
    * @param {*} res 조회된 data
    * @returns
@@ -102,7 +102,7 @@ export class OrderController {
       //let { userId } = res.locals.user;
       let userId = 1;
       // const OrderId = req.params.orderId;
-      let orderId = 11; // 이거 삭제할때마다 확인해서 수정하셔야해요!
+      let orderId = 55; // 이거 삭제할때마다 확인해서 수정하셔야해요!
       const deleteOrder = await this.orderService.deleteOrder(userId, orderId);
       return res.json({ deleteOrder });
     } catch (error) {
