@@ -18,6 +18,7 @@ import passport from 'passport';
 import { depositEveryday } from './utils/schedule/depositEveryday.js';
 import { getAccessToken, getStockPrices, stockCode } from './utils/schedule/currentUpdate.js';
 import { deleteOverTTL } from './utils/schedule/deleteOverTTL.js';
+import { updateRankBoard } from './utils/schedule/rankBoard.js';
 dotenv.config();
 
 const app = express();
@@ -139,6 +140,9 @@ schedule.scheduleJob('10 31 15 * * *', () => {
  */
 schedule.scheduleJob('50 59 8 * * *', () => {
   deleteOverTTL();
+});
+schedule.scheduleJob('0 0 9-16 * * 1-5', () => {
+  updateRankBoard();
 });
 
 app.use(notFoundErrorHandler);
