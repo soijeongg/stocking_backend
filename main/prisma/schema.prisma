@@ -79,7 +79,7 @@ model Stock {
 }
 
 model Order {
-  OrderId    Int      @id @default(autoincrement()) @unique @map("OrderId")
+  orderId    Int      @id @default(autoincrement()) @unique @map("orderId")
   userId     Int      @map("userId")
   companyId  Int      @map("companyId")
   type       Type     @map("type")

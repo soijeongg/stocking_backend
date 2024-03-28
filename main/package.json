@@ -10,6 +10,7 @@
   "dependencies": {
     "@prisma/client": "^5.11.0",
     "argon2": "^0.40.1",
+    "axios": "^1.6.8",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "express": "^4.19.1",
@@ -25,7 +26,8 @@
     "passport-naver-v2": "^2.0.8",
     "prisma": "^5.11.0",
     "winston": "^3.13.0",
-    "winston-daily-rotate-file": "^5.0.0"
+    "winston-daily-rotate-file": "^5.0.0",
+    "ws": "^8.16.0"
   },
   "devDependencies": {
     "dotenv": "^16.4.5",
