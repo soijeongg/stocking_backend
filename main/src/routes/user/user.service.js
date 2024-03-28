@@ -85,20 +85,23 @@ export class userService {
   // 전체 정보를 내보내는 것
   selectUserInfo = async (userId) => {
     let userInfoService = await this.userRepository.userinfo(userId);
-    console.log(userInfoService);
-    let stocks = await this.userRepository.userStocks(userId);
-    let totalAsset = userInfoService[0].currentMoney;
-    console.log(totalAsset);
-    stocks.forEach((stock) => {
-      console.log(stock.Company.name);
-      totalAsset += BigInt(cur[stock.Company.name]) * BigInt(stock.quantity);
-    });
-    userInfoService[0].totalAsset = totalAsset;
     if (!userInfoService) {
       const error = new Error('회원 정보조회에 실패했습니다');
       error.status = 401;
       throw error;
     }
+    //유저가 가지고 있는 주식을 조회한다
+    let stocks = await this.userRepository.userStocks(userId);
+    //유저의 총자산을 계산한다
+    let totalAsset = userInfoService[0].currentMoney;
+    if (stocks) {
+      stocks.forEach((stock) => {
+        totalAsset += BigInt(cur[stock.Company.name]) * BigInt(stock.quantity);
+      });
+    }
+    //유저의 총자산을 업데이트한다
+    userInfoService[0].totalAsset = totalAsset;
+
     return userInfoService;
   };
 }
