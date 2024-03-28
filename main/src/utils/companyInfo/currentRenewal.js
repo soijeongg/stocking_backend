@@ -236,7 +236,6 @@ async function getAccessToken() {
       },
     });
     process.env.ACCESS_TOKEN = response.data.access_token;
-    console.log(process.env.ACCESS_TOKEN);
   } catch (err) {
     // 오류 처리
     console.log(err);
