@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import axios from 'axios';
 import { prisma } from '../prisma/index.js';
-import { cur } from './index.js';
+import { cur } from '../companyInfo/index.js';
 dotenv.config();
 
 const stockCode = [
