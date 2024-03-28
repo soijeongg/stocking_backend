@@ -17,6 +17,7 @@ import passport from 'passport';
 
 import { depositEveryday } from './utils/schedule/depositEveryday.js';
 import { getAccessToken, getStockPrices, stockCode } from './utils/schedule/currentUpdate.js';
+import { deleteOverTTL } from './utils/schedule/deleteOverTTL.js';
 dotenv.config();
 
 const app = express();
@@ -82,18 +83,6 @@ app.use('/api', router);
 //   await getStockPrices(stockCode);
 // }
 
-/* 각 사용자의 잔액에 1000만 원을 추가함
-await Promise.all(
-  users.map(async (user) => {
-    await prisma.user.update({
-      where: { userId: user.userId },
-      data: {
-        currentMoney: BigInt(user.currentMoney) + BigInt(10000000), // 1000만 원 추가
-      },
-    });
-  })
-);
-
 // /**
 //  * @description
 //  * 위의 함수를 비동기적으로 실행합니다.
@@ -123,7 +112,7 @@ await Promise.all(
 //  * @description
 //  * 평일 3시 부터 3시 30분까지 매초 현재가를 받아오고 주문 체결을 처리합니다.
 //  */
-// schedule.scheduleJob('0-59 0-30 15 * * 1-5', () => {
+// schedule.scheduleJob('0-59 0-29 15 * * 1-5', () => {
 //   if (process.env.ACCESS_TOKEN) {
 //     getStockPrices(stockCode);
 //   }
@@ -136,6 +125,20 @@ await Promise.all(
  */
 schedule.scheduleJob('0 0 0 * * *', () => {
   depositEveryday();
+});
+/**
+ * @description
+ * 장이 끝난 후 TTL을 지난 데이터를 삭제합니다.
+ */
+schedule.scheduleJob('10 31 15 * * *', () => {
+  deleteOverTTL();
+});
+/**
+ * @description
+ * 장 시작전 TTl이 지난 데이터를 삭제합니다.
+ */
+schedule.scheduleJob('50 59 8 * * *', () => {
+  deleteOverTTL();
 });
 
 app.use(notFoundErrorHandler);
