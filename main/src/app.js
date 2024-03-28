@@ -6,6 +6,15 @@ import LogMiddleware from './middlewares/log.middleware.js';
 import notFoundErrorHandler from './middlewares/notFoundError.middleware.js';
 import generalErrorHandler from './middlewares/generalError.middleware.js';
 import router from './routes/index.js';
+import { prisma } from './utils/prisma/index.js';
+import cors from 'cors';
+import passportConfig from './utils/passportConfig/index.js';
+//import { createClient } from 'redis';
+import expressSession from 'express-session';
+import expressMySQLSession from 'express-mysql-session';
+import passport from 'passport';
+//import RedisStore from 'connect-redis';
+
 import { depositEveryday } from './utils/schedule/depositEveryday.js';
 import { getAccessToken, getStockPrices, stockCode } from './utils/schedule/currentUpdate.js';
 import { deleteOverTTL } from './utils/schedule/deleteOverTTL.js';
@@ -18,9 +27,47 @@ app.use(LogMiddleware);
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
+
+/*
+const redisClient = createClient({
+  url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
+  password: `${process.env.REDIS_PASSWORD}`,
+});
+
+await redisClient.connect();
+console.log('Redis 서버에 연결되었습니다.');
+*/
+const MySQLStore = expressMySQLSession(expressSession); // express-session 미들웨어가 세션 정보를 메모리에 저장하는 대신, express-mysql-session을 사용해 MySQL 데이터베이스에 세션 정보를 저장
+const sessionStore = new MySQLStore({
+  user: process.env.DATABASE_USERNAME,
+  password: process.env.DATABASE_PASSWORD,
+  host: process.env.DATABASE_HOST,
+  port: process.env.DATABASE_PORT,
+  database: process.env.DATABASE_NAME,
+  expiration: 1000 * 60 * 60 * 24,
+  createDatabaseTable: true,
+});
+
+const sessionMiddleware = expressSession({
+  store: sessionStore,
+  secret: process.env.JWT_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    maxAge: 1000 * 60 * 60 * 24,
+  },
+});
+
+app.use(sessionMiddleware);
+// Passport 초기화 및 세션 사용
+
 app.get('/', (req, res) => {
   res.send('<h1>Stocking</h1>');
 });
+app.use(passport.initialize());
+app.use(passport.session());
+passportConfig(passport);
+
 app.use('/api', router);
 
 // // 밑에는 주식 가격을 받아오는 코드인데, 테스트 할때마다  토큰 값을 받아오는게 번거로워서 실제 서비스할때만 사용하도록 하겠습니다.
@@ -35,6 +82,18 @@ app.use('/api', router);
 //   await new Promise((resolve) => setTimeout(resolve, 1000));
 //   await getStockPrices(stockCode);
 // }
+
+/* 각 사용자의 잔액에 1000만 원을 추가함
+await Promise.all(
+  users.map(async (user) => {
+    await prisma.user.update({
+      where: { userId: user.userId },
+      data: {
+        currentMoney: BigInt(user.currentMoney) + BigInt(10000000), // 1000만 원 추가
+      },
+    });
+  })
+);
 
 // /**
 //  * @description
