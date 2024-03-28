@@ -10,11 +10,11 @@ async function depositEveryday() {
     await Promise.all(
       users.map(async (user) => {
         await prisma.user.update({
-          where: { userId: user.userId },
+          where: { userId: +user.userId },
           data: {
             // BigInt 연산으로 1000만 원 추가
-            currentMoney: user.currentMoney + 10000000,
-            initialSeed: user.initialSeed + 10000000,
+            currentMoney: BigInt(user.currentMoney) + BigInt(10000000),
+            initialSeed: BigInt(user.initialSeed) + BigInt(10000000),
           },
         });
       })

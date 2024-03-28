@@ -120,7 +120,7 @@ async function updateCurrentPrice(companyName, price) {
               },
               data: {
                 currentMoney: {
-                  increment: order.quantity * price,
+                  increment: BigInt(order.quantity) * price,
                 },
               },
             });
@@ -168,7 +168,7 @@ async function updateCurrentPrice(companyName, price) {
             },
             data: {
               currentMoney: {
-                decrement: order.quantity * price,
+                decrement: BigInt(order.quantity) * price,
               },
             },
           });
