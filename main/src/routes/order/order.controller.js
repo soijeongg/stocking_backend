@@ -1,3 +1,7 @@
+function isValidDateFormat(str) {
+  const pattern = /^\d{4}-\d{2}-\d{2}$/;
+  return pattern.test(str);
+}
 export class OrderController {
   constructor(orderService) {
     this.orderService = orderService;
@@ -16,6 +20,7 @@ export class OrderController {
    * @param {*} res 조회된 data
    * @returns
    */
+
   getOrder = async (req, res) => {
     try {
       // let { userId } = res.locals.user;
@@ -44,6 +49,15 @@ export class OrderController {
    */
   postOrder = async (req, res) => {
     try {
+      //input 확인
+      if (req.body.timeToLive == null) {
+        req.body.timeToLive = new Date();
+      } else {
+        if (!isValidDateFormat(req.body.timeToLive)) {
+          //에러처리
+        }
+        req.body.timeToLive = new Date(req.body.timeToLive);
+      }
       //let { userId } = res.locals.user;
       let userId = 1;
       const orderData = req.body;
