@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { cur } from '../../utils/companyInfo/index.js';
 export class userService {
   constructor(userRepository) {
     this.userRepository = userRepository;
@@ -84,6 +85,15 @@ export class userService {
   // 전체 정보를 내보내는 것
   selectUserInfo = async (userId) => {
     let userInfoService = await this.userRepository.userinfo(userId);
+    console.log(userInfoService);
+    let stocks = await this.userRepository.userStocks(userId);
+    let totalAsset = userInfoService[0].currentMoney;
+    console.log(totalAsset);
+    stocks.forEach((stock) => {
+      console.log(stock.Company.name);
+      totalAsset += BigInt(cur[stock.Company.name]) * BigInt(stock.quantity);
+    });
+    userInfoService[0].totalAsset = totalAsset;
     if (!userInfoService) {
       const error = new Error('회원 정보조회에 실패했습니다');
       error.status = 401;
