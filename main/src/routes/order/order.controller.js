@@ -4,10 +4,15 @@ export class OrderController {
   }
   // test단계에서는 실제로 data가 존재하는지 확인 잘하셔야합니다. //
   // joi는 대충 만들어만 놓고 적용은 안했습니다. //
+  // 나중에 로그인 구현되면 let {userId} = res.locals.user; 부분 주석해제, 아랫줄 삭제
+  // 나중에 실제로 cur받아오게 되면 cur을 사용해야됨!
+  // 잡다한 주석은 필수적인걸 제외하고 나중에 지우겠습니다.
 
   /**
    * 주문 조회 요청
-   * @param {*} req X
+   * @param {*} req params: 어떤 데이터가 필요한지.
+   *                        기본 정렬:0, 시간별 정렬(오래된 순): 1,시간별 정렬(최신순):2, 회사별 정렬(a부터): 3, 회사별 정렬(z부터): 4,
+   *                        매수/ 매도(매수 먼저):5,매수/ 매도(매도 먼저):6, 체결여부(true먼저):7, 체결여부(false먼저):8
    * @param {*} res 조회된 data
    * @returns
    */
@@ -15,12 +20,21 @@ export class OrderController {
     try {
       // let { userId } = res.locals.user;
       let userId = 1;
-      const showOrder = await this.orderService.getOrder(userId);
+      const displayType = parseInt(req.params.displayType);
+      console.log(displayType);
+      if (displayType < 0 || displayType > 8) {
+        return res.status(400).json({ error: error.message });
+      }
+      const showOrder = await this.orderService.getOrder(userId, displayType);
       return res.json(showOrder);
     } catch (error) {
+      console.log(error.stack);
       return res.status(400).json({ error: error.message });
     }
   };
+  // 사용자한테 보여줄때 어떤 데이터가 필요한지를 쿼리파라미터로 식별해서 다르게 보냄.
+  // 정렬방식: 시간, 회사별, 매수/매도, 체결여부
+  //  -> service 파트에서 추가
 
   /**
    * 주문 생성 요청
@@ -36,6 +50,7 @@ export class OrderController {
       const createdOrder = await this.orderService.postOrder(orderData, userId);
       return res.json({ createdOrder });
     } catch (error) {
+      console.log(error.stack);
       return res.status(400).json({ error: error.message });
     }
   };
@@ -52,11 +67,12 @@ export class OrderController {
       //let { userId } = res.locals.user;
       let userId = 1;
       // const orderId = req.params.orderId;
-      let orderId = 10;
-      const changeData = req.body;
-      const changedOrder = await this.orderService.updateOrder(userId, orderId, changeData);
+      let orderId = 16;
+      const orderData = req.body;
+      const changedOrder = await this.orderService.updateOrder(userId, orderId, orderData);
       return res.json({ changedOrder });
     } catch (error) {
+      console.log(error.stack);
       return res.status(400).json({ error: error.message });
     }
   };
@@ -76,6 +92,7 @@ export class OrderController {
       const deleteOrder = await this.orderService.deleteOrder(userId, orderId);
       return res.json({ deleteOrder });
     } catch (error) {
+      console.log(error.stack);
       return res.status(400).json({ error: error.message });
     }
   };
