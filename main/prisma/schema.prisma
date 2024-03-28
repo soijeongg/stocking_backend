@@ -29,7 +29,6 @@ model User {
   email        String    @unique @map("email")
   password     String    @map("password")
   provider     String?   @map("provider")
-  companyId    BigInt    @map("companyId")
   isVerified   Boolean   @default(false)
   token        String    @unique @map("token")
   nickname     String    @map("nickname")
@@ -80,7 +79,7 @@ model Stock {
 }
 
 model Order {
-  OrderId    Int      @id @default(autoincrement()) @unique @map("OrderId")
+  orderId    Int      @id @default(autoincrement()) @unique @map("orderId")
   userId     Int      @map("userId")
   companyId  Int      @map("companyId")
   type       Type     @map("type")

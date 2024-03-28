@@ -62,6 +62,7 @@ async function updateCurrentPrice(companyName, price) {
       name: companyName,
     },
   });
+  if (company === null) return;
   // 회사 정보를 조회한 후, 해당 회사에 대한 주문을 조회합니다.
   const orderList = await prisma.order.findMany({
     where: {
@@ -266,8 +267,7 @@ async function getStockPrices(stockCodes) {
       //console.log(`Code: ${code}, Price: ${response.data.output.stck_prpr}`);
       // 여기서는 코드의 실행 흐름을 변경하지 않기 때문에 바로 비교하고 업데이트 할 수 있습니다.
       if (cur[codeToName[code]] !== response.data.output.stck_prpr) {
-        // await updateCurrentPrice(codeToName[code], response.data.output.stck_prpr);
-        console.log('주가변동 발생!', codeToName[code], cur[codeToName[code]], response.data.output.stck_prpr);
+        updateCurrentPrice(codeToName[code], response.data.output.stck_prpr);
       }
       cur[codeToName[code]] = response.data.output.stck_prpr;
     } catch (err) {
