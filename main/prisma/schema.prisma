@@ -79,7 +79,7 @@ model Stock {
 }
 
 model Order {
-  orderId    Int      @id @default(autoincrement()) @unique @map("OrderId")
+  orderId    Int      @id @default(autoincrement()) @unique @map("orderId")
   updatedAt  DateTime @default(now()) @map("updatedAt")
   isSold     Boolean  @default(false) @map("isSold")
   userId     Int      @map("userId")
