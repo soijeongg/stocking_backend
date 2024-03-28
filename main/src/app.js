@@ -83,18 +83,6 @@ app.use('/api', router);
 //   await getStockPrices(stockCode);
 // }
 
-/* 각 사용자의 잔액에 1000만 원을 추가함
-await Promise.all(
-  users.map(async (user) => {
-    await prisma.user.update({
-      where: { userId: user.userId },
-      data: {
-        currentMoney: BigInt(user.currentMoney) + BigInt(10000000), // 1000만 원 추가
-      },
-    });
-  })
-);
-
 // /**
 //  * @description
 //  * 위의 함수를 비동기적으로 실행합니다.
