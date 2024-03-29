@@ -141,6 +141,10 @@ schedule.scheduleJob('10 31 15 * * *', () => {
 schedule.scheduleJob('50 59 8 * * *', () => {
   deleteOverTTL();
 });
+/**
+ * @description
+ * 평일 9시부터 4시까지 랭킹을 업데이트합니다.
+ */
 schedule.scheduleJob('0 0 9-16 * * 1-5', () => {
   updateRankBoard();
 });
