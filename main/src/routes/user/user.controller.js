@@ -57,7 +57,6 @@ export class userController {
   putLoginController = async (req, res, next) => {
     try {
       let { password, nickname } = req.body;
-
       // 비밀번호와 닉네임에 대한 유효성 검사는 email 필드가 존재할 때만 진행됩니다.
       if (password) {
         let passwordValidation = passwordSchema.validate({ password });
@@ -79,15 +78,17 @@ export class userController {
 
       let { userId } = res.locals.user;
       if (nickname && password) {
-        let updatetwo = await this.userService.chageUserinfoServiceNickname(nickname, userId);
+        let updatetwo = await this.userService.changeUserNickname(nickname, userId);
         return res.status(200).json({ message: '성공적으로 수정했습니다' });
       }
       if (!nickname && password) {
-        let updatePass = await this.userService.chageUserinfoServicepassword(password, userId);
-        return es.status(200).json({ message: '성공적으로 수정했습니다' });
+        console.log('1');
+        let updatePass = await this.userService.changeUserPassword(password, userId);
+        console.log('4');
+        return res.status(200).json({ message: '성공적으로 수정했습니다' });
       }
       if (nickname && !password) {
-        let updateNick = await this.userService.chageUserinfoServiceNickname(nickname, userId);
+        let updateNick = await this.userService.changeUserNicknamePassword(nickname, userId);
         return res.status(200).json({ message: '성공적으로 수정했습니다' });
       }
     } catch (error) {

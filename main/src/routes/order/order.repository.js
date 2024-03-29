@@ -4,10 +4,7 @@ export class OrderRepository {
   }
   // 주문 조회 section---------------------------------------------------------------------------------------------------------------------------------
 
-  //displayType- 기본 정렬:0, 시간별 정렬(오래된 순): 1,시간별 정렬(최신순):2, 회사별 정렬(a부터): 3, 회사별 정렬(z부터): 4,
-  //             매수/ 매도(매수 먼저):5, 매수/ 매도(매도 먼저):6, 체결여부(true먼저):7, 체결여부(false먼저):8
-
-  // 0: 유저번호로 주문 조회 & 기본정렬
+  // 유저 번호로 주문 조회
   findOrderByUserId = async (userId) => {
     return await this.prisma.order.findMany({
       where: {
@@ -18,45 +15,73 @@ export class OrderRepository {
       },
     });
   };
+  // 형식님이 만들어주신 주문조회by 쿼리문
+  filterData = async (userId, name, type, order, isSold) => {
+    // 주문을 가져올 변수
+    let stocks;
+    console.log('Repo 도착!');
+    console.log(userId, name, type, order, isSold);
+    if (order === '오름차순') {
+      //1차필터링
+      stocks = await this.prisma.order.findMany({
+        where: {
+          userId,
+        },
+        include: {
+          Company: true,
+        },
+        orderBy: {
+          updatedAt: 'asc',
+        },
+      });
+    } else if (order === '내림차순') {
+      stocks = await this.prisma.order.findMany({
+        where: {
+          userId,
+        },
+        include: {
+          Company: true,
+        },
+        orderBy: {
+          updatedAt: 'desc',
+        },
+      });
+    } else {
+      stocks = await this.prisma.order.findMany({
+        where: {
+          userId,
+        },
+        include: {
+          Company: true,
+        },
+      });
+    }
 
-  // 1: 주문목록을 시간순으로 정렬 (오래된 순)
-  sortOrderByTimeOldOrder = async (defaultOrder) => {
-    return defaultOrder.sort((a, b) => new Date(a.updatedAt) - new Date(b.updatedAt));
-  };
+    console.log('필터링 전 stock', stocks);
+    // 2차 필터링
+    const filteredStocks = stocks.filter((item) => {
+      const companyName = item.Company.name;
 
-  // 2: 주문목록을 시간순으로 정렬 (최신순)
-  sortOrderByTimeLatest = async (defaultOrder) => {
-    return defaultOrder.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-  };
+      // 회사이름검색
+      if (name && companyName !== name) {
+        return false;
+      }
+      // 타입검색
+      if (type && item.type !== type) {
+        return false;
+      }
+      // isSold 검색 (수정된 버전)
+      if (isSold !== undefined) {
+        const isSoldBoolean = isSold === 'true'; // 'true' 문자열을 boolean 값으로 변환
+        if (item.isSold !== isSoldBoolean) {
+          return false;
+        }
+      }
 
-  //  3: 회사별 정렬(a부터)
-  sortOrderByCompanyNameAsc = async (defaultOrder) => {
-    return defaultOrder.sort((a, b) => a.Company.name.localeCompare(b.Company.name));
-  };
-
-  // 4: 회사별 정렬(z부터)
-  sortOrderByCompanyNameDesc = async (defaultOrder) => {
-    return defaultOrder.sort((a, b) => b.Company.name.localeCompare(a.Company.name));
-  };
-
-  // 5: 매수/ 매도(매수 먼저)
-  sortOrderByTypeBuyFirst = async (defaultOrder) => {
-    return defaultOrder.sort((a, b) => (a.type === 'buy' ? -1 : b.type === 'buy' ? 1 : 0));
-  };
-
-  // 6: 매수/ 매도(매도 먼저)
-  sortOrderByTypeSellFirst = async (defaultOrder) => {
-    return defaultOrder.sort((a, b) => (a.type === 'sell' ? -1 : b.type === 'sell' ? 1 : 0));
-  };
-
-  // 7: 체결여부(true 먼저)
-  sortOrderByIsSoldTrueFirst = async (defaultOrder) => {
-    return defaultOrder.sort((a, b) => (a.isSold === b.isSold ? 0 : a.isSold ? -1 : 1));
-  };
-
-  // 8: 체결여부(false 먼저)
-  sortOrderByIsSoldFalseFirst = async (defaultOrder) => {
-    return defaultOrder.sort((a, b) => (a.isSold === b.isSold ? 0 : a.isSold ? 1 : -1));
+      return true;
+    });
+    console.log('필터링 후 stocks', filteredStocks);
+    return filteredStocks;
   };
 
   // 주문 생성 section---------------------------------------------------------------------------------------------------------------------------------

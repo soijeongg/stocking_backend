@@ -12,7 +12,7 @@ const orderController = new OrderController(orderService);
 const router = express.Router();
 
 //주문 조회 요청
-router.get('/:displayType', orderController.getOrder);
+router.get('/', orderController.getOrder);
 //주문 생성 요청
 router.post('/', orderController.postOrder);
 //주문 정정 요청
