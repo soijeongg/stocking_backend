@@ -105,11 +105,12 @@ export class userController {
   getUserController = async (req, res, next) => {
     let { userId } = res.locals.user;
     let getOne = await this.userService.selectUserInfo(userId);
-    const processedUsers = getOne.map((getone) => ({
-      ...getone,
-      currentMoney: getone.currentMoney.toString(),
-      totalAsset: getone.totalAsset.toString(),
-      initialSeed: getone.initialSeed.toString(),
+    const processedUsers = getOne.map((user) => ({
+      nickname: user.nickname,
+      currentMoney: user.currentMoney.toString(),
+      totalAsset: user.totalAsset.toString(),
+      initialSeed: user.initialSeed.toString(),
+      tier: user.tier,
     }));
     return res.status(200).json({ data: processedUsers });
   };
