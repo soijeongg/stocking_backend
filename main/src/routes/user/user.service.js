@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { cur } from '../../utils/companyInfo/index.js';
 export class userService {
   constructor(userRepository) {
     this.userRepository = userRepository;
@@ -89,6 +90,18 @@ export class userService {
       error.status = 401;
       throw error;
     }
+    //유저가 가지고 있는 주식을 조회한다
+    let stocks = await this.userRepository.userStocks(userId);
+    //유저의 총자산을 계산한다
+    let totalAsset = userInfoService[0].currentMoney;
+    if (stocks) {
+      stocks.forEach((stock) => {
+        totalAsset += BigInt(cur[stock.Company.name]) * BigInt(stock.quantity);
+      });
+    }
+    //유저의 총자산을 업데이트한다
+    userInfoService[0].totalAsset = totalAsset;
+
     return userInfoService;
   };
 }

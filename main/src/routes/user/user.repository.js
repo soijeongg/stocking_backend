@@ -101,4 +101,21 @@ export class userRepository {
       },
     });
   };
+  //유저가 가지고 있는 주식의 회사명과 주식수를 보내준다.
+  userStocks = async (userId) => {
+    const stocks = await this.prisma.Stock.findMany({
+      where: {
+        userId: +userId,
+      },
+      select: {
+        quantity: true,
+        Company: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+    return stocks;
+  };
 }
