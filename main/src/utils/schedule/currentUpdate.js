@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import axios from 'axios';
 import { prisma } from '../prisma/index.js';
 import { cur } from '../companyInfo/index.js';
+import { Prisma } from '@prisma/client';
 dotenv.config();
 
 const stockCode = [
@@ -120,7 +121,7 @@ async function updateCurrentPrice(companyName, price) {
               },
               data: {
                 currentMoney: {
-                  increment: BigInt(order.quantity) * price,
+                  increment: BigInt(order.quantity) * BigInt(price),
                 },
               },
             });
@@ -145,74 +146,79 @@ async function updateCurrentPrice(companyName, price) {
       // 매수 주문일 경우
       // 트랜잭션을 이용하여 매수주문을 처리한다.
       try {
-        await prisma.$transaction(async (tx) => {
-          // 1-1. 주문을 요청한 유저의 잔고를 구한다.
-          const user = await tx.user.findUnique({
-            where: {
-              userId: +order.userId,
-            },
-          });
-          // 1-2. 주문을 요청한 유저의 잔고가 부족하다면 에러를 발생시킨다.
-          if (user.currentMoney < order.quantity * price) {
-            await tx.order.delete({
+        await prisma.$transaction(
+          async (tx) => {
+            // 1-1. 주문을 요청한 유저의 잔고를 구한다.
+            const user = await tx.user.findUnique({
+              where: {
+                userId: +order.userId,
+              },
+            });
+            // 1-2. 주문을 요청한 유저의 잔고가 부족하다면 에러를 발생시킨다.
+            if (user.currentMoney < order.quantity * price) {
+              await tx.order.delete({
+                where: {
+                  orderId: +order.orderId,
+                },
+              });
+              return;
+            }
+            // 2. 유저가 가지고 있는 현금 수량을 감소시킨다.
+            await tx.user.update({
+              where: {
+                userId: +order.userId,
+              },
+              data: {
+                currentMoney: {
+                  decrement: BigInt(order.quantity) * BigInt(price),
+                },
+              },
+            });
+            //  3-1. 유저가 가지고 있는 주식을 조회한다.
+            const stock = await tx.stock.findFirst({
+              where: {
+                userId: +order.userId,
+                companyId: +company.companyId,
+              },
+            });
+            // 3-1-1. 유저가 가지고 있는 주식이 없다면 주식을 생성한다.
+            if (stock === null) {
+              await tx.stock.create({
+                data: {
+                  userId: +order.userId,
+                  companyId: +company.companyId,
+                  quantity: +order.quantity,
+                  averagePrice: +price,
+                },
+              });
+            } else {
+              // 3-1-2. 유저가 가지고 있는 주식이 있다면 수량과 평단가를 증가시킨다.
+              const newQuantity = stock.quantity + order.quantity;
+              const newAveragePrice = (stock.averagePrice * stock.quantity + order.quantity * price) / newQuantity;
+              await tx.stock.update({
+                where: {
+                  stockId: +stock.stockId,
+                },
+                data: {
+                  quantity: newQuantity,
+                  averagePrice: newAveragePrice,
+                },
+              });
+            }
+            //4. 주문을 처리한 유저의 주문을 체결 처리한다.
+            await tx.order.update({
               where: {
                 orderId: +order.orderId,
               },
-            });
-            return;
-          }
-          // 2. 유저가 가지고 있는 현금 수량을 감소시킨다.
-          await tx.user.update({
-            where: {
-              userId: +order.userId,
-            },
-            data: {
-              currentMoney: {
-                decrement: BigInt(order.quantity) * price,
-              },
-            },
-          });
-          //  3-1. 유저가 가지고 있는 주식을 조회한다.
-          const stock = await tx.stock.findFirst({
-            where: {
-              userId: +order.userId,
-              companyId: +company.companyId,
-            },
-          });
-          // 3-1-1. 유저가 가지고 있는 주식이 없다면 주식을 생성한다.
-          if (stock === null) {
-            await tx.stock.create({
               data: {
-                userId: +order.userId,
-                companyId: +company.companyId,
-                quantity: +order.quantity,
-                averagePrice: +price,
+                isSold: true,
               },
             });
-          } else {
-            // 3-1-2. 유저가 가지고 있는 주식이 있다면 수량과 평단가를 증가시킨다.
-            const newQuantity = stock.quantity + order.quantity;
-            const newAveragePrice = (stock.averagePrice * stock.quantity + order.quantity * price) / newQuantity;
-            await tx.stock.update({
-              where: {
-                stockId: +stock.stockId,
-              },
-              data: {
-                quantity: newQuantity,
-                averagePrice: newAveragePrice,
-              },
-            });
+          },
+          {
+            isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
           }
-          //4. 주문을 처리한 유저의 주문을 체결 처리한다.
-          await tx.order.update({
-            where: {
-              orderId: +order.orderId,
-            },
-            data: {
-              isSold: true,
-            },
-          });
-        });
+        );
       } catch (err) {
         console.log(err);
       }
