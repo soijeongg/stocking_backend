@@ -13,7 +13,6 @@ export class OrderService {
   //주문 조회 요청
   getOrder = async (userId, name, type, order, isSold) => {
     try {
-      console.log('fileterData를 만들어봅시다!');
       const filterData = await this.orderRepository.filterData(userId, name, type, order, isSold);
       console.log(filterData);
       return filterData;
@@ -34,7 +33,6 @@ export class OrderService {
     const companyId = orderData.companyId;
     const availableCash = await this.orderRepository.findAvailableCash(userId);
     const availableStock = await this.orderRepository.findStockQuantity(userId, companyId);
-
     // controller->service로 들어가자마자 사용자의 잔고를 판단, 부족하면 생성안하고 return
     if (orderData.type == 'buy' && availableCash <= orderedValue) {
       return { message: '잔고가 부족합니다.' };
@@ -43,20 +41,26 @@ export class OrderService {
       return { message: '보유주식이 부족합니다.' };
     }
 
-    // 현재가와 매수/매도가 비교해서 isSold 판단& isSold:true는 유저의 계좌상황 변동
-    // const currentPrice = this.cur;                               // 실제 데이터 받아오면 이부분 변동 필요!!
-    const currentPrice = orderData.price - 1;
+    // 현재가와 매수/매도가 비교해서 isSold 판단& isSold:true는 유저의 계좌상황 변동                                            <*현재가* 관련 로직>
+    // const currentPrice = this.cur;                                                                            실제 *현재가* 데이터 받아오면 이부분 변동 필요!!
+    let currentPrice;
+    //                                                                                                           항상 바로바로 체결되도록 *현재가* 로직 설정
+    if (orderData.type == 'buy') {
+      currentPrice = orderData.price + 1;
+    } else if (orderData.type == 'sell') {
+      currentPrice = orderData.price - 1;
+    }
+
     let updatedOrderData = orderData;
     if (orderData.type == 'buy' && currentPrice <= orderData.price) {
       try {
         const stockDataWithBoolean = await this.orderRepository.isStockExisting(userId, orderData);
         const stockData = stockDataWithBoolean.stockData;
-        const isStock = stockDataWithBoolean.isStock;
-        const stockId = stockData.stockId;
+        const isStock = stockData ? stockDataWithBoolean.isStock : 0;
+        const stockId = stockData ? stockData.stockId : 0;
         const currentAveragePrice = stockData ? stockData.averagePrice : 0;
         const currentQuantity = stockData ? stockData.quantity : 0;
         const changedAveragePrice = isStock ? (currentAveragePrice * currentQuantity + orderedValue) / (currentQuantity + orderData.quantity) : orderData.price;
-
         await this.orderRepository.concludeBuyoutOrder(userId, orderData, orderedValue, isStock, changedAveragePrice, stockId);
       } catch (error) {
         console.log(error.stack);
@@ -66,14 +70,20 @@ export class OrderService {
     }
     if (orderData.type == 'sell' && currentPrice >= orderData.price) {
       try {
-        await this.orderRepository.concludeSaleOrder(userId, orderData, orderedValue);
+        const stockDataWithBoolean = await this.orderRepository.isStockExisting(userId, orderData);
+        const stockData = stockDataWithBoolean.stockData;
+        const stockId = stockData ? stockData.stockId : 0;
+        if (stockData.quantity - orderData.quantity != 0) {
+          await this.orderRepository.concludeSaleOrder(userId, orderData, orderedValue, stockId);
+        } else {
+          await this.orderRepository.concludeSaleOrderIfQuantityZero(userId, orderData, orderedValue, stockId);
+        }
       } catch (error) {
         console.log(error.stack);
-        return { error: true, message: '매수 주문에 대해 계좌에 접근하는 과정에서 문제가 발생했습니다.' };
+        return { error: true, message: '매도 주문에 대해 계좌에 접근하는 과정에서 문제가 발생했습니다.' };
       }
       updatedOrderData = { ...orderData, isSold: true };
     }
-
     try {
       const createdOrder = await this.orderRepository.postOrderByUserId(userId, updatedOrderData);
       return createdOrder;
@@ -106,15 +116,11 @@ export class OrderService {
         return { error: true, message: error.message };
       }
     }
-    console.log('사용자의 잔고를 성공적으로 판단했습니다.');
     // 현재가와 매수/매도가 비교해서 isSold 판단& isSold:true는 유저의 계좌상황 변동
     // const currentPrice = this.cur;                               // 실제 데이터 받아오면 이부분 변동 필요!!
     const currentPrice = orderData.price - 1; //                        여기서 '현재가' 조절하시면 됩니다!!
     let updatedOrderData = orderData;
     let targetData = await this.orderRepository.findTargetData(orderId);
-    console.log('현재가는: ', currentPrice, '구매가는: ', orderData.price);
-    console.log(targetData.type == 'sell' && currentPrice >= orderData.price);
-    console.log(targetData);
     if (targetData.isSold == 'true') {
       return { message: '이미 체결된 주문입니다.' };
     }
@@ -152,8 +158,7 @@ export class OrderService {
       }
       updatedOrderData = { ...orderData, isSold: true };
     }
-    console.log('즉시 체결을 완료했습니다.');
-    console.log(isSold);
+
     // db에서 주문목록 변경
     try {
       const changedOrder = await this.orderRepository.updateOrderByOrderId(userId, orderId, updatedOrderData);
@@ -175,7 +180,21 @@ export class OrderService {
   //
   //_______________________________________________________________________________________________________________________
   deleteOrder = async (userId, orderId) => {
-    const deleteOrder = await this.orderRepository.deleteOrderByOrderId(userId, orderId);
-    return deleteOrder;
+    try {
+      const targetData = await this.orderRepository.findOrderByOrderId(userId, orderId);
+      if (targetData == null) {
+        return { message: '존재하지 않는 주문입니다.' };
+      }
+      console.log(targetData);
+      if (targetData.isSold == true) {
+        return { message: '이미 체결된 주문입니다.' };
+      } else {
+        const deleteOrder = await this.orderRepository.deleteOrderByOrderId(userId, orderId);
+        return deleteOrder;
+      }
+    } catch (error) {
+      console.error(error.stack);
+      return { error: true, message: '주문 취소 과정에서 에러가 발생했습니다.' };
+    }
   };
 }
