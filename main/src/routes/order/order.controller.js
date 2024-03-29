@@ -76,8 +76,9 @@ export class OrderController {
     try {
       //let { userId } = res.locals.user;
       let userId = 1;
-      // const orderId = req.params.orderId;
-      let orderId = 16;
+      const orderId = parseInt(req.query.orderId);
+      console.log(orderId, typeof orderId);
+
       const orderData = req.body;
       const changedOrder = await this.orderService.updateOrder(userId, orderId, orderData);
       return res.json({ changedOrder });
@@ -97,8 +98,7 @@ export class OrderController {
     try {
       //let { userId } = res.locals.user;
       let userId = 1;
-      // const OrderId = req.params.orderId;
-      let orderId = 55; // 이거 삭제할때마다 확인해서 수정하셔야해요!
+      const orderId = parseInt(req.query.orderId);
       const deleteOrder = await this.orderService.deleteOrder(userId, orderId);
       return res.json({ deleteOrder });
     } catch (error) {

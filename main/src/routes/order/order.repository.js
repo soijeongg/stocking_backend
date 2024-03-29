@@ -15,6 +15,17 @@ export class OrderRepository {
       },
     });
   };
+
+  // 주문 번호 + 유저 번호로 주문 조회
+  findOrderByOrderId = async (userId, orderId) => {
+    return await this.prisma.order.findFirst({
+      where: {
+        userId,
+        orderId,
+      },
+    });
+  };
+
   // 형식님이 만들어주신 주문조회by 쿼리문
   filterData = async (userId, name, type, order, isSold) => {
     // 주문을 가져올 변수
@@ -192,31 +203,57 @@ export class OrderRepository {
     // user테이블의 currentMoney 정보 변동
     // stock테이블의 quantity 정보 변동
     // 매도의 경우 무조건 줄이면 된다.
-
-    await this.prisma.$transaction([
-      this.prisma.user.update({
-        where: {
-          userId,
-        },
-        data: {
-          currentMoney: {
-            increment: orderedValue,
+    console.log('감소 시작!!'),
+      await this.prisma.$transaction([
+        this.prisma.user.update({
+          where: {
+            userId,
           },
-        },
-      }),
-      this.prisma.stock.update({
-        where: {
-          userId,
-          companyId: orderData.companyId,
-          stockId: stockId,
-        },
-        data: {
-          quantity: {
-            decrement: orderData.quantity,
+          data: {
+            currentMoney: {
+              increment: orderedValue,
+            },
           },
-        },
-      }),
-    ]);
+        }),
+        this.prisma.stock.update({
+          where: {
+            userId,
+            companyId: orderData.companyId,
+            stockId: +stockId,
+          },
+          data: {
+            quantity: {
+              decrement: orderData.quantity,
+            },
+          },
+        }),
+      ]);
+  };
+  // 즉시 체결된 매도 주문 처리 - 트랜잭션 처리 - quantity가 0이됨
+  concludeSaleOrderIfQuantityZero = async (userId, orderData, orderedValue, stockId) => {
+    // user테이블의 currentMoney 정보 변동
+    // stock테이블의 quantity 정보 변동
+    // 매도의 경우 무조건 줄이면 된다.
+    console.log('감소 시작!!'),
+      await this.prisma.$transaction([
+        this.prisma.user.update({
+          where: {
+            userId,
+          },
+          data: {
+            currentMoney: {
+              increment: orderedValue,
+            },
+          },
+        }),
+        this.prisma.stock.delete({
+          where: {
+            userId,
+            companyId: orderData.companyId,
+            stockId: +stockId,
+          },
+        }),
+      ]);
   };
 
   //주문 생성 요청
