@@ -25,6 +25,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(LogMiddleware);
+app.use(
+  cors({
+    origin: ['http://localhost:5000'], // 허용할 도메인 목록
+    credentials: true, // 쿠키를 포함한 요청을 허용
+  })
+);
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
