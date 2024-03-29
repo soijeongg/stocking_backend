@@ -46,15 +46,16 @@ model User {
 }
 
 model Company {
-  companyId Int      @id @default(autoincrement()) @unique
-  name      String   @unique @map("name")
-  priceGap  Int      @map("priceGap")
-  Follows   Follow[]
-  Stocks    Stock[]
-  Orders    Order[]
-  
+  companyId       Int         @id @default(autoincrement()) @unique
+  name            String      @unique @map("name")
+  fluctuationRate Float       @default(0) @map("fluctuationRate")
+  Follows         Follow[]
+  Stocks          Stock[]
+  Orders          Order[]
+
   @@map("Company")
 }
+
 
 model Follow {
   followId  Int     @id @default(autoincrement()) @unique @map("followId")
