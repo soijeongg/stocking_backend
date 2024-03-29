@@ -25,13 +25,9 @@ export class OrderController {
     try {
       // let { userId } = res.locals.user;
       let userId = 1;
-      const displayType = parseInt(req.params.displayType);
-      console.log(displayType);
-      if (displayType < 0 || displayType > 8) {
-        return res.status(400).json({ error: error.message });
-      }
-      const showOrder = await this.orderService.getOrder(userId, displayType);
-      return res.json(showOrder);
+      const { name, type, order, isSold } = req.query;
+      const result = await this.orderService.getOrder(userId, name, type, order, isSold);
+      return res.status(200).json(result);
     } catch (error) {
       console.log(error.stack);
       return res.status(400).json({ error: error.message });

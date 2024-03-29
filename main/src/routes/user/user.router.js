@@ -14,6 +14,8 @@ const UserController = new userController(UserService);
 
 router.post('/sign-up', UserController.signupController);
 
+router.post('/idcheck', UserController.idCheckController);
+
 router.post('/login', isNotLogin, (req, res, next) => {
   passport.authenticate('local', async (err, user, info) => {
     try {
@@ -60,6 +62,7 @@ router.get(
     res.redirect('http://localhost:3000');
   }
 );
+
 router.get('/auth/naver', passport.authenticate('naver', { authType: 'reprompt' }));
 router.get(
   '/auth/naver/callback',

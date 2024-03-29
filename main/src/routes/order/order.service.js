@@ -11,47 +11,17 @@ export class OrderService {
   }
 
   //주문 조회 요청
-  //displayType- 기본 정렬:0, 시간별 정렬(오래된 순): 1,시간별 정렬(최신순):2, 회사별 정렬(a부터): 3, 회사별 정렬(z부터): 4,
-  //             매수/ 매도(매수 먼저):5, 매수/ 매도(매도 먼저):6, 체결여부(true먼저):7, 체결여부(false먼저):8
-  getOrder = async (userId, displayType) => {
-    let defaultOrder = await this.orderRepository.findOrderByUserId(userId); // Company 테이블의 name과 priceGap도 포함!
-    let switchedOrder;
-    console.log(displayType);
-    switch (displayType) {
-      case 0:
-        switchedOrder = defaultOrder;
-        break;
-      case 1:
-        switchedOrder = await this.orderRepository.sortOrderByTimeOldOrder(defaultOrder);
-        break;
-      case 2:
-        switchedOrder = await this.orderRepository.sortOrderByTimeLatest(defaultOrder);
-        break;
-      case 3:
-        switchedOrder = await this.orderRepository.sortOrderByCompanyNameAsc(defaultOrder);
-        break;
-      case 4:
-        switchedOrder = await this.orderRepository.sortOrderByCompanyNameDesc(defaultOrder);
-        break;
-      case 5:
-        switchedOrder = await this.orderRepository.sortOrderByTypeBuyFirst(defaultOrder);
-        break;
-      case 6:
-        switchedOrder = await this.orderRepository.sortOrderByTypeSellFirst(defaultOrder);
-        break;
-      case 7:
-        switchedOrder = await this.orderRepository.sortOrderByIsSoldTrueFirst(defaultOrder);
-        break;
-      case 8:
-        switchedOrder = await this.orderRepository.sortOrderByIsSoldFalseFirst(defaultOrder);
-        break;
-      default:
-        throw new Error('주문목록 조회 과정에서 에러가 발생했습니다.');
+  getOrder = async (userId, name, type, order, isSold) => {
+    try {
+      console.log('fileterData를 만들어봅시다!');
+      const filterData = await this.orderRepository.filterData(userId, name, type, order, isSold);
+      console.log(filterData);
+      return filterData;
+    } catch (error) {
+      console.log(error.stack);
+      return { message: '주문 조회 과정에서 에러가 발생했습니다.' };
     }
-
-    return switchedOrder;
   };
-
   // 사용자한테 보여줄때 어떤 데이터가 필요한지를 쿼리파라미터로 식별해서 다르게 보냄.
   // 정렬방식: 시간, 회사별, 매수/매도, 체결여부
   //  -> service 파트에서 추가

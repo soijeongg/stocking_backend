@@ -38,7 +38,7 @@ export class userService {
     }
   };
   //로그인은 passport에서 처리 회원정보 수정을 해보자
-  chageUserinfoServiceNickname = async (nickname, userId) => {
+  changeUserNickname = async (nickname, userId) => {
     //닉네임만 있다면
     let changeNickname = await this.userRepository.updateNickname(nickname, userId);
     if (!changeNickname) {
@@ -47,13 +47,15 @@ export class userService {
     }
     return changeNickname;
   };
-  chageUserinfoServicepassword = async (password, userId) => {
+  changeUserPassword = async (password, userId) => {
+    console.log('2');
     let changePassword = await this.userRepository.updatePassword(password, userId);
+    console.log('3');
     if (!changePassword) {
       const error = new Error('수정에 실패했습니다');
       throw error;
     }
-    return chageUserinfoServicepassword;
+    return changePassword;
   };
 
   changeUserNicknamePassword = async (nickname, password, userId) => {

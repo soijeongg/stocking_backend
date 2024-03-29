@@ -47,7 +47,8 @@ export class userRepository {
   };
 
   updatePassword = async (password, userId) => {
-    hashedPassword = await argon2.hash(password);
+    const hashedPassword = await argon2.hash(password);
+
     let updatedPassword = await this.prisma.User.update({
       data: { password: hashedPassword },
       where: { userId: +userId },
