@@ -32,9 +32,9 @@ model User {
   isVerified   Boolean   @default(false)
   token        String    @unique @map("token")
   nickname     String    @map("nickname")
-  currentMoney BigInt    @default(100000000) @map("currentMoney")
-  totalAsset   BigInt    @default(100000000) @map("totalAsset")
-  initialSeed  BigInt    @default(100000000) @map("initialSeed")
+  currentMoney BigInt    @default(0) @map("currentMoney")
+  totalAsset   BigInt    @default(0) @map("totalAsset")
+  initialSeed  BigInt    @default(0) @map("initialSeed")
   mmr          Int       @default(0) @map("mmr")
   tier         Tier      @default(bronze) @map("tier")
   Stocks       Stock[]
