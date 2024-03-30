@@ -55,28 +55,84 @@ router.put('/user', authMiddleware, UserController.putLoginController);
 router.delete('/user', authMiddleware, UserController.deleteUseController);
 router.get('/verify', UserController.getVerifyController);
 router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-router.get(
-  '/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: 'http://localhost:3000/login' }), //? 그리고 passport 로그인 전략에 의해 googleStrategy로 가서 구글계정 정보와 DB를 비교해서 회원가입시키거나 로그인 처리하게 한다.
-  (req, res) => {
-    res.redirect('http://localhost:3000');
-  }
-);
-
+router.get('/auth/google/callback', (req, res, next) => {
+  passport.authenticate('google', (err, user, info) => {
+    if (err) {
+      // 일반 에러 처리
+      return res.status(500).json({ error: '인증 과정에서 시스템 에러가 발생했습니다.' });
+    }
+    if (!user) {
+      // 사용자 인증 실패 처리
+      if (info && info.message === '이 이메일은 이미 가입되어 있습니다 다른 메일을 이용하시거나 원래 사용하셨던 방식으로 로그인해주세요.') {
+        // 특정 에러 메시지에 대한 처리
+        return res.status(409).json({ error: info.message });
+      } else {
+        // 다른 유형의 인증 실패 처리
+        return res.status(401).json({ error: info.message || '인증에 실패했습니다.' });
+      }
+    }
+    req.logIn(user, (loginErr) => {
+      if (loginErr) {
+        // 로그인 프로세스 에러 처리
+        return res.status(500).json({ error: '로그인 처리 중 에러가 발생했습니다.' });
+      }
+      // 인증 및 로그인 성공
+      return res.redirect('http://localhost:5000');
+    });
+  })(req, res, next);
+});
 router.get('/auth/naver', passport.authenticate('naver', { authType: 'reprompt' }));
-router.get(
-  '/auth/naver/callback',
-  passport.authenticate('naver', { failureRedirect: 'http://localhost:3000/login' }), //? 그리고 passport 로그인 전략에 의해 googleStrategy로 가서 구글계정 정보와 DB를 비교해서 회원가입시키거나 로그인 처리하게 한다.
-  (req, res) => {
-    res.redirect('http://localhost:3000');
-  }
-);
+router.get('/auth/naver/callback', (req, res, next) => {
+  passport.authenticate('naver', (err, user, info) => {
+    if (err) {
+      // 일반 에러 처리
+      return res.status(500).json({ error: '인증 과정에서 시스템 에러가 발생했습니다.' });
+    }
+    if (!user) {
+      // 사용자 인증 실패 처리
+      if (info && info.message === '이 이메일은 이미 가입되어 있습니다 다른 메일을 이용하시거나 원래 사용하셨던 방식으로 로그인해주세요.') {
+        // 특정 에러 메시지에 대한 처리
+        return res.status(409).json({ error: info.message });
+      } else {
+        // 다른 유형의 인증 실패 처리
+        return res.status(401).json({ error: info.message || '인증에 실패했습니다.' });
+      }
+    }
+    req.logIn(user, (loginErr) => {
+      if (loginErr) {
+        // 로그인 프로세스 에러 처리
+        return res.status(500).json({ error: '로그인 처리 중 에러가 발생했습니다.' });
+      }
+      // 인증 및 로그인 성공
+      return res.redirect('http://localhost:5000');
+    });
+  })(req, res, next);
+});
 router.get('/auth/kakao', passport.authenticate('kakao', { authType: 'reprompt' }));
-router.get(
-  '/auth/kakao/callback',
-  passport.authenticate('kakao', { failureRedirect: 'http://localhost:3000/login' }), //? 그리고 passport 로그인 전략에 의해 googleStrategy로 가서 구글계정 정보와 DB를 비교해서 회원가입시키거나 로그인 처리하게 한다.
-  (req, res) => {
-    res.redirect('http://localhost:3000');
-  }
-);
+router.get('/auth/kakao/callback', (req, res, next) => {
+  passport.authenticate('kakao', (err, user, info) => {
+    if (err) {
+      // 일반 에러 처리
+      return res.status(500).json({ error: '인증 과정에서 시스템 에러가 발생했습니다.' });
+    }
+    if (!user) {
+      // 사용자 인증 실패 처리
+      if (info && info.message === '이 이메일은 이미 가입되어 있습니다 다른 메일을 이용하시거나 원래 사용하셨던 방식으로 로그인해주세요.') {
+        // 특정 에러 메시지에 대한 처리
+        return res.status(409).json({ error: info.message });
+      } else {
+        // 다른 유형의 인증 실패 처리
+        return res.status(401).json({ error: info.message || '인증에 실패했습니다.' });
+      }
+    }
+    req.logIn(user, (loginErr) => {
+      if (loginErr) {
+        // 로그인 프로세스 에러 처리
+        return res.status(500).json({ error: '로그인 처리 중 에러가 발생했습니다.' });
+      }
+      // 인증 및 로그인 성공
+      return res.redirect('http://localhost:5000');
+    });
+  })(req, res, next);
+});
 export default router;
