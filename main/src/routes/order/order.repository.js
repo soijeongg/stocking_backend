@@ -265,6 +265,45 @@ export class OrderRepository {
       },
     });
   };
+  //시장가 주문---------------------------------------------------------------------------------------------------------------------------------
+  // 가장 비싼 매수주문들의 orderId를 반환하고 해당 주문들을 삭제
+  getMostExpensiveOrders = async (selectedCompanyId, orderedQuantity) => {
+    const buyOrders = await this.prisma.order.findMany({
+      where: {
+        type: 'buy',
+        companyId: selectedCompanyId,
+      },
+      orderBy: {
+        price: 'desc',
+      },
+    });
+
+    let selectedQuantity = 0;
+    const selectedOrders = []; // 선택된 각 주문들의 userId, orderId, price, quantity을 담을 배열
+
+    await this.prisma.$transaction(async (prisma) => {
+      for (const order of buyOrders) {
+        if (selectedQuantity >= orderedQuantity) {
+          break;
+        }
+        selectedQuantity += order.quantity;
+        selectedOrders.push({
+          userId: order.userId,
+          orderId: order.orderId,
+          price: order.price,
+          quantity: order.quantity,
+        });
+
+        await prisma.order.delete({
+          where: {
+            orderId: order.orderId,
+          },
+        });
+      }
+    });
+
+    return selectedOrders; //[{},{},{},...]형태
+  };
 
   //주문 정정 요청---------------------------------------------------------------------------------------------------------------------------------
   updateOrderByOrderId = async (userId, orderId, orderData) => {

@@ -37,38 +37,60 @@ export class OrderController {
   // 정렬방식: 시간, 회사별, 매수/매도, 체결여부
   //  -> service 파트에서 추가
 
+  //___________________________________________________________________________________________
+
   /**
    * 주문 생성 요청
-   * @param {*} req: "companyId": 1, "type": "buy", or “sell”, "timeToLive": "2024-03-28", "price": 32000, "quantity": 10
+   * @param {*} req: "companyId": 1, "type": "buy", or “sell”, "price": 32000,// price가 null이면 지정가, "quantity": 10
    * @param {*} res: "orderId": 15, "updatedAt": "2024-03-27T16:04:36.149Z", "isSold": false, "userId": 1, "companyId": 1, "type": "buy", "timeToLive": "2024-03-28T15:42:28.338Z", "price": 32000, "quantity": 10
    * @returns
    */
   postOrder = async (req, res) => {
+    const { userId } = res.locals.user;
+    const orderData = req.body;
+    // 주문 데이터 유효성 확인---------------------------------
+    // 1. 가격 확인 - 시장가/지정가 판별할때까지 보류.
+    // 2. 회사id 확인
+    let companyId = parseInt(orderData.companyId);
+    if (companyId < 1 || !Number.isInteger(companyId)) {
+      return res.status(400).json({ message: '잘못된 회사정보입니다.' });
+    }
+
+    // 3.type 확인
+    let type = orderData.type;
+    if (type != 'buy' && type != 'sell') {
+      return res.status(400).json({ message: '잘못된 주문요청입니다. 매수/매도 주문만 가능합니다.' });
+    }
+    // 4. quantity 확인
+    let quantity = parseInt(orderData.quantity);
+    if (quantity < 1 || !Number.isInteger(quantity)) {
+      return res.status(400).json({ message: '잘못된 주문수량입니다.' });
+    }
+
+    //  지정가/시장가 구분해서 처리---------------------------------
+    let correctedPrice = orderData.price;
     try {
-      //input 확인
-      if (req.body.timeToLive == null) {
-        req.body.timeToLive = new Date();
-      } else {
-        if (!isValidDateFormat(req.body.timeToLive)) {
-          //에러처리
-        }
-        req.body.timeToLive = new Date(req.body.timeToLive);
+      //  1. 시장가
+      if (orderData.price == null) {
+        const createdOrder = this.orderService.postMarketPriceOrder(userId, orderData);
+        return res.status(200).json(createdOrder);
       }
-      //let { userId } = res.locals.user;
-      let userId = 1;
-      const orderData = req.body;
-      const createdOrder = await this.orderService.postOrder(orderData, userId);
-      return res.json({ createdOrder });
+      //  2. 지정가 - 아직 안함
+      else {
+        let price = parseInt(orderData.price);
+        if (price < 10000) {
+          // 만원이하면 안됨
+          return res.status(400).json({ message: '잘못된 주문가격입니다.' });
+        }
+        correctedPrice = 10000 * Math.floor(price / 10000); // 만의 배수가 되도록 price 내림
+      }
+      const createdOrder = this.orderService.postLimitedOrder(userId, orderData, correctedPrice);
     } catch (error) {
       console.log(error.stack);
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ message: '주문 생성 과정에서 에러가 발생했습니다.' });
     }
   };
-  // 응답
-  // {
-  //
-  // }
-  // }
+  //___________________________________________________________________________________________
   /**
    * 주문 정정 요청
    * @param {*} req body: 정정data

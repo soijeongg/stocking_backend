@@ -102,6 +102,78 @@ export class OrderService {
   //
   //_______________________________________________________________________________________________________________________
   //
+  // 시장가 주문 생성
+  postMarketPriceOrder = async (userId, orderData) => {
+    try {
+      // 매도/매수 구분해서 처리---------------------------------------------------------------------------------------------------
+      // 1. 매도 주문------------------------------------------------------------------
+      // order의 schema
+      // orderId
+      // userId
+      // companyId
+      // type
+      // updatedAt
+      // price
+      // quantity
+      //------------------------------
+      // concluded의 schema
+      // concludedId
+      // userId
+      // companyId
+      // type
+      // createdAt
+      // price
+      // quantity
+
+      if (orderData.type == 'sell') {
+        // 1. 주문의 수량에 맞춰서 서버가 order테이블에서 ‘매수 주문중 가장 비싼’주문들에 대해 get 요청을 보냄
+        // 해당 주문들의 userId, orderId, price, quantity를 가져오고, 해당 주문들을 order테이블에서 삭제
+        let mostExpensiveOrders = await this.orderRepository.getMostExpensiveOrders(orderData.companyId, orderData.quantity); // mostExpensiveOrderIds는 [{userId:1, orderId:2, price:30000, quantity:40},{},{},...] 이런형태일 것
+        let lastExpensiveOrder = mostExpensiveOrders.pop;
+        // 2. orderData의 companyId,quantity와 mostExpensiveOrderIds를 통해 concluded 테이블에 주문자의 데이터를 생성
+        let remainingQuantity = orderData.quantity;
+        for (let concludedOrderInfo in mostExpensiveOrders) {
+          await this.orderRepository.createConcludedOrder(orderData.userId, orderData.companyId, orderData.type, concludedOrderInfo.price, concludedOrderInfo.quantity);
+          remainingQuantity -= concludedOrderInfo.quantity;
+        }
+        // 남은 주문 수량만큼 주문자의 체결 데이터를 lastExpensiveOrder의 가격으로 생성
+        await this.orderRepository.createConcludedOrder(orderData.userId, orderData.companyId, orderData.type, lastExpensiveOrder.price, remainingQuantity);
+        let changedQuantity = lastExpensiveOrder.quantity - remainingQuantity;
+        // lastExpensiveOrder의 order정보를 수정, 체결된건 concluded로 보내줌
+        await this.orderRepository.changeOrderData(lastExpensiveOrder, changedQuantity);
+        await this.orderRepository.createConcludedOrder(lastExpensiveOrder.userId, orderData.companyId, orderData.type, lastExpensiveOrder.price, remainingQuantity);
+
+        // 3. 해당 요청의 요청자의 user테이블과 stock테이블에 정보 수정
+        // 4. 아까 가져온 ‘매수 물량중 가장 비싼거’에 해당되는 주문들도 각각 conclueded 테이블로 보냄
+        await this.orderRepository.sendOrdersToConcluded(mostExpensiveOrderIds);
+        // 5. 해당 주문들의 userid,orderid 의 user테이블과 stock테이블의 데이터를 변경
+
+        return createdOrder; // 생성된 주문 결과 반환
+      } // 2. 매수 주문------------------------------------------------------------------
+      else if (orderData.type == 'buy') {
+        // 1. 주문의 수량에 맞춰서 서버가 order테이블에서 ‘매도 물량중 가장 싼’주문들에 대해 get 요청을 보냄
+
+        // 2. 해당 요청을 갖고온 get요청 list에 대응해서 concluded 테이블로 보냄
+        // 3. 해당 요청의 요청자의 user테이블과 stock테이블에 정보 수정
+        // 4. 아까 가져온 ‘매도 물량중 가장 싼거’에 해당되는 주문들도 각각 conclueded 테이블로 보냄
+        // 5. 해당 주문들의 userid,orderid 의 user테이블과 stock테이블의 데이터를 변경
+
+        return createdOrder; // 생성된 주문 결과 반환
+      } // 3. 매도/매수 주문이 아닐 경우------------------------------------------------------
+      else {
+        return { error, message: '잘못된 주문 요청입니다. 매도/매수 주문만 가능합니다.' };
+      }
+    } catch (error) {
+      console.log(error.stack);
+      return { message: '시장가 주문 생성중에 문제가 생겼습니다.' };
+    }
+  };
+
+  //_______________________________________________________________________________________________________________________
+
+  // 지정가 주문 생성
+  postLimitedOrder = async (userId, orderData, correctedPrice) => {};
+
   //주문 정정 요청
   updateOrder = async (userId, orderId, orderData) => {
     // 1) controller->service로 들어가자마자 사용자의 잔고를 판단, 부족하면 해당 주문 자체를 삭제
