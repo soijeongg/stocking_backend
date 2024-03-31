@@ -86,7 +86,6 @@ model Order {
   userId     Int      @map("userId")
   companyId  Int      @map("companyId")
   type       Type     @map("type")
-  timeToLive DateTime @map("timeToLive")
   price      Int      @map("price")
   quantity   Int      @map("quantity")
   User       User     @relation(fields: [userId], references: [userId], onDelete: Cascade)

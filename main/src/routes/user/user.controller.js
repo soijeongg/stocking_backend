@@ -78,17 +78,17 @@ export class userController {
 
       let { userId } = res.locals.user;
       if (nickname && password) {
-        let updatetwo = await this.userService.changeUserNickname(nickname, userId);
+        await this.userService.changeUserNickname(nickname, userId);
         return res.status(200).json({ message: '성공적으로 수정했습니다' });
       }
       if (!nickname && password) {
         console.log('1');
-        let updatePass = await this.userService.changeUserPassword(password, userId);
+        await this.userService.changeUserPassword(password, userId);
         console.log('4');
         return res.status(200).json({ message: '성공적으로 수정했습니다' });
       }
       if (nickname && !password) {
-        let updateNick = await this.userService.changeUserNicknamePassword(nickname, userId);
+        await this.userService.changeUserNicknamePassword(nickname, userId);
         return res.status(200).json({ message: '성공적으로 수정했습니다' });
       }
     } catch (error) {

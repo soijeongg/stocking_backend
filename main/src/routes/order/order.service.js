@@ -3,11 +3,8 @@
 // 최대한 주석을 달아봤는데 추가로 달아주시면 매우 감사합니다. //
 
 export class OrderService {
-  constructor(orderRepository, cur, rate, gap) {
+  constructor(orderRepository) {
     this.orderRepository = orderRepository;
-    this.cur = cur;
-    this.rate = rate;
-    this.gap = gap;
   }
 
   //주문 조회 요청
@@ -44,11 +41,15 @@ export class OrderService {
     // 현재가와 매수/매도가 비교해서 isSold 판단& isSold:true는 유저의 계좌상황 변동                                            <*현재가* 관련 로직>
     // const currentPrice = this.cur;                                                                            실제 *현재가* 데이터 받아오면 이부분 변동 필요!!
     let currentPrice;
-    //                                                                                                           항상 바로바로 체결되도록 *현재가* 로직 설정
+    //                                         항상 바로바로 체결되도록 *현재가* 로직 설정
     if (orderData.type == 'buy') {
       currentPrice = orderData.price + 1;
     } else if (orderData.type == 'sell') {
       currentPrice = orderData.price - 1;
+    }
+
+    if (orderData.price == null) {
+      orderData.price = currentPrice;
     }
 
     let updatedOrderData = orderData;

@@ -39,8 +39,8 @@ export class OrderController {
 
   /**
    * 주문 생성 요청
-   * @param {*} req body: 생성data
-   * @param {*} res 생성된 data
+   * @param {*} req: "companyId": 1, "type": "buy", or “sell”, "timeToLive": "2024-03-28", "price": 32000, "quantity": 10
+   * @param {*} res: "orderId": 15, "updatedAt": "2024-03-27T16:04:36.149Z", "isSold": false, "userId": 1, "companyId": 1, "type": "buy", "timeToLive": "2024-03-28T15:42:28.338Z", "price": 32000, "quantity": 10
    * @returns
    */
   postOrder = async (req, res) => {
@@ -64,7 +64,11 @@ export class OrderController {
       return res.status(400).json({ error: error.message });
     }
   };
-
+  // 응답
+  // {
+  //
+  // }
+  // }
   /**
    * 주문 정정 요청
    * @param {*} req body: 정정data

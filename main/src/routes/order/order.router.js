@@ -1,12 +1,11 @@
 import express from 'express';
 import { prisma } from '../../utils/prisma/index.js';
-import { cur, rate, gap } from '../../utils/companyInfo/index.js';
 import { OrderService } from './order.service.js';
 import { OrderController } from './order.controller.js';
 import { OrderRepository } from './order.repository.js';
 
 const orderRepository = new OrderRepository(prisma);
-const orderService = new OrderService(orderRepository, cur, rate, gap);
+const orderService = new OrderService(orderRepository);
 const orderController = new OrderController(orderService);
 
 const router = express.Router();
