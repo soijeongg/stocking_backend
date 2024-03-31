@@ -32,40 +32,31 @@ model User {
   isVerified   Boolean   @default(false)
   token        String    @unique @map("token")
   nickname     String    @map("nickname")
-  currentMoney BigInt    @default(100000000) @map("currentMoney")
-  totalAsset   BigInt    @default(100000000) @map("totalAsset")
-  initialSeed  BigInt    @default(100000000) @map("initialSeed")
+  currentMoney BigInt    @default(0) @map("currentMoney")
+  totalAsset   BigInt    @default(0) @map("totalAsset")
+  initialSeed  BigInt    @default(0) @map("initialSeed")
   mmr          Int       @default(0) @map("mmr")
   tier         Tier      @default(bronze) @map("tier")
-  Follows      Follow[]
   Stocks       Stock[]
   Orders       Order[]
+  Concludeds   Concluded[]
   rank         Rank?
   
   @@map("User")
 }
 
 model Company {
-  companyId       Int         @id @default(autoincrement()) @unique
-  name            String      @unique @map("name")
-  fluctuationRate Float       @default(0) @map("fluctuationRate")
-  Follows         Follow[]
-  Stocks          Stock[]
-  Orders          Order[]
+  companyId     Int       @id @default(autoincrement()) @unique
+  name          String    @unique @map("name")
+  currentPrice  Int       @default(0) @map("currentPrice")
+  initialPrice  Int       @map("initialPrice")
+  Stocks        Stock[]
+  Orders        Order[]
+  Concludeds    Concluded[]
 
   @@map("Company")
 }
 
-
-model Follow {
-  followId  Int     @id @default(autoincrement()) @unique @map("followId")
-  userId    Int     @map("userId")
-  companyId Int     @map("companyId")
-  User      User    @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  Company   Company @relation(fields: [companyId], references: [companyId], onDelete: Cascade)
-  
-  @@map("Follow")
-}
 
 model Stock {
   stockId      Int     @id @default(autoincrement()) @unique
@@ -82,7 +73,6 @@ model Stock {
 model Order {
   orderId    Int      @id @default(autoincrement()) @unique @map("orderId")
   updatedAt  DateTime @default(now()) @map("updatedAt")
-  isSold     Boolean  @default(false) @map("isSold")
   userId     Int      @map("userId")
   companyId  Int      @map("companyId")
   type       Type     @map("type")
@@ -92,6 +82,20 @@ model Order {
   Company    Company  @relation(fields: [companyId], references: [companyId], onDelete: Cascade)
   
   @@map("Order")
+}
+
+model Concluded {
+  concludedId Int      @id @default(autoincrement()) @unique @map("concludedId")
+  createdAt   DateTime @default(now()) @map("createdAt")
+  userId      Int      @map("userId")
+  companyId   Int      @map("companyId")
+  type        Type     @map("type")
+  price       Int      @map("price")
+  quantity    Int      @map("quantity")
+  User        User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  Company     Company  @relation(fields: [companyId], references: [companyId], onDelete: Cascade)
+
+  @@map("Concluded")
 }
 
 enum Type {
