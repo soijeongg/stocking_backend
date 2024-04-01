@@ -48,7 +48,7 @@ export class OrderController {
   postOrder = async (req, res) => {
     const { userId } = res.locals.user;
     const orderData = req.body;
-    // 주문 데이터 유효성 확인---------------------------------
+    // 주문 데이터 유효성 확인---------------------------------controller단에서 가져온 데이터를 정수로(해당 데이터가 정수 데이터라면) 미리 바꿔서 전달
     // 1. 가격 확인 - 시장가/지정가 판별할때까지 보류.
     // 2. 회사id 확인
     let companyId = parseInt(orderData.companyId);
