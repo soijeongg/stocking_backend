@@ -1,0 +1,31 @@
+{
+  "config": {
+    "target": "http://localhost:3000",
+    "phases": [
+      {
+        "duration": 60,
+        "arrivalRate": 30
+      }
+    ],
+    "payload": {
+      "path": "./data.csv",
+      "fields": ["email", "password", "nickname"]
+    }
+  },
+  "scenarios": [
+    {
+      "flow": [
+        {
+          "post": {
+            "url": "/api/sign-up",
+            "json": {
+              "email": "{{email}}",
+              "password": "{{password}}",
+              "nickname": "{{nickname}}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
