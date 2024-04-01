@@ -10,9 +10,17 @@ export class RankRepository {
   userRanking = async () => {
     const ranking = await this.prisma.rank.findMany({
       orderBy: {
-        ranking: 'desc',
+        ranking: 'asc',
       },
     });
     return ranking;
+  };
+  usermmrRanking = async () => {
+    const usermmrRanking = await this.prisma.user.findMany({
+      orderBy: {
+        mmr: 'desc',
+      },
+    });
+    return usermmrRanking;
   };
 }
