@@ -110,13 +110,30 @@ export class userRepository {
       },
       select: {
         quantity: true,
-        Company: {
-          select: {
-            name: true,
-          },
-        },
+        companyId: true,
       },
     });
     return stocks;
   };
+  //회사의 id를 가지고 회사의 현재 주가를 보내준다
+  getCompany = async (companyId) => {
+    return await this.prisma.Company.findUnique({
+      where: {
+        companyId: +companyId,
+      },
+      select: {
+        currentPrice: true,
+      },
+    });
+  };
+  updateTotalAsset(totalAsset, userId) {
+    return this.prisma.User.update({
+      where: {
+        userId: +userId,
+      },
+      data: {
+        totalAsset: BigInt(totalAsset),
+      },
+    });
+  }
 }

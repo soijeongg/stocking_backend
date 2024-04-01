@@ -78,16 +78,15 @@ export class OrderRepository {
       if (type && item.type !== type) {
         return false;
       }
-      // isSold 검색 (수정된 버전)
-      if (isSold !== undefined) {
-        const isSoldBoolean = isSold === 'true'; // 'true' 문자열을 boolean 값으로 변환
-        if (item.isSold !== isSoldBoolean) {
-          return false;
-        }
-      }
+      return true
+    })
 
+<<<<<<< HEAD
       return true;
     });
+=======
+    console.log('필터링 후 stocks', filteredStocks);
+>>>>>>> bc571502e16fd91d73de4aa806b06d100df874e0
     return filteredStocks;
   };
 
@@ -184,6 +183,7 @@ export class OrderRepository {
       },
     });
   };
+<<<<<<< HEAD
 
   // 주문 생성 section-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
   //회사의 현재가 변경
@@ -373,3 +373,6 @@ deleteOrderByOrderId = async (userId, orderId) => {
     },
   });
 };
+=======
+  }
+>>>>>>> bc571502e16fd91d73de4aa806b06d100df874e0
