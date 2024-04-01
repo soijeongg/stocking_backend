@@ -81,16 +81,9 @@ export class OrderRepository {
       if (type && item.type !== type) {
         return false;
       }
-      // isSold 검색 (수정된 버전)
-      if (isSold !== undefined) {
-        const isSoldBoolean = isSold === 'true'; // 'true' 문자열을 boolean 값으로 변환
-        if (item.isSold !== isSoldBoolean) {
-          return false;
-        }
-      }
+      return true
+    })
 
-      return true;
-    });
     console.log('필터링 후 stocks', filteredStocks);
     return filteredStocks;
   };
@@ -286,4 +279,4 @@ export class OrderRepository {
       },
     });
   };
-}
+  }
