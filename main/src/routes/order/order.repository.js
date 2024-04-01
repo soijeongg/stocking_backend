@@ -99,6 +99,7 @@ export class OrderRepository {
       },
       orderBy: {
         price: 'desc',
+        createdAt: 'asc',
       },
     });
 
@@ -138,6 +139,7 @@ export class OrderRepository {
       },
       orderBy: {
         price: 'asc',
+        createdAt: 'asc',
       },
     });
 
@@ -169,7 +171,37 @@ export class OrderRepository {
     return selectedOrders; //[{},{},{},...]형태
   };
 
+  // companyId, price, type로 조회
+  getSelectedOrder = async (companyId, price, type) => {
+    return await this.prisma.findMany({
+      where: {
+        companyId,
+        price,
+        type,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+  };
+
   // 주문 생성 section-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  //회사의 현재가 변경
+  changeCurrentPrice = async (companyId, changedPrice) => {
+    await this.prisma.Company.update({
+      where: companyId,
+      data: {
+        price: changedPrice,
+      },
+    });
+  };
+
+  addUserIdToOrderData = async (userId, orderData) => {
+    return {
+      userId: userId,
+      ...orderData,
+    };
+  };
   //______________________________________________________________ 시장가 주문 생성__________________________________________________________
   // 가장 비싼 매수 주문들의 orderId를 반환하고 해당 주문들을 삭제
 
@@ -306,10 +338,17 @@ getMostCheapestOrders = async (selectedCompanyId, orderedQuantity) => {
 };
 
 //______________________________________________________________ 지정가 주문 생성__________________________________________________________
-createOrderByUserId = async (orderData) => {
+createOrderByOrderData = async (orderData) => {
   return await this.prisma.order.create({
     data: orderData,
   });
+};
+
+changePriceOfData = async (data, changedPrice) => {
+  return {
+    ...data,
+    price: changedPrice,
+  };
 };
 
 //주문 정정 요청-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

@@ -23,14 +23,13 @@ export class OrderController {
 
   getOrder = async (req, res) => {
     try {
-      // let { userId } = res.locals.user;
-      let userId = 1;
+      const { userId } = res.locals.user;
       const { name, type, order, isSold } = req.query;
       const result = await this.orderService.getOrder(userId, name, type, order, isSold);
       return res.status(200).json(result);
     } catch (error) {
       console.log(error.stack);
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ message: '주문 조회 도중 문제가 발생했습니다.' });
     }
   };
   // 사용자한테 보여줄때 어떤 데이터가 필요한지를 쿼리파라미터로 식별해서 다르게 보냄.
@@ -72,10 +71,10 @@ export class OrderController {
     try {
       //  1. 시장가
       if (orderData.price == null) {
-        const createdOrder = this.orderService.postMarketPriceOrder(userId, orderData);
+        const createdOrder = await this.orderService.postMarketPriceOrder(userId, orderData);
         return res.status(200).json(createdOrder);
       }
-      //  2. 지정가 - 아직 안함
+      //  2. 지정가
       else {
         let price = parseInt(orderData.price);
         if (price < 10000) {
@@ -83,8 +82,10 @@ export class OrderController {
           return res.status(400).json({ message: '잘못된 주문가격입니다.' });
         }
         correctedPrice = 10000 * Math.floor(price / 10000); // 만의 배수가 되도록 price 내림
+
+        const createdOrder = await this.orderService.postLimitedOrder(userId, orderData, correctedPrice);
+        return res.status(200).json(createdOrder);
       }
-      const createdOrder = this.orderService.postLimitedOrder(userId, orderData, correctedPrice);
     } catch (error) {
       console.log(error.stack);
       return res.status(400).json({ message: '주문 생성 과정에서 에러가 발생했습니다.' });
@@ -100,8 +101,7 @@ export class OrderController {
    */
   updateOrder = async (req, res) => {
     try {
-      //let { userId } = res.locals.user;
-      let userId = 1;
+      const { userId } = res.locals.user;
       const orderId = parseInt(req.query.orderId);
       console.log(orderId, typeof orderId);
 
@@ -110,7 +110,7 @@ export class OrderController {
       return res.json({ changedOrder });
     } catch (error) {
       console.log(error.stack);
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ message: '주문 정정 도중 문제가 발생했습니다.' });
     }
   };
 
@@ -122,14 +122,13 @@ export class OrderController {
    */
   deleteOrder = async (req, res) => {
     try {
-      //let { userId } = res.locals.user;
-      let userId = 1;
+      const { userId } = res.locals.user;
       const orderId = parseInt(req.query.orderId);
       const deleteOrder = await this.orderService.deleteOrder(userId, orderId);
       return res.json({ deleteOrder });
     } catch (error) {
       console.log(error.stack);
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ message:'주문 삭제 도중 문제가 발생했습니다.' });
     }
   };
 }
