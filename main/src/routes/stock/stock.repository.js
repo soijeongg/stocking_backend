@@ -14,6 +14,9 @@ export class StockRepository {
         where: {
           userId: +userId,
         },
+        include:{
+          Company: true
+        }
       });
       if (stocks.length === 0) {
         return { message: '보유하신 주식이 없습니다' };
