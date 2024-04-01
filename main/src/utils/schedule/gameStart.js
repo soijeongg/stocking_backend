@@ -1,5 +1,8 @@
 import { prisma } from '../prisma/index.js';
-
+/**
+ * @description
+ *기존의 모든 주문과 주식을 삭제합니다.
+ */
 async function resetOrderAndStock() {
   try {
     await prisma.stock.deleteMany();
@@ -8,7 +11,11 @@ async function resetOrderAndStock() {
     console.error('주문 및 주식을 삭제하는 동안 오류가 발생했습니다:', error);
   }
 }
-
+/**
+ * @description
+ * 모든 사용자의 잔액을 1000만 원으로 재설정합니다.
+ 
+ */
 async function resetUserMoney() {
   try {
     // 데이터베이스에서 모든 사용자를 가져옴
