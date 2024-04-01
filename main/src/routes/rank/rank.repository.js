@@ -20,6 +20,7 @@ export class RankRepository {
       orderBy: {
         mmr: 'desc',
       },
+      take: 5,
     });
     return usermmrRanking;
   };
