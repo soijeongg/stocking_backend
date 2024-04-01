@@ -12,6 +12,7 @@ import passportConfig from './utils/passportConfig/index.js';
 //import { createClient } from 'redis';
 import expressSession from 'express-session';
 import expressMySQLSession from 'express-mysql-session';
+import { setupWebSocketServer } from './utils/chartData/chartData.js';
 import passport from 'passport';
 //import RedisStore from 'connect-redis';
 
@@ -27,7 +28,7 @@ app.use(
     credentials: true, // 쿠키를 포함한 요청을 허용
   })
 );
-
+setupWebSocketServer(8080);
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));

@@ -16,7 +16,7 @@ export class userController {
       }
       let passwordvalidation = passwordSchema.validate({ password });
       if (passwordvalidation.error) {
-        const error = new Error('비밀번호는 5자 이상 15자 이내 아이디가 들어가 있지 않게 만들어주세요');
+        const error = new Error('비밀번호는 5자 이상 15자 이내 닉네임이 들어가 있지 않게 만들어주세요');
         error.status = 404;
         throw error;
       }
