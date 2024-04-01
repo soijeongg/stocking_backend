@@ -26,12 +26,10 @@ export class OrderRepository {
     });
   };
 
-  // 형식님이 만들어주신 주문조회by 쿼리문
+  // 형식님이 만들어주신 주문조회 by 쿼리문
   filterData = async (userId, name, type, order, isSold) => {
     // 주문을 가져올 변수
     let stocks;
-    console.log('Repo 도착!');
-    console.log(userId, name, type, order, isSold);
     if (order === '오름차순') {
       //1차필터링
       stocks = await this.prisma.order.findMany({
@@ -68,7 +66,6 @@ export class OrderRepository {
       });
     }
 
-    console.log('필터링 전 stock', stocks);
     // 2차 필터링
     const filteredStocks = stocks.filter((item) => {
       const companyName = item.Company.name;
@@ -84,199 +81,298 @@ export class OrderRepository {
       return true
     })
 
+<<<<<<< HEAD
+      return true;
+    });
+=======
     console.log('필터링 후 stocks', filteredStocks);
+>>>>>>> bc571502e16fd91d73de4aa806b06d100df874e0
     return filteredStocks;
   };
 
-  // 주문 생성 section---------------------------------------------------------------------------------------------------------------------------------
-
-  //주문번호로 주문 조회
-  findTargetData = async (orderId) => {
-    return await this.prisma.order.findUnique({
+  getMostExpensiveBuyings = async (selectedCompanyId, orderedQuantity) => {
+    const buyOrders = await this.prisma.order.findMany({
       where: {
-        orderId,
+        type: 'buy',
+        companyId: selectedCompanyId,
+      },
+      orderBy: {
+        price: 'desc',
+        createdAt: 'asc',
+      },
+    });
+
+    let selectedQuantity = 0;
+    const selectedOrders = []; // 선택된 각 주문들의 userId, orderId, price, quantity을 담을 배열
+
+    await this.prisma.$transaction(async (prisma) => {
+      for (const order of buyOrders) {
+        if (selectedQuantity >= orderedQuantity) {
+          break;
+        }
+        selectedQuantity += order.quantity;
+        selectedOrders.push({
+          userId: order.userId,
+          orderId: order.orderId,
+          type: order.type,
+          price: order.price,
+          quantity: order.quantity,
+        });
+
+        await this.prisma.order.delete({
+          where: {
+            orderId: order.orderId,
+          },
+        });
+      }
+    });
+
+    return selectedOrders; //[{},{},{},...]형태
+  };
+
+  getMostCheapestSellings = async (selectedCompanyId, orderedQuantity) => {
+    const sellOrders = await this.prisma.order.findMany({
+      where: {
+        type: 'sell',
+        companyId: selectedCompanyId,
+      },
+      orderBy: {
+        price: 'asc',
+        createdAt: 'asc',
+      },
+    });
+
+    let selectedQuantity = 0;
+    const selectedOrders = []; // 선택된 각 주문들의 userId, orderId, price, quantity을 담을 배열
+
+    await this.prisma.$transaction(async (prisma) => {
+      for (const order of sellOrders) {
+        if (selectedQuantity >= orderedQuantity) {
+          break;
+        }
+        selectedQuantity += order.quantity;
+        selectedOrders.push({
+          userId: order.userId,
+          orderId: order.orderId,
+          type: order.type,
+          price: order.price,
+          quantity: order.quantity,
+        });
+
+        await this.prisma.order.delete({
+          where: {
+            orderId: order.orderId,
+          },
+        });
+      }
+    });
+
+    return selectedOrders; //[{},{},{},...]형태
+  };
+
+  // companyId, price, type로 조회
+  getSelectedOrder = async (companyId, price, type) => {
+    return await this.prisma.findMany({
+      where: {
+        companyId,
+        price,
+        type,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+  };
+<<<<<<< HEAD
+
+  // 주문 생성 section-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  //회사의 현재가 변경
+  changeCurrentPrice = async (companyId, changedPrice) => {
+    await this.prisma.Company.update({
+      where: companyId,
+      data: {
+        price: changedPrice,
       },
     });
   };
 
-  // 사용자의 user.currentMoney 조회
-  findAvailableCash = async (userId) => {
-    return await this.prisma.user.findFirst({
+  addUserIdToOrderData = async (userId, orderData) => {
+    return {
+      userId: userId,
+      ...orderData,
+    };
+  };
+  //______________________________________________________________ 시장가 주문 생성__________________________________________________________
+  // 가장 비싼 매수 주문들의 orderId를 반환하고 해당 주문들을 삭제
+
+  createConcludedOrder = async (userId, companyId, type, price, quantity) => {
+    await this.prisma.Concluded.create({
+      data: {
+        userId: userId,
+        companyId: companyId,
+        type: type,
+        price: price,
+        quantity: quantity,
+      },
+    });
+  };
+
+  decreaseUserCurrentMoney = async (userId, totalPrice) => {
+    await this.prisma.User.update({
       where: {
         userId,
       },
-      select: {
-        currentMoney: true,
+      data: {
+        currentMoney: {
+          decrement: totalPrice,
+        },
       },
     });
   };
 
-  // 사용자의 stock.quantity 조회
-  findStockQuantity = async (userId, companyId) => {
-    return await this.prisma.stock.findFirst({
+  increaseUserCurrentMoney = async (userId, totalPrice) => {
+    await this.prisma.User.update({
+      where: {
+        userId,
+      },
+      data: {
+        currentMoney: {
+          increment: totalPrice,
+        },
+      },
+    });
+  };
+
+  decreaseUserStockInfo = async (userId, companyId, quantity) => {
+    await this.prisma.Stock.update({
       where: {
         userId,
         companyId,
       },
-      select: {
-        quantity: true,
-      },
-    });
-  };
-
-  // stock테이블에 orderData.companyId의 데이터
-  isStockExisting = async (userId, orderData) => {
-    const stockData = await this.prisma.stock.findFirst({
-      where: {
-        userId,
-        companyId: orderData.companyId,
-      },
-    });
-    const isStock = stockData != null;
-    return { stockData, isStock };
-  };
-
-  //즉시 체결된 매수 주문 처리 - 트랜잭션처리
-  concludeBuyoutOrder = async (userId, orderData, orderedValue, isStock, changedAveragePrice, stockId) => {
-    // 1. user 테이블의 currentMoney 정보 변동
-    // 2. stock 테이블에서 orderData.companyId의 데이터가 존재하면 update, 없으면 create해야함
-
-    let changeAsset = [
-      this.prisma.user.update({
-        where: {
-          userId,
-        },
-        data: {
-          currentMoney: {
-            decrement: orderedValue,
-          },
-        },
-      }),
-    ];
-
-    if (isStock) {
-      // stock테이블에 orderData.companyId의 데이터가 존재할때
-      changeAsset.push(
-        this.prisma.stock.update({
-          where: {
-            userId,
-            companyId: orderData.companyId,
-            stockId: stockId,
-          },
-          data: {
-            averagePrice: changedAveragePrice,
-            quantity: {
-              increment: orderData.quantity,
-            },
-          },
-        })
-      );
-    } else {
-      // stock테이블에 orderData.companyId의 데이터가 존재하지 않을때
-      changeAsset.push(
-        this.prisma.stock.create({
-          data: {
-            userId: userId,
-            companyId: orderData.companyId,
-            averagePrice: orderData.price,
-            quantity: orderData.quantity,
-          },
-        })
-      );
-    }
-    try {
-      return await this.prisma.$transaction(changeAsset);
-    } catch (error) {
-      return { error: true, message: 'repository단계에서 실패했어요!', detail: error.message };
-    }
-  };
-
-  // 즉시 체결된 매도 주문 처리 - 트랜잭션 처리
-  concludeSaleOrder = async (userId, orderData, orderedValue, stockId) => {
-    // user테이블의 currentMoney 정보 변동
-    // stock테이블의 quantity 정보 변동
-    // 매도의 경우 무조건 줄이면 된다.
-    console.log('감소 시작!!'),
-      await this.prisma.$transaction([
-        this.prisma.user.update({
-          where: {
-            userId,
-          },
-          data: {
-            currentMoney: {
-              increment: orderedValue,
-            },
-          },
-        }),
-        this.prisma.stock.update({
-          where: {
-            userId,
-            companyId: orderData.companyId,
-            stockId: +stockId,
-          },
-          data: {
-            quantity: {
-              decrement: orderData.quantity,
-            },
-          },
-        }),
-      ]);
-  };
-  // 즉시 체결된 매도 주문 처리 - 트랜잭션 처리 - quantity가 0이됨
-  concludeSaleOrderIfQuantityZero = async (userId, orderData, orderedValue, stockId) => {
-    // user테이블의 currentMoney 정보 변동
-    // stock테이블의 quantity 정보 변동
-    // 매도의 경우 무조건 줄이면 된다.
-    console.log('감소 시작!!'),
-      await this.prisma.$transaction([
-        this.prisma.user.update({
-          where: {
-            userId,
-          },
-          data: {
-            currentMoney: {
-              increment: orderedValue,
-            },
-          },
-        }),
-        this.prisma.stock.delete({
-          where: {
-            userId,
-            companyId: orderData.companyId,
-            stockId: +stockId,
-          },
-        }),
-      ]);
-  };
-
-  //주문 생성 요청
-  postOrderByUserId = async (userId, orderData) => {
-    return await this.prisma.order.create({
       data: {
-        ...orderData,
-        userId,
+        quantity: {
+          decrement: quantity,
+        },
       },
     });
   };
+}
 
-  //주문 정정 요청---------------------------------------------------------------------------------------------------------------------------------
-  updateOrderByOrderId = async (userId, orderId, orderData) => {
-    console.log('rep.update에 접근했습니다.');
-    return await this.prisma.order.update({
-      where: {
-        userId,
-        orderId,
+getUserStockInfo = async (userId, companyId) => {
+  return await this.prisma.Stock.findFirst({
+    where: {
+      userId,
+      companyId,
+    },
+    data: {
+      averagePrice,
+      quantity,
+    },
+  });
+};
+
+// 기존에 해당 회사의 주식이 있는 사람의 보유 주식 증가
+increaseUserStockInfo_shareholder = async (userId, companyId, price, quantity) => {
+  await this.prisma.Stock.update({
+    where: {
+      stockId: isStock.stockId,
+    },
+    data: {
+      quantity: {
+        increment: quantity,
       },
-      data: orderData,
-    });
+      averagePrice: price,
+    },
+  });
+};
+
+// 기존에 해당 회사의 주식이 없는 사람의 보유 주식 증가
+increaseUserStockInfo_firstBuying = async (userId, companyId, price, quantity) => {
+  await this.prisma.Stock.create({
+    data: {
+      userId,
+      companyId,
+      averagePrice: price,
+      quantity,
+    },
+  });
+};
+
+// 가장 싼 매도주문들의 orderId를 반환하고 해당 주문들을 삭제
+getMostCheapestOrders = async (selectedCompanyId, orderedQuantity) => {
+  const sellOrders = await this.prisma.order.findMany({
+    where: {
+      type: 'sell',
+      companyId: selectedCompanyId,
+    },
+    orderBy: {
+      price: 'desc',
+    },
+  });
+
+  let selectedQuantity = 0;
+  const selectedOrders = []; // 선택된 각 주문들의 userId, orderId, price, quantity을 담을 배열
+
+  await this.prisma.$transaction(async (prisma) => {
+    for (const order of sellOrders) {
+      if (selectedQuantity >= orderedQuantity) {
+        break;
+      }
+      selectedQuantity += order.quantity;
+      selectedOrders.push({
+        userId: order.userId,
+        orderId: order.orderId,
+        price: order.price,
+        quantity: order.quantity,
+      });
+
+      await this.prisma.order.delete({
+        where: {
+          orderId: order.orderId,
+        },
+      });
+    }
+  });
+
+  return selectedOrders; //[{},{},{},...]형태
+};
+
+//______________________________________________________________ 지정가 주문 생성__________________________________________________________
+createOrderByOrderData = async (orderData) => {
+  return await this.prisma.order.create({
+    data: orderData,
+  });
+};
+
+changePriceOfData = async (data, changedPrice) => {
+  return {
+    ...data,
+    price: changedPrice,
   };
-  //주문 삭제 요청---------------------------------------------------------------------------------------------------------------------------------
-  deleteOrderByOrderId = async (userId, orderId) => {
-    return await this.prisma.order.delete({
-      where: {
-        userId,
-        orderId,
-      },
-    });
-  };
+};
+
+//주문 정정 요청-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+changeOrderQuantity = async (userId, orderId, changedQuantity) => {
+  return await this.prisma.order.update({
+    where: {
+      userId,
+      orderId,
+    },
+    data: {
+      quantity: changedQuantity,
+    },
+  });
+};
+
+//주문 삭제 요청---------------------------------------------------------------------------------------------------------------------------------
+deleteOrderByOrderId = async (userId, orderId) => {
+  return await this.prisma.order.delete({
+    where: {
+      userId,
+      orderId,
+    },
+  });
+};
+=======
   }
+>>>>>>> bc571502e16fd91d73de4aa806b06d100df874e0
