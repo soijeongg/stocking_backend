@@ -105,4 +105,13 @@ export class userService {
 
     return userInfoService;
   };
+  selectUserSimpleInfo = async (userId) => {
+    let userInfoService = await this.userRepository.userinfo(userId);
+    if (!userInfoService) {
+      const error = new Error('회원 정보조회에 실패했습니다');
+      error.status = 401;
+      throw error;
+    }
+    return userInfoService;
+  };
 }

@@ -114,7 +114,15 @@ export class userController {
     }));
     return res.status(200).json({ data: processedUsers });
   };
-
+  //회원의 닉네임을 받아오자.
+  getUserSimpleController = async (req, res, next) => {
+    let { userId } = res.locals.user;
+    let getOne = await this.userService.selectUserSimpleInfo(userId);
+    const processedUsers = getOne.map((user) => ({
+      nickname: user.nickname,
+    }));
+    return res.status(200).json(processedUsers);
+  };
   //이메일 인증 컨트롤러를 만든다 .
   getVerifyController = async (req, res, next) => {
     try {
