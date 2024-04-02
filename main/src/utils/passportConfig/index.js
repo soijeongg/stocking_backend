@@ -114,7 +114,7 @@ export default function passportConfig() {
             // 이메일이 이미 존재하는 경우
             if (user.provider === 'kakao') {
               // 동일한 제공자로부터 로그인 시도인 경우, 로그인 성공 처리
-              return done(null, exUser);
+              return done(null, user);
             } else {
               // 다른 제공자를 통한 계정이 이미 존재하는 경우, 에러 처리
               return done(null, false, { message: '이 이메일은 이미 가입되어 있습니다 다른 메일을 이용하시거나 원래 사용하셨던 방식으로 로그인해주세요.' });
