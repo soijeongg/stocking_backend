@@ -3,7 +3,17 @@ export class OrderRepository {
     this.prisma = prisma;
   }
   // 주문 조회 section---------------------------------------------------------------------------------------------------------------------------------
-
+  // 시장가 가져오기
+  getCurrentPrice = async (findingCompanyId) => {
+    return await this.prisma.Company.findFirst({
+      where: {
+        companyId: findingCompanyId,
+      },
+      data: {
+        currentMoney,
+      },
+    });
+  };
   // 유저 번호로 주문 조회
   findOrderByUserId = async (userId) => {
     return await this.prisma.order.findMany({
@@ -89,6 +99,8 @@ export class OrderRepository {
     return filteredStocks;
   };
 
+  // 트랜잭션을 사용하고 특정 quantity만큼만 가져와야하는 주문이기에 어쩔 수 없이 해당 repository에 여러 await을 넣었습니다.
+  // 분리하게 되면 불필요한 대용량 데이터의 호출이 발생합니다.
   getMostExpensiveBuyings = async (selectedCompanyId, orderedQuantity) => {
     const buyOrders = await this.prisma.order.findMany({
       where: {
@@ -127,6 +139,13 @@ export class OrderRepository {
     });
 
     return selectedOrders; //[{},{},{},...]형태
+  };
+
+  getUserCurrentMoney = async (userId) => {
+    return await this.User.findFirst({
+      where: userId,
+      data: currentMoney,
+    });
   };
 
   getMostCheapestSellings = async (selectedCompanyId, orderedQuantity) => {
@@ -200,6 +219,7 @@ export class OrderRepository {
       ...orderData,
     };
   };
+
   //______________________________________________________________ 시장가 주문 생성__________________________________________________________
   // 가장 비싼 매수 주문들의 orderId를 반환하고 해당 주문들을 삭제
 
