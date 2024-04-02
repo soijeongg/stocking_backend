@@ -6,6 +6,7 @@ import { userController } from './user.controller.js';
 import { userRepository } from './user.repository.js';
 import { userService } from './user.service.js';
 import authMiddleware from '../../middlewares/authMiddleware.js';
+import { deleteSessionsByUserId } from '../../app.js';
 let router = express.Router();
 
 const UserRepository = new userRepository(prisma);
@@ -72,6 +73,12 @@ router.get('/auth/google/callback', (req, res, next) => {
         return res.status(401).json({ error: info.message || '인증에 실패했습니다.' });
       }
     }
+    deleteSessionsByUserId(user.userId, (error) => {
+      if (error) {
+        // 오류 처리
+        return next(error);
+      }
+    });
     req.logIn(user, (loginErr) => {
       if (loginErr) {
         // 로그인 프로세스 에러 처리
@@ -99,6 +106,12 @@ router.get('/auth/naver/callback', (req, res, next) => {
         return res.status(401).json({ error: info.message || '인증에 실패했습니다.' });
       }
     }
+    deleteSessionsByUserId(user.userId, (error) => {
+      if (error) {
+        // 오류 처리
+        return next(error);
+      }
+    });
     req.logIn(user, (loginErr) => {
       if (loginErr) {
         // 로그인 프로세스 에러 처리
@@ -126,6 +139,12 @@ router.get('/auth/kakao/callback', (req, res, next) => {
         return res.status(401).json({ error: info.message || '인증에 실패했습니다.' });
       }
     }
+    deleteSessionsByUserId(user.userId, (error) => {
+      if (error) {
+        // 오류 처리
+        return next(error);
+      }
+    });
     req.logIn(user, (loginErr) => {
       if (loginErr) {
         // 로그인 프로세스 에러 처리
