@@ -9,7 +9,6 @@ export function setupWebSocketServerOrder(port) {
     console.log('클라이언트가 연결되었습니다.');
 
     const getCurrentOrder = async () => {
-      console.log('실행은 되니?');
       let priceResult = await prisma.company.findFirst({
         select: { currentPrice: true },
         where: { companyId: companyId },
@@ -44,9 +43,7 @@ export function setupWebSocketServerOrder(port) {
           return b.price - a.price;
         });
 
-        console.log(groupedOrders);
         ws.send(JSON.stringify(groupedOrders));
-        console.log(`주문 정보 전송: ${JSON.stringify(groupedOrders)}`);
       } else {
         console.log('Company not found or currentPrice is undefined');
         ws.send(JSON.stringify([])); // 또는 오류 메시지
