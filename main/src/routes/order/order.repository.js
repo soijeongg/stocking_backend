@@ -11,7 +11,7 @@ export class OrderRepository {
   getCurrentPrice = async (findingCompanyId) => {
     return await this.prisma.Company.findFirst({
       where: {
-        companyId: findingCompanyId,
+        companyId: +findingCompanyId,
       },
       select: {
         currentPrice: true,
@@ -160,7 +160,7 @@ export class OrderRepository {
     return await this.prisma.Stock.findFirst({
       where: {
         userId: targetUserId,
-        companyId: targetCompanyId,
+        companyId: +targetCompanyId,
       },
       select: {
         quantity: true,
