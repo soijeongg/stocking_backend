@@ -12,6 +12,7 @@ import passportConfig from './utils/passportConfig/index.js';
 //import { createClient } from 'redis';
 import expressSession from 'express-session';
 import expressMySQLSession from 'express-mysql-session';
+import mysql from 'mysql';
 import { setupWebSocketServer } from './utils/chartData/chartData.js';
 import passport from 'passport';
 //import RedisStore from 'connect-redis';
@@ -66,6 +67,29 @@ const sessionMiddleware = expressSession({
 app.use(sessionMiddleware);
 // Passport 초기화 및 세션 사용
 
+const connection = mysql.createConnection({
+  host: process.env.DATABASE_HOST,
+  user: process.env.DATABASE_USERNAME,
+  password: process.env.DATABASE_PASSWORD,
+  database: process.env.DATABASE_NAME,
+});
+
+connection.connect();
+export function deleteSessionsByUserId(userId, callback) {
+  const query = `
+    DELETE FROM sessions
+    WHERE JSON_EXTRACT(data, '$.passport.user') = ?
+  `;
+
+  connection.query(query, [userId], (error, results) => {
+    if (error) {
+      console.error('세션 삭제 중 오류 발생:', error);
+      return callback(error);
+    }
+    console.log(`Deleted ${results.affectedRows} sessions.`);
+    callback(null, results);
+  });
+}
 app.get('/', (req, res) => {
   res.send('<h1>Stocking</h1>');
 });
