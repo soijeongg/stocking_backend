@@ -47,7 +47,7 @@ export class OrderController {
   postOrder = async (req, res) => {
     const { userId } = res.locals.user;
     const orderData = req.body;
-    // 주문 데이터 유효성 확인---------------------------------controller단에서 가져온 데이터를 정수로(해당 데이터가 정수 데이터라면) 미리 바꿔서 전달
+    // 주문 데이터 유효성 확인- 나중에 joi로 바꿔야함--------------------------------controller단에서 가져온 데이터를 정수로(해당 데이터가 정수 데이터라면) 미리 바꿔서 전달
     // 1. 가격 확인 - 시장가/지정가 판별할때까지 보류.
     // 2. 회사id 확인
     let companyId = parseInt(orderData.companyId);
@@ -82,7 +82,7 @@ export class OrderController {
           return res.status(400).json({ message: '잘못된 주문가격입니다.' });
         }
         correctedPrice = 10000 * Math.floor(price / 10000); // 만의 배수가 되도록 price 내림
-
+        // 주문에 절삭된 가격의 적용은 service 계층에서 이뤄집니다.
         const createdOrder = await this.orderService.postLimitedOrder(userId, orderData, correctedPrice);
         return res.status(200).json(createdOrder);
       }
@@ -102,12 +102,40 @@ export class OrderController {
   updateOrder = async (req, res) => {
     try {
       const { userId } = res.locals.user;
-      const orderId = parseInt(req.query.orderId);
-      console.log(orderId, typeof orderId);
-
+      const originalOrderId = parseInt(req.query.orderId);
       const orderData = req.body;
-      const changedOrder = await this.orderService.updateOrder(userId, orderId, orderData);
-      return res.json({ changedOrder });
+
+      // 정정 주문 데이터 유효성 확인- 나중에 joi로 바꿔야함--------------------------------controller단에서 가져온 데이터를 정수로(해당 데이터가 정수 데이터라면) 미리 바꿔서 전달
+      // 주문 정정은 지정가에만 가능 - 시장가는 이미 취소되거나 체결됐을테니
+      // 1. 회사id 확인
+      let companyId = parseInt(orderData.companyId);
+      if (companyId < 1 || !Number.isInteger(companyId)) {
+        return res.status(400).json({ message: '잘못된 회사정보입니다.' });
+      }
+
+      // 2.type 확인
+      let type = orderData.type;
+      if (type != 'buy' && type != 'sell') {
+        return res.status(400).json({ message: '잘못된 주문요청입니다. 매수/매도 주문만 가능합니다.' });
+      }
+      // 3. quantity 확인
+      let quantity = parseInt(orderData.quantity);
+      if (quantity < 1 || !Number.isInteger(quantity)) {
+        return res.status(400).json({ message: '잘못된 주문수량입니다.' });
+      }
+
+      // 4. 가격 확인
+      let price = parseInt(orderData.price);
+      if (price < 10000) {
+        // 만원이하면 안됨
+        return res.status(400).json({ message: '잘못된 주문가격입니다.' });
+      }
+      const correctedPrice = 10000 * Math.floor(price / 10000); // 만의 배수가 되도록 price 내림
+      // 주문에 절삭된 가격의 적용은 service 계층에서 이뤄집니다.
+
+      // service계층으로 작업 요청
+      const changedOrder = await this.orderService.updateOrder(userId, originalOrderId, orderData, correctedPrice);
+      return res.json({ message: '주문 정정에 성공했습니다.\n 정정 내용:\n', changedOrder });
     } catch (error) {
       console.log(error.stack);
       return res.status(400).json({ message: '주문 정정 도중 문제가 발생했습니다.' });

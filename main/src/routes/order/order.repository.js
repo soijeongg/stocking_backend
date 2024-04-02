@@ -2,8 +2,22 @@ export class OrderRepository {
   constructor(prisma) {
     this.prisma = prisma;
   }
-  // 주문 조회 section---------------------------------------------------------------------------------------------------------------------------------
 
+  transaction = async (operations) => {
+    return await this.prisma.$transaction(operations);
+  };
+  // 주문 조회 section---------------------------------------------------------------------------------------------------------------------------------
+  // 시장가 가져오기
+  getCurrentPrice = async (findingCompanyId) => {
+    return await this.prisma.Company.findFirst({
+      where: {
+        companyId: findingCompanyId,
+      },
+      select: {
+        currentPrice: true,
+      },
+    });
+  };
   // 유저 번호로 주문 조회
   findOrderByUserId = async (userId) => {
     return await this.prisma.order.findMany({
@@ -89,6 +103,8 @@ export class OrderRepository {
     return filteredStocks;
   };
 
+  // 트랜잭션을 사용하고 특정 quantity만큼만 가져와야하는 주문이기에 어쩔 수 없이 해당 repository에 여러 await을 넣었습니다.
+  // 분리하게 되면 불필요한 대용량 데이터의 호출이 발생합니다.
   getMostExpensiveBuyings = async (selectedCompanyId, orderedQuantity) => {
     const buyOrders = await this.prisma.order.findMany({
       where: {
@@ -129,16 +145,36 @@ export class OrderRepository {
     return selectedOrders; //[{},{},{},...]형태
   };
 
+  getUserCurrentMoney = async (findingUserId) => {
+    return await this.prisma.User.findFirst({
+      where: {
+        userId: findingUserId,
+      },
+      select: {
+        currentMoney: true,
+      },
+    });
+  };
+
+  getUserCurrentStockQuantity = async (targetUserId, targetCompanyId) => {
+    return await this.prisma.Stock.findFirst({
+      where: {
+        userId: targetUserId,
+        companyId: targetCompanyId,
+      },
+      select: {
+        quantity: true,
+      },
+    });
+  };
+
   getMostCheapestSellings = async (selectedCompanyId, orderedQuantity) => {
     const sellOrders = await this.prisma.order.findMany({
       where: {
         type: 'sell',
         companyId: selectedCompanyId,
       },
-      orderBy: {
-        price: 'asc',
-        createdAt: 'asc',
-      },
+      orderBy: [{ price: 'asc' }, { updatedAt: 'asc' }],
     });
 
     let selectedQuantity = 0;
@@ -187,9 +223,11 @@ export class OrderRepository {
   //회사의 현재가 변경
   changeCurrentPrice = async (companyId, changedPrice) => {
     await this.prisma.Company.update({
-      where: companyId,
+      where: {
+        companyId,
+      },
       data: {
-        price: changedPrice,
+        currentPrice: changedPrice,
       },
     });
   };
@@ -200,6 +238,7 @@ export class OrderRepository {
       ...orderData,
     };
   };
+
   //______________________________________________________________ 시장가 주문 생성__________________________________________________________
   // 가장 비싼 매수 주문들의 orderId를 반환하고 해당 주문들을 삭제
 
@@ -241,11 +280,10 @@ export class OrderRepository {
     });
   };
 
-  decreaseUserStockInfo = async (userId, companyId, quantity) => {
+  decreaseUserStockInfo = async (stockId, quantity) => {
     await this.prisma.Stock.update({
       where: {
-        userId,
-        companyId,
+        stockId,
       },
       data: {
         quantity: {
@@ -261,36 +299,37 @@ export class OrderRepository {
         userId,
         companyId,
       },
-      data: {
-        averagePrice,
-        quantity,
+      select: {
+        stockId: true,
+        averagePrice: true,
+        quantity: true,
       },
     });
   };
 
   // 기존에 해당 회사의 주식이 있는 사람의 보유 주식 증가
-  increaseUserStockInfo_shareholder = async (userId, companyId, price, quantity) => {
+  increaseUserStockInfo_shareholder = async (receivedStockId, receivedPrice, increasedQuantity) => {
     await this.prisma.Stock.update({
       where: {
-        stockId: isStock.stockId,
+        stockId: receivedStockId,
       },
       data: {
         quantity: {
-          increment: quantity,
+          increment: increasedQuantity,
         },
-        averagePrice: price,
+        averagePrice: receivedPrice,
       },
     });
   };
 
   // 기존에 해당 회사의 주식이 없는 사람의 보유 주식 증가
-  increaseUserStockInfo_firstBuying = async (userId, companyId, price, quantity) => {
+  increaseUserStockInfo_firstBuying = async (receivedUserId, receivedCompanyId, receivedPrice, initialQuantity) => {
     await this.prisma.Stock.create({
       data: {
-        userId,
-        companyId,
-        averagePrice: price,
-        quantity,
+        userId: receivedUserId,
+        companyId: receivedCompanyId,
+        averagePrice: receivedPrice,
+        quantity: initialQuantity,
       },
     });
   };
