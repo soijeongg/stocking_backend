@@ -2,6 +2,10 @@ export class OrderRepository {
   constructor(prisma) {
     this.prisma = prisma;
   }
+
+  transaction = async (operations) => {
+    return await this.prisma.$transaction(operations);
+  };
   // 주문 조회 section---------------------------------------------------------------------------------------------------------------------------------
   // 시장가 가져오기
   getCurrentPrice = async (findingCompanyId) => {
@@ -9,8 +13,8 @@ export class OrderRepository {
       where: {
         companyId: findingCompanyId,
       },
-      data: {
-        currentMoney,
+      select: {
+        currentPrice: true,
       },
     });
   };
@@ -141,10 +145,26 @@ export class OrderRepository {
     return selectedOrders; //[{},{},{},...]형태
   };
 
-  getUserCurrentMoney = async (userId) => {
-    return await this.User.findFirst({
-      where: userId,
-      data: currentMoney,
+  getUserCurrentMoney = async (findingUserId) => {
+    return await this.prisma.User.findFirst({
+      where: {
+        userId: findingUserId,
+      },
+      select: {
+        currentMoney: true,
+      },
+    });
+  };
+
+  getUserCurrentStockQuantity = async (targetUserId, targetCompanyId) => {
+    return await this.prisma.Stock.findFirst({
+      where: {
+        userId: targetUserId,
+        companyId: targetCompanyId,
+      },
+      select: {
+        quantity: true,
+      },
     });
   };
 
@@ -154,10 +174,7 @@ export class OrderRepository {
         type: 'sell',
         companyId: selectedCompanyId,
       },
-      orderBy: {
-        price: 'asc',
-        createdAt: 'asc',
-      },
+      orderBy: [{ price: 'asc' }, { updatedAt: 'asc' }],
     });
 
     let selectedQuantity = 0;
@@ -206,9 +223,11 @@ export class OrderRepository {
   //회사의 현재가 변경
   changeCurrentPrice = async (companyId, changedPrice) => {
     await this.prisma.Company.update({
-      where: companyId,
+      where: {
+        companyId,
+      },
       data: {
-        price: changedPrice,
+        currentPrice: changedPrice,
       },
     });
   };
@@ -261,11 +280,10 @@ export class OrderRepository {
     });
   };
 
-  decreaseUserStockInfo = async (userId, companyId, quantity) => {
+  decreaseUserStockInfo = async (stockId, quantity) => {
     await this.prisma.Stock.update({
       where: {
-        userId,
-        companyId,
+        stockId,
       },
       data: {
         quantity: {
@@ -281,36 +299,37 @@ export class OrderRepository {
         userId,
         companyId,
       },
-      data: {
-        averagePrice,
-        quantity,
+      select: {
+        stockId: true,
+        averagePrice: true,
+        quantity: true,
       },
     });
   };
 
   // 기존에 해당 회사의 주식이 있는 사람의 보유 주식 증가
-  increaseUserStockInfo_shareholder = async (userId, companyId, price, quantity) => {
+  increaseUserStockInfo_shareholder = async (receivedStockId, receivedPrice, increasedQuantity) => {
     await this.prisma.Stock.update({
       where: {
-        stockId: isStock.stockId,
+        stockId: receivedStockId,
       },
       data: {
         quantity: {
-          increment: quantity,
+          increment: increasedQuantity,
         },
-        averagePrice: price,
+        averagePrice: receivedPrice,
       },
     });
   };
 
   // 기존에 해당 회사의 주식이 없는 사람의 보유 주식 증가
-  increaseUserStockInfo_firstBuying = async (userId, companyId, price, quantity) => {
+  increaseUserStockInfo_firstBuying = async (receivedUserId, receivedCompanyId, receivedPrice, initialQuantity) => {
     await this.prisma.Stock.create({
       data: {
-        userId,
-        companyId,
-        averagePrice: price,
-        quantity,
+        userId: receivedUserId,
+        companyId: receivedCompanyId,
+        averagePrice: receivedPrice,
+        quantity: initialQuantity,
       },
     });
   };
