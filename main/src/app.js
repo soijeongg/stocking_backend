@@ -13,6 +13,7 @@ import passportConfig from './utils/passportConfig/index.js';
 import expressSession from 'express-session';
 import expressMySQLSession from 'express-mysql-session';
 import { setupWebSocketServer } from './utils/chartData/chartData.js';
+import { setupWebSocketServerOrder } from './utils/orderData/orderData.js';
 import passport from 'passport';
 //import RedisStore from 'connect-redis';
 
@@ -29,6 +30,7 @@ app.use(
   })
 );
 setupWebSocketServer(8080);
+setupWebSocketServerOrder(8090);
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
