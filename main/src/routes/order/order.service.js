@@ -6,10 +6,9 @@ export class OrderService {
   constructor(orderRepository) {
     this.orderRepository = orderRepository;
     this.orderConcludeProcess = this.orderConcludeProcess.bind(this);
-    this.orderConcludeProcessOfLastOrder = this.orderConcludeProcessOfLastOrder.bind(this);
   }
 
-  // 특정 조건에 따라 order테이블에서 불러온 주문들에서 마지막 주문을 lastOrder로 분리하고, 나머지 주문들은 orderConcludeProcess에서 처리하고 lastOrder은 orderConcludeProcessOfLastOrder에서 처리합니다.
+  // 특정 조건에 따라 order테이블에서 불러온 주문들에서 마지막 주문을 lastOrder로 분리하고, 나머지 주문들은 orderConcludeProcess에서 처리하고 lastOrder은 별도로 처리합니다(경우마다 조금씩 달라서...).
   async orderConcludeProcess(orderData, concludedOrderInfo) {
     let transactionPromises = [];
     // ___________1. 매도자의 기록 처리___________
