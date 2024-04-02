@@ -11,7 +11,7 @@ export function setupWebSocketServer(port) {
 
     const getCurrentPrice = async () => {
       let price = await prisma.company.findFirst({
-        select: { currentPrice: true },
+        select: { currentPrice: true, initialPrice: true },
         where: { companyId: companyId },
       });
       ws.send(JSON.stringify(price));
