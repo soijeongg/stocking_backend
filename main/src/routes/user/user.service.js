@@ -63,6 +63,7 @@ export class userService {
       const error = new Error('수정에 실패했습니다');
       throw error;
     }
+    return changeBoth;
   };
   //===============================회원삭제를 시도한다=======================
   deleteUserService = async (userId) => {
