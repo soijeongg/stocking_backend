@@ -15,6 +15,7 @@ import expressMySQLSession from 'express-mysql-session';
 import mysql from 'mysql';
 import { setupWebSocketServer } from './utils/chartData/chartData.js';
 import { setupWebSocketServerOrder } from './utils/orderData/orderData.js';
+import { setupWebSocketServer2 } from './utils/chatting/chatting.js';
 import passport from 'passport';
 //import RedisStore from 'connect-redis';
 
@@ -68,6 +69,7 @@ const sessionMiddleware = expressSession({
 
 app.use(sessionMiddleware);
 // Passport 초기화 및 세션 사용
+setupWebSocketServer2(9010, sessionStore);
 
 const connection = mysql.createConnection({
   host: process.env.DATABASE_HOST,
