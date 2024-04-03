@@ -150,6 +150,8 @@ export class OrderService {
     }
   }
 
+  // ________________________________________________________체결 관련 로직 함수들____________________________________________________________________________________________________________________________________________
+
   //______________________________________________________주문 조회 요청____________________________________________________________________________________________________________________________________
   // 정렬방식: 시간, 회사별, 매수/매도, 체결여부
   getOrder = async (userId, name, type, order, isSold) => {
@@ -168,10 +170,18 @@ export class OrderService {
   postMarketPriceOrder = async (userId, receivedOrderData) => {
     const orderData = await this.orderRepository.addUserIdToOrderData(userId, receivedOrderData);
     try {
+      // 유저 현재 보유 주식량 조회
+      const userCurrentStockQuantity = await this.orderRepository.getUserCurrentStockQuantity(orderData.userId, orderData.companyId);
+
       if (orderData.type == 'sell') {
         // ---------------------------------------------시장가 '매도' ------------------------------------------
+        // 보유 주식이 없으면
+        if (userCurrentStockQuantity == null) {
+          return { message: '현재 해당 회사의 보유 주식이 없습니다.' };
+        }
         let mostExpensiveBuyings = await this.orderRepository.getMostExpensiveBuyings(orderData.companyId, orderData.quantity);
         let totalPrice = 0;
+
         for (let price of mostExpensiveBuyings) {
           price += mostExpensiveBuyings.price * mostExpensiveBuyings.quantity;
           totalPrice += price;
@@ -229,10 +239,10 @@ export class OrderService {
           await this.verifyLastOrder(lastCheapestSelling, remainingQuantity, orderData, tx);
 
           // 마지막 주문 체결
-          await this.orderConcludeSellingProcess(orderData, lastCheapestSelling, remainingQuantity, tx);
+          await this.orderConcludeBuyingProcess(orderData, lastCheapestSelling, remainingQuantity, tx);
         });
 
-        return { message: '정상적으로 시장가 매도 주문이 처리되었습니다.' }; // 생성된 주문 결과 반환
+        return { message: '정상적으로 시장가 매수 주문이 처리되었습니다.' }; // 생성된 주문 결과 반환
       } else {
         return { message: '잘못된 주문 요청입니다. 매도/매수 주문만 가능합니다.' };
       }
