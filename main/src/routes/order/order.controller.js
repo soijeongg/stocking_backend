@@ -71,14 +71,16 @@ export class OrderController {
     }
     orderData.companyId = +orderData.companyId;
     orderData.quantity = +orderData.quantity;
-    if (orderData.price) orderData.price = +orderData.price;
-
+    if (orderData.price) {
+      orderData.price = 10000 * Math.floor(+orderData.price / 10000);
+    }
     try {
-      await execution(userId, companyId, null, type, quantity, correctedPrice); // execution 함수 호출(시장가 주문일 경우 orderId는 null
+      await execution(userId, companyId, null, type, quantity, orderData.price); // execution 함수 호출(시장가 주문일 경우 orderId는 null
       return res.json({ message: '주문이 성공적으로 생성되었습니다.' });
     } catch (error) {
       console.log(error.stack);
-      return res.status(400).json({ message: '주문 생성 과정에서 에러가 발생했습니다.' });
+      const { message } = error.message ? error : { message: '주문 생성 도중 문제가 발생했습니다.' };
+      if (error.message) return res.status(400).json({ message });
     }
   };
   //___________________________________________________________________________________________

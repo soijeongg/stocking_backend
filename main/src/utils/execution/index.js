@@ -64,10 +64,14 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
               lte: price,
             },
           },
-          orderBy: {
-            price: 'asc',
-            updatedAt: 'asc',
-          },
+          orderBy: [
+            {
+              price: 'asc',
+            },
+            {
+              updatedAt: 'asc',
+            },
+          ],
         });
         for (let sellerOrder of sellerOrders) {
           const sellerStock = await tx.stock.findFirst({
@@ -135,18 +139,20 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                   quantity: {
                     decrement: sellerOrder.quantity,
                   },
+                  averagePrice: (sellerStock.averagePrice * sellerStock.quantity - sellerOrder.price * sellerOrder.quantity) / (sellerStock.quantity - sellerOrder.quantity),
                 },
-                averagePrice: (sellerStock.averagePrice * sellerStock.quantity - sellerOrder.price * sellerOrder.quantity) / (sellerStock.quantity - sellerOrder.quantity),
               });
             }
             //주식 구매 처리
             await tx.order.update({
-              where: orderId,
+              where: {
+                orderId,
+              },
               data: {
                 quantity: {
                   decrement: sellerOrder.quantity,
                 },
-                updateAt: buyerOrder.updatedAt,
+                updatedAt: buyerOrder.updatedAt,
               },
             });
             await tx.concluded.create({
@@ -158,7 +164,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                 quantity: sellerOrder.quantity,
               },
             });
-            buyer.currentMoney -= sellerOrder.price * sellerOrder.quantity;
+            buyer.currentMoney -= BigInt(sellerOrder.price) * BigInt(sellerOrder.quantity);
             if (buyer.currentMoney < 0) {
               throw new Error('가지고 있는 돈이 부족합니다.');
             }
@@ -205,8 +211,8 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
               quantity,
             },
           });
-          currentMoney -= sellerOrder.price * quantity;
-          if (currentMoney < 0) {
+          buyer.currentMoney -= BigInt(sellerOrder.price) * BigInt(quantity);
+          if (buyer.currentMoney < 0) {
             throw new Error('가지고 있는 돈이 부족합니다.');
           }
           if (buyerStock) {
@@ -302,7 +308,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
               userId,
             },
             data: {
-              currentMoney,
+              currentMoney: buyer.currentMoney,
             },
           });
           break;
@@ -370,10 +376,14 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
               gte: price,
             },
           },
-          orderBy: {
-            price: 'desc',
-            updatedAt: 'asc',
-          },
+          orderBy: [
+            {
+              price: 'desc', // 가격에 대해서는 내림차순 정렬
+            },
+            {
+              updatedAt: 'asc', // 같은 가격을 가진 주문에 대해서는 업데이트 시간 순으로 오름차순 정렬
+            },
+          ],
         });
         for (let buyerOrder of buyerOrders) {
           const buyerUser = await tx.order.findFirst({
@@ -526,13 +536,14 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
               },
             },
           });
-          if (quantity === buyerOrder.quantity) {
+          if (quantity === sellerStock.quantity) {
             await tx.stock.delete({
               where: {
                 stockId: sellerStock.stockId,
               },
             });
           } else {
+            console.log(sellerStock.quantity, quantity);
             await tx.stock.update({
               where: {
                 stockId: sellerStock.stockId,
