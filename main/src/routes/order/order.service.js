@@ -164,10 +164,6 @@ export class OrderService {
   };
 
   //__________________________________________________________주문 생성 요청_____________________________________________________________________________________________________________________________________
-  //
-  changeDataInt = async (orderData) => {
-    return await this.orderRepository.changeDataToInt(orderData);
-  };
   // __________________________________________시장가 주문 생성____________________________________________________________________________________
   postMarketPriceOrder = async (userId, receivedOrderData) => {
     const orderData = await this.orderRepository.addUserIdToOrderData(userId, receivedOrderData);
