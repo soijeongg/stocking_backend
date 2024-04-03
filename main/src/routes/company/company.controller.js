@@ -11,4 +11,13 @@ export class CompanyController {
       next(err);
     }
   };
+  getCompanyNameController = async (req, res, next) => {
+    try {
+      let { companyId } = req.body;
+      let companyName = await this.CompanyService.getName(companyId);
+      return res.status(200).json(companyName);
+    } catch (err) {
+      next(err);
+    }
+  };
 }
