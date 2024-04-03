@@ -42,11 +42,10 @@ export function setupWebSocketServerOrder(port) {
           }
           return b.price - a.price;
         });
-
-        ws.send(JSON.stringify(groupedOrders));
+        ws.send(JSON.stringify({ groupedOrders, currentPrice }));
       } else {
         console.log('Company not found or currentPrice is undefined');
-        ws.send(JSON.stringify([])); // 또는 오류 메시지
+        ws.send(JSON.stringify({ groupedOrders: [], currentPrice: null })); // 또는 적절한 오류 메시지
       }
     };
     // 1초마다 가격 정보 전송
