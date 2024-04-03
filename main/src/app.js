@@ -16,7 +16,6 @@ import mysql from 'mysql';
 import { setupWebSocketServer } from './utils/chartData/chartData.js';
 import { setupWebSocketServerOrder } from './utils/orderData/orderData.js';
 import passport from 'passport';
-import gameStart from './utils/schedule/gameStart.js';
 //import RedisStore from 'connect-redis';
 
 dotenv.config();
@@ -101,8 +100,6 @@ app.use(passport.session());
 passportConfig(passport);
 
 app.use('/api', router);
-//game 시작함수
-gameStart();
 
 app.use(notFoundErrorHandler);
 app.use(generalErrorHandler);

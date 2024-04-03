@@ -103,3 +103,11 @@ async function updateMMR() {
     console.error('MMR 업데이트 중 오류가 발생했습니다:', err);
   }
 }
+
+async function gameEnd() {
+  await updateAllUsertotalAsset();
+  await updateRankBoard();
+  await updateMMR();
+}
+
+export default gameEnd;

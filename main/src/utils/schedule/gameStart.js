@@ -142,8 +142,10 @@ async function makeDummyOrderAndStock() {
 
 async function gameStart() {
   await resetCompany();
+  await resetUserMoney();
   await makeDummyUserAndCompany();
   await makeDummyOrderAndStock();
 }
+gameStart();
 
 export default gameStart;
