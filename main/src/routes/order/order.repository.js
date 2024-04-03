@@ -14,7 +14,7 @@ export class OrderRepository {
     const prismaContext = transaction || this.prisma;
     return await prismaContext.Company.findFirst({
       where: {
-        companyId: findingCompanyId,
+        companyId: +findingCompanyId,
       },
       select: {
         currentPrice: true,
@@ -167,7 +167,7 @@ export class OrderRepository {
     return await prismaContext.Stock.findFirst({
       where: {
         userId: targetUserId,
-        companyId: targetCompanyId,
+        companyId: +targetCompanyId,
       },
       select: {
         quantity: true,
