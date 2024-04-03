@@ -6,7 +6,7 @@ import { OrderController } from './order.controller.js';
 import { OrderRepository } from './order.repository.js';
 
 const orderRepository = new OrderRepository(prisma);
-const orderService = new OrderService(orderRepository);
+const orderService = new OrderService(orderRepository, prisma);
 const orderController = new OrderController(orderService);
 
 const router = express.Router();

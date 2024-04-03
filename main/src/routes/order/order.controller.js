@@ -72,7 +72,8 @@ export class OrderController {
       //  1. 시장가
       if (orderData.price == null) {
         const createdOrder = await this.orderService.postMarketPriceOrder(userId, orderData);
-        return res.status(200).json(createdOrder);
+        console.log(createdOrder);
+        res.status(200).json(createdOrder);
       }
       //  2. 지정가
       else {
