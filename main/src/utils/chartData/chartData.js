@@ -15,7 +15,7 @@ export function setupWebSocketServer(port) {
         where: { companyId: companyId },
       });
       ws.send(JSON.stringify(price));
-      console.log(`가격 정보 전송: ${JSON.stringify(price)}`);
+      // console.log(`가격 정보 전송: ${JSON.stringify(price)}`);
     };
     // 1초마다 가격 정보 전송
     const intervalId = setInterval(getCurrentPrice, 1000);
