@@ -165,6 +165,9 @@ export class OrderService {
 
   //__________________________________________________________주문 생성 요청_____________________________________________________________________________________________________________________________________
   //
+  changeDataInt = async (orderData) => {
+    return await this.orderRepository.changeDataToInt(orderData);
+  };
   // __________________________________________시장가 주문 생성____________________________________________________________________________________
   postMarketPriceOrder = async (userId, receivedOrderData) => {
     const orderData = await this.orderRepository.addUserIdToOrderData(userId, receivedOrderData);
@@ -387,11 +390,11 @@ export class OrderService {
 
   updateOrder = async (userId, originalOrderId, receivedOrderData, correctedPrice) => {
     try {
-      const {userIdOfOrder} = await this.orderRepository.getUserOfOrder(receivedOrderData.orderId);
-      if(userId != userIdOfOrder){
-        return {message:"본인의 주문만 정정할 수 있습니다."};
+      const { userIdOfOrder } = await this.orderRepository.getUserOfOrder(receivedOrderData.orderId);
+      if (userId != userIdOfOrder) {
+        return { message: '본인의 주문만 정정할 수 있습니다.' };
       }
-      
+
       const correctedOrderData = await this.orderRepository.changePriceOfData(receivedOrderData, correctedPrice);
       const orderData = await this.orderRepository.addUserIdToOrderData(userId, correctedOrderData);
       // 현재가 조회

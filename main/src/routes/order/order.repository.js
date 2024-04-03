@@ -214,6 +214,16 @@ export class OrderRepository {
   };
 
   // 주문 생성 section-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  //orderData의 "companyId", "price", "quantity"를 int로 변경
+  changeDataToInt = async (orderData) => {
+    return {
+      ...orderData,
+      companyId: parseInt(orderData.companyId, 10),
+      price: parseInt(orderData.price, 10),
+      quantity: parseInt(orderData.quantity, 10),
+    };
+  };
+
   //회사의 현재가 변경
   changeCurrentPrice = async (companyId, changedPrice, transaction) => {
     const prismaContext = transaction || this.prisma;
