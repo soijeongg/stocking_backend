@@ -232,7 +232,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
             });
           }
           // 주식 판매 처리
-          if (sellerOrder.quantity) {
+          if (sellerOrder.quantity === quantity) {
             await tx.order.delete({
               where: {
                 orderId: sellerOrder.orderId,
