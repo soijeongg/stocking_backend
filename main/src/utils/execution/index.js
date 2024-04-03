@@ -308,9 +308,10 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
           break;
         }
         return '요청한 주문이 완료되었습니다.';
+        //종결
       } else {
         //매도 주문
-        const sellerStock = await tx.stock.findFirst({
+        let sellerStock = await tx.stock.findFirst({
           where: {
             userId,
             companyId,
@@ -359,8 +360,264 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
               price,
             },
           });
-          //여기까지 판매 주문 생성 또는 수정 완료
         }
+        //여기까지 판매 주문 생성 또는 수정 완료
+        const buyerOrders = await tx.order.findMany({
+          where: {
+            companyId,
+            type: 'buy',
+            price: {
+              gte: price,
+            },
+          },
+          orderBy: {
+            price: 'desc',
+            updatedAt: 'asc',
+          },
+        });
+        for (let buyerOrder of buyerOrders) {
+          const buyerUser = await tx.order.findFirst({
+            where: {
+              userId: buyerOrder.userId,
+            },
+          });
+          if (buyerUser.currentMoney < buyerOrder.price * buyerOrder.quantity) {
+            //돈이 부족하면 다음 주문으로 넘어감
+            await tx.order.delete({
+              where: {
+                orderId: buyerOrder.orderId,
+              },
+            });
+            continue;
+          }
+          const buyerStock = await tx.stock.findFirst({
+            where: {
+              userId: buyerOrder.userId,
+              companyId,
+            },
+          });
+          sellerStock = await tx.stock.findFirst({
+            where: {
+              userId,
+              companyId,
+            },
+          });
+          if (quantity > buyerOrder.quantity) {
+            //판매주문량이 구매주문량보다 많을 때
+            //결제되는 양: buyerOrder.quantity
+            //결제되는 금액: buyerOrder.price
+            // 주식 구매 처리
+            await tx.order.delete({
+              where: {
+                orderId: buyerOrder.orderId,
+              },
+            });
+            await tx.concluded.create({
+              data: {
+                userId: buyerOrder.userId,
+                companyId,
+                type: 'buy',
+                price: buyerOrder.price,
+                quantity: buyerOrder.quantity,
+              },
+            });
+            await tx.user.update({
+              where: {
+                userId: buyerOrder.userId,
+              },
+              data: {
+                currentMoney: {
+                  decrement: buyerOrder.price * buyerOrder.quantity,
+                },
+              },
+            });
+            if (buyerStock) {
+              await tx.stock.update({
+                where: {
+                  stockId: buyerStock.stockId,
+                },
+                data: {
+                  quantity: {
+                    increment: buyerOrder.quantity,
+                  },
+                  averagePrice: (buyerStock.averagePrice * buyerStock.quantity + buyerOrder.price * buyerOrder.quantity) / (buyerStock.quantity + buyerOrder.quantity),
+                },
+              });
+            } else {
+              await tx.stock.create({
+                data: {
+                  userId: buyerOrder.userId,
+                  companyId,
+                  quantity: buyerOrder.quantity,
+                  averagePrice: buyerOrder.price,
+                },
+              });
+            }
+            //주식 판매 처리
+            await tx.order.update({
+              where: {
+                orderId,
+              },
+              data: {
+                quantity: {
+                  decrement: buyerOrder.quantity,
+                },
+                updatedAt: sellerOrder.updatedAt,
+              },
+            });
+            await tx.concluded.create({
+              data: {
+                userId,
+                companyId,
+                type: 'sell',
+                price: buyerOrder.price,
+                quantity: buyerOrder.quantity,
+              },
+            });
+            await tx.user.update({
+              where: {
+                userId,
+              },
+              data: {
+                currentMoney: {
+                  increment: buyerOrder.price * buyerOrder.quantity,
+                },
+              },
+            });
+            await tx.stock.update({
+              where: {
+                stockId: sellerStock.stockId,
+              },
+              data: {
+                quantity: {
+                  decrement: buyerOrder.quantity,
+                },
+                averagePrice: (sellerStock.averagePrice * sellerStock.quantity - buyerOrder.price * buyerOrder.quantity) / (sellerStock.quantity - buyerOrder.quantity),
+              },
+            });
+            quantity -= buyerOrder.quantity;
+            continue;
+          }
+          //판매주문량이 구매주문량보다 적거나 같을 때
+          // 결제되는 양: quantity
+          // 결제되는 금액: buyerOrder.price
+          // 주식 판매 처리
+          await tx.order.delete({
+            where: {
+              orderId,
+            },
+          });
+          await tx.concluded.create({
+            data: {
+              userId,
+              companyId,
+              type: 'sell',
+              price: buyerOrder.price,
+              quantity,
+            },
+          });
+          await tx.user.update({
+            where: {
+              userId,
+            },
+            data: {
+              currentMoney: {
+                increment: buyerOrder.price * quantity,
+              },
+            },
+          });
+          if (quantity === buyerOrder.quantity) {
+            await tx.stock.delete({
+              where: {
+                stockId: sellerStock.stockId,
+              },
+            });
+          } else {
+            await tx.stock.update({
+              where: {
+                stockId: sellerStock.stockId,
+              },
+              data: {
+                quantity: {
+                  decrement: quantity,
+                },
+                averagePrice: (sellerStock.averagePrice * sellerStock.quantity - buyerOrder.price * quantity) / (sellerStock.quantity - quantity),
+              },
+            });
+          }
+          // 주식 구매 처리
+          if (buyerOrder.quantity === quantity) {
+            await tx.order.delete({
+              where: {
+                orderId: buyerOrder.orderId,
+              },
+            });
+          } else {
+            await tx.order.update({
+              where: {
+                orderId: buyerOrder.orderId,
+              },
+              data: {
+                quantity: {
+                  decrement: quantity,
+                },
+                updatedAt: buyerOrder.updatedAt,
+              },
+            });
+          }
+          await tx.concluded.create({
+            data: {
+              userId: buyerOrder.userId,
+              companyId,
+              type: 'buy',
+              price: buyerOrder.price,
+              quantity,
+            },
+          });
+          await tx.user.update({
+            where: {
+              userId: buyerOrder.userId,
+            },
+            data: {
+              currentMoney: {
+                decrement: buyerOrder.price * quantity,
+              },
+            },
+          });
+          if (buyerStock) {
+            await tx.stock.update({
+              where: {
+                stockId: buyerStock.stockId,
+              },
+              data: {
+                quantity: {
+                  increment: quantity,
+                },
+                averagePrice: (buyerStock.averagePrice * buyerStock.quantity + buyerOrder.price * quantity) / (buyerStock.quantity + quantity),
+              },
+            });
+          } else {
+            await tx.stock.create({
+              data: {
+                userId: buyerOrder.userId,
+                companyId,
+                quantity,
+                averagePrice: buyerOrder.price,
+              },
+            });
+          }
+          await tx.company.update({
+            where: {
+              companyId,
+            },
+            data: {
+              currentPrice: buyerOrder.price,
+            },
+          });
+          break;
+        }
+        return '주문이 완료되었습니다.';
+        //종결
       }
     });
   } catch (err) {
