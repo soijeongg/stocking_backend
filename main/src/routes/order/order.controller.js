@@ -1,3 +1,5 @@
+import { execution } from '../../utils/execution/index.js';
+
 function isValidDateFormat(str) {
   const pattern = /^\d{4}-\d{2}-\d{2}$/;
   return pattern.test(str);
@@ -56,7 +58,6 @@ export class OrderController {
     if (companyId < 1 || !Number.isInteger(companyId)) {
       return res.status(400).json({ message: '잘못된 회사정보입니다.' });
     }
-    orderData.companyId = +orderData.companyId;
 
     // 3.type 확인
     let type = orderData.type;
@@ -68,31 +69,13 @@ export class OrderController {
     if (quantity < 1 || !Number.isInteger(quantity)) {
       return res.status(400).json({ message: '잘못된 주문수량입니다.' });
     }
+    orderData.companyId = +orderData.companyId;
     orderData.quantity = +orderData.quantity;
-
-    //  지정가/시장가 구분해서 처리---------------------------------
-    let correctedPrice = orderData.price;
+    if (orderData.price) orderData.price = +orderData.price;
 
     try {
-      //  1. 시장가
-      if (orderData.price == null) {
-        const createdOrder = await this.orderService.postMarketPriceOrder(userId, orderData);
-        console.log(createdOrder);
-        res.status(200).json(createdOrder);
-      }
-      //  2. 지정가
-      else {
-        let price = parseInt(orderData.price);
-        orderData.price = +orderData.price;
-        if (price < 10000) {
-          // 만원이하면 안됨
-          return res.status(400).json({ message: '잘못된 주문가격입니다.' });
-        }
-        correctedPrice = 10000 * Math.floor(price / 10000); // 만의 배수가 되도록 price 내림
-        // 주문에 절삭된 가격의 적용은 service 계층에서 이뤄집니다.
-        const createdOrder = await this.orderService.postLimitedOrder(userId, orderData, correctedPrice);
-        return res.status(200).json(createdOrder);
-      }
+      await execution(userId, companyId, null, type, quantity, correctedPrice); // execution 함수 호출(시장가 주문일 경우 orderId는 null
+      return res.json({ message: '주문이 성공적으로 생성되었습니다.' });
     } catch (error) {
       console.log(error.stack);
       return res.status(400).json({ message: '주문 생성 과정에서 에러가 발생했습니다.' });
@@ -119,7 +102,6 @@ export class OrderController {
       if (companyId < 1 || !Number.isInteger(companyId)) {
         return res.status(400).json({ message: '잘못된 회사정보입니다.' });
       }
-      orderData.companyId = +orderData.companyId;
 
       // 2.type 확인
       let type = orderData.type;
@@ -131,19 +113,21 @@ export class OrderController {
       if (quantity < 1 || !Number.isInteger(quantity)) {
         return res.status(400).json({ message: '잘못된 주문수량입니다.' });
       }
-      orderData.quantity = +orderData.quantity;
       // 4. 가격 확인
       let price = parseInt(orderData.price);
+      if (price == null) {
+        return res.status(400).json({ message: '지정가 주문만 가능합니다.' });
+      }
 
       if (price < 10000) {
         // 만원이하면 안됨
         return res.status(400).json({ message: '잘못된 주문가격입니다.' });
       }
       const correctedPrice = 10000 * Math.floor(price / 10000); // 만의 배수가 되도록 price 내림
-      // 주문에 절삭된 가격의 적용은 service 계층에서 이뤄집니다.
+      orderData.companyId = +orderData.companyId;
+      orderData.quantity = +orderData.quantity;
       orderData.price = +orderData.price;
-      // service계층으로 작업 요청
-      const changedOrder = await this.orderService.updateOrder(userId, originalOrderId, orderData, correctedPrice);
+      await execution(userId, companyId, originalOrderId, type, quantity, correctedPrice); // execution 함수 호출
       return res.json({ message: '주문 정정에 성공했습니다.\n 정정 내용:\n', changedOrder });
     } catch (error) {
       console.log(error.stack);
