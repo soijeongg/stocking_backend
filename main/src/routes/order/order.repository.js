@@ -214,6 +214,8 @@ export class OrderRepository {
   };
 
   // 주문 생성 section-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
   //회사의 현재가 변경
   changeCurrentPrice = async (companyId, changedPrice, transaction) => {
     const prismaContext = transaction || this.prisma;
