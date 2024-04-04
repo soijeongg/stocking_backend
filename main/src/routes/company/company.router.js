@@ -10,5 +10,6 @@ const companyService = new CompanyService(companyRepository);
 const companyController = new CompanyController(companyService);
 
 router.get('/company', authMiddleware, companyController.getCompanies);
+router.post('/companyName', companyController.getCompanyNameController);
 
 export default router;
