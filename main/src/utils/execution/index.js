@@ -25,8 +25,8 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
             quantity: true,
           },
         });
-        if (totalQuantity[0].quantity < quantity) {
-          throw new Error(`최대 ${totalQuantity[0].quantity}주까지만 구매할 수 있습니다.`);
+        if (totalQuantity[0]._sum.quantity < quantity) {
+          throw new Error(`최대 ${totalQuantity[0]._sum.quantity}주까지만 구매할 수 있습니다.`);
         }
         if (!price) price = 1000000000; //시장가 주문
         let buyerOrder; //사용자 주문
@@ -337,8 +337,8 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
             quantity: true,
           },
         });
-        if (totalQuantity[0].quantity < quantity) {
-          throw new Error(`최대 ${totalQuantity[0].quantity}주까지만 판매할 수 있습니다.`);
+        if (totalQuantity[0]._sum.quantity < quantity) {
+          throw new Error(`최대 ${totalQuantity[0]._sum.quantity}주까지만 판매할 수 있습니다.`);
         }
         if (!price) price = 0; //시장가 주문
         let sellerOrder; //사용자 주문
