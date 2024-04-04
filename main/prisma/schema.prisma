@@ -37,6 +37,7 @@ model User {
   initialSeed  BigInt    @default(0) @map("initialSeed")
   mmr          Int       @default(0) @map("mmr")
   tier         Tier      @default(bronze) @map("tier")
+  dummy        Boolean   @default(false) @map("dummy")
   Stocks       Stock[]
   Orders       Order[]
   Concludeds   Concluded[]
