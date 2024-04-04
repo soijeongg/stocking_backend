@@ -76,7 +76,7 @@ export class OrderController {
     }
     try {
       await execution(userId, companyId, null, type, quantity, orderData.price); // execution 함수 호출(시장가 주문일 경우 orderId는 null
-      return res.json({ message: '주문이 성공적으로 생성되었습니다.' });
+      return res.json({ message: '주문이 성공적으로 처리되었습니다.' });
     } catch (error) {
       console.log(error.stack);
       const { message } = error.message ? error : { message: '주문 생성 도중 문제가 발생했습니다.' };
@@ -125,10 +125,11 @@ export class OrderController {
       orderData.quantity = +orderData.quantity;
       orderData.price = +orderData.price;
       await execution(userId, companyId, originalOrderId, type, quantity, correctedPrice); // execution 함수 호출
-      return res.json({ message: '주문 정정에 성공했습니다.\n 정정 내용:\n', changedOrder });
+      return res.json({ message: '주문이 성공적으로 처리되었습니다.' });
     } catch (error) {
       console.log(error.stack);
-      return res.status(400).json({ message: '주문 정정 도중 문제가 발생했습니다.' });
+      const { message } = error.message ? error : { message: '주문 정정 도중 문제가 발생했습니다.' };
+      if (error.message) return res.status(400).json({ message });
     }
   };
 

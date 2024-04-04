@@ -1,24 +1,23 @@
 import { prisma } from '../prisma/index.js';
-import axios from 'axios';
-const axiosInstance = axios.create({
-  baseURL: 'http://localhost:3000',
-  withCredentials: true, // 모든 요청에 자동으로 쿠키를 포함시키도록 설정
-});
+import crypto from 'crypto';
+import argon2 from 'argon2';
+
 /**
  * @description
- *기존의 회사들을 삭제합니다.
+ * 길이가 length인 랜덤 문자열을 생성합니다.
  */
-async function resetCompany() {
-  try {
-    await prisma.company.deleteMany();
-  } catch (error) {
-    console.error('회사 정보를 삭제하는 동안 오류가 발생했습니다:', error);
+async function generateRandomString(length) {
+  let result = '';
+  const characters = 'abcdefghijklmnopqrstuvwxyz';
+  const charactersLength = characters.length;
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
   }
+  return result;
 }
 /**
  * @description
  * 모든 사용자의 잔액을 1000만 원으로 재설정합니다.
- 
  */
 async function resetUserMoney() {
   try {
@@ -42,38 +41,42 @@ async function resetUserMoney() {
     console.error('사용자 잔액을 업데이트하는 동안 오류가 발생했습니다:', error);
   }
 }
-
-async function makeDummyUserAndCompany() {
+/**
+ * @description
+ * 더미 사용자를 생성합니다.
+ */
+async function createDummyUser() {
   try {
-    await prisma.user.deleteMany({
-      where: {
-        nickname: 'dummy',
-      },
-    });
-    // 사용자와 회사 정보를 생성
-    await axiosInstance.post('/api/sign-up', {
-      email: 'dummy@naver.com',
-      nickname: 'dummy',
-      password: 'dummy',
-    });
-    const dummyUser = await prisma.user.findFirst({
-      where: {
-        email: 'dummy@naver.com',
-      },
-    });
-    await prisma.user.update({
-      where: {
-        userId: +dummyUser.userId,
-      },
+    let hashedPassword = await argon2.hash('dummy');
+    let email = (await generateRandomString(10)) + '@naver.com';
+    // 더미 사용자 생성
+    await prisma.user.create({
       data: {
+        email,
+        nickname: 'dummy',
+        password: hashedPassword,
+        token: crypto.randomBytes(20).toString('hex'),
         currentMoney: BigInt(10000000000),
         initialSeed: BigInt(10000000000),
         totalAsset: BigInt(10000000000),
         isVerified: true,
+        dummy: true,
       },
     });
+  } catch (err) {
+    console.error('더미 사용자를 생성하는 동안 오류가 발생했습니다:', err);
+  }
+}
+/**
+ * @description
+ * 더미 회사를 생성합니다.
+ */
+async function createCompany() {
+  try {
+    // 회사 이름과 현재가격을 배열로 저장
     const companies = ['항해 전자', '항해 자동차', '항해 화학'];
     const companyPrices = [300000, 500000, 1000000];
+    // 더미 회사 생성
     for (let i = 0; i < companies.length; i++) {
       await prisma.company.create({
         data: {
@@ -87,65 +90,61 @@ async function makeDummyUserAndCompany() {
     console.error('더미 사용자 및 회사 정보를 생성하는 동안 오류가 발생했습니다:', error);
   }
 }
-
-async function makeDummyOrderAndStock() {
+/**
+ * @description
+ * 더미 주문과 주식을 생성합니다.
+ */
+async function createDummyOrderAndStock() {
   try {
-    const dummyUser = await prisma.user.findFirst({
+    const dummyUsers = await prisma.user.findMany({
       where: {
-        nickname: 'dummy',
+        dummy: true,
       },
     });
     const companies = await prisma.company.findMany();
-
-    for (let company of companies) {
-      let currentPrice = company.currentPrice;
-      currentPrice /= 10000;
-      let maxOrder = Math.round(1000 / currentPrice);
-      for (let i = currentPrice / 2; i < currentPrice; ++i) {
-        //1부터 10까지 랜덤으로된 숫자 생성
-        let random = Math.floor(Math.random() * maxOrder) + 1;
-        await prisma.order.create({
+    for (let dummyUser of dummyUsers) {
+      for (let company of companies) {
+        let currentPrice = company.currentPrice;
+        currentPrice /= 10000;
+        let maxOrder = Math.round(1000 / currentPrice);
+        for (let i = currentPrice / 2; i < currentPrice; ++i) {
+          //1부터 10까지 랜덤으로된 숫자 생성
+          let random = Math.floor(Math.random() * maxOrder) + 1;
+          await prisma.order.create({
+            data: {
+              userId: +dummyUser.userId,
+              companyId: +company.companyId,
+              quantity: random,
+              price: i * 10000,
+              type: 'buy',
+            },
+          });
+        }
+        for (let i = currentPrice; i <= (3 * currentPrice) / 2; ++i) {
+          let random = Math.floor(Math.random() * maxOrder) + 1;
+          await prisma.order.create({
+            data: {
+              userId: +dummyUser.userId,
+              companyId: +company.companyId,
+              quantity: random,
+              price: i * 10000,
+              type: 'sell',
+            },
+          });
+        }
+        await prisma.stock.create({
           data: {
             userId: +dummyUser.userId,
             companyId: +company.companyId,
-            quantity: random,
-            price: i * 10000,
-            type: 'buy',
+            quantity: 1000000,
+            averagePrice: currentPrice * 10000,
           },
         });
       }
-      for (let i = currentPrice; i <= (3 * currentPrice) / 2; ++i) {
-        let random = Math.floor(Math.random() * maxOrder) + 1;
-        await prisma.order.create({
-          data: {
-            userId: +dummyUser.userId,
-            companyId: +company.companyId,
-            quantity: random,
-            price: i * 10000,
-            type: 'sell',
-          },
-        });
-      }
-      await prisma.stock.create({
-        data: {
-          userId: +dummyUser.userId,
-          companyId: +company.companyId,
-          quantity: 1000000,
-          averagePrice: currentPrice * 10000,
-        },
-      });
     }
   } catch (err) {
     console.error('더미 주문을 생성하는 동안 오류가 발생했습니다:', err);
   }
 }
 
-async function gameStart() {
-  await resetCompany();
-  await resetUserMoney();
-  await makeDummyUserAndCompany();
-  await makeDummyOrderAndStock();
-}
-gameStart();
-
-export default gameStart;
+export { resetUserMoney, createDummyUser, createCompany, createDummyOrderAndStock };

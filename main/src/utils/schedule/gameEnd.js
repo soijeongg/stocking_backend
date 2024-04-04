@@ -1,38 +1,76 @@
 import { prisma } from '../prisma/index.js';
+
 /**
  * @description
- * 사용자의 총 자산을 업데이트 합니다.
- * @returns {Promise<Array>} 수정된 사용자 객체 배열
+ * 더미 사용자를 삭제합니다.
  */
-async function updateAllUsertotalAsset() {
-  let users = await prisma.user.findMany();
-  const companies = await prisma.company.findMany();
-  let companyInfo = {};
-  for (const company of companies) {
-    companyInfo[company.companyId] = company.currentPrice;
-  }
-  for (let user of users) {
-    let totalAsset = BigInt(user.currentMoney); // user.currentMoney가 BigInt 호환 값이라고 가정합니다.
-    const stocks = await prisma.stock.findMany({
+async function deleteDummyUser() {
+  // 더미 사용자를 삭제
+  try {
+    await prisma.user.deleteMany({
       where: {
-        userId: user.userId,
+        dummy: true,
       },
     });
+  } catch (err) {
+    console.error('더미 사용자 삭제 중 오류가 발생했습니다:', err);
+  }
+}
+/**
+ * @description
+ * 회사 정보를 삭제합니다.
+ */
+async function deleteCompany() {
+  try {
+    await prisma.company.deleteMany();
+  } catch (err) {
+    console.error('회사 정보를 삭제하는 동안 오류가 발생했습니다:', err);
+  }
+}
+/**
+ * @description
+ * 사용자의 주식을 현금으로 변환하여 총자산을 업데이트합니다.
+ */
+async function updateStockToCash() {
+  try {
+    await prisma.$transaction(async (tx) => {
+      let users = await tx.user.findMany();
+      const companies = await tx.company.findMany();
+      let companyInfo = {};
+      for (const company of companies) {
+        companyInfo[company.companyId] = company.currentPrice;
+      }
+      for (let user of users) {
+        let totalAsset = BigInt(user.currentMoney); // user.currentMoney가 BigInt 호환 값이라고 가정합니다.
+        const stocks = await tx.stock.findMany({
+          where: {
+            userId: user.userId,
+          },
+        });
+        await tx.stock.deleteMany({
+          where: {
+            userId: user.userId,
+          },
+        });
 
-    for (const stock of stocks) {
-      totalAsset += BigInt(companyInfo[stock.companyId]) * BigInt(stock.quantity);
-    }
-    user.totalAsset = totalAsset; // BigInt를 문자열로 변환합니다.
-    await prisma.user.update({
-      where: {
-        userId: user.userId,
-      },
-      data: {
-        totalAsset: user.totalAsset,
-      },
+        for (const stock of stocks) {
+          totalAsset += BigInt(companyInfo[stock.companyId]) * BigInt(stock.quantity);
+        }
+        totalAsset = totalAsset.toString(); // BigInt를 문자열로 변환합니다.
+        await tx.user.update({
+          where: {
+            userId: user.userId,
+          },
+          data: {
+            currentMoney: totalAsset,
+            totalAsset: totalAsset,
+          },
+        });
+      }
     });
+  } catch (err) {
+    console.error('주식을 현금으로 변환하는 동안 오류가 발생했습니다:', err);
   }
-  return users; // 수정된 사용자 객체 배열을 반환합니다.
 }
 /**
  * @description
@@ -64,6 +102,10 @@ async function updateRankBoard() {
     console.error('랭킹보드 업데이트 중 오류가 발생했습니다:', err);
   }
 }
+/**
+ * @description
+ * 사용자의 MMR을 업데이트합니다.
+ */
 async function updateMMR() {
   try {
     const rankUsers = await prisma.rank.findMany();
@@ -104,10 +146,4 @@ async function updateMMR() {
   }
 }
 
-async function gameEnd() {
-  await updateAllUsertotalAsset();
-  await updateRankBoard();
-  await updateMMR();
-}
-
-export default gameEnd;
+export { deleteDummyUser, deleteCompany, updateStockToCash, updateRankBoard, updateMMR };
