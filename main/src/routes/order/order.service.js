@@ -10,11 +10,22 @@ export class OrderService {
   getOrder = async (userId, name, type, order, isSold) => {
     try {
       const filterData = await this.orderRepository.filterData(userId, name, type, order, isSold);
-      console.log(filterData);
       return filterData;
     } catch (error) {
       console.log(error.stack);
       return { message: '주문 조회 과정에서 에러가 발생했습니다.' };
+    }
+  };
+  getOrderForUpdate = async (userId, orderId) => {
+    try {
+      const targetData = await this.orderRepository.findOrderByOrderId(userId, orderId);
+      if (targetData == null) {
+        return { message: '존재하지 않는 주문입니다.' };
+      }
+      return targetData;
+    } catch (error) {
+      console.error(error.stack);
+      return { error: true, message: '주문 조회 과정에서 에러가 발생했습니다.' };
     }
   };
   deleteOrder = async (userId, orderId) => {
