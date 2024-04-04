@@ -1,9 +1,6 @@
 import { prisma } from '../prisma/index.js';
-import axios from 'axios';
-const axiosInstance = axios.create({
-  baseURL: 'http://localhost:3000',
-  withCredentials: true, // 모든 요청에 자동으로 쿠키를 포함시키도록 설정
-});
+import crypto from 'crypto';
+import argon2 from 'argon2';
 /**
  * @description
  *기존의 회사들을 삭제합니다.
@@ -45,35 +42,32 @@ async function resetUserMoney() {
 
 async function makeDummyUserAndCompany() {
   try {
+    // 기존의 더미 사용자를 삭제
     await prisma.user.deleteMany({
       where: {
-        nickname: 'dummy',
+        dummy: true,
       },
     });
-    // 사용자와 회사 정보를 생성
-    await axiosInstance.post('/api/sign-up', {
-      email: 'dummy@naver.com',
-      nickname: 'dummy',
-      password: 'dummy',
-    });
-    const dummyUser = await prisma.user.findFirst({
-      where: {
-        email: 'dummy@naver.com',
-      },
-    });
-    await prisma.user.update({
-      where: {
-        userId: +dummyUser.userId,
-      },
+    // 기존의 더미 회사를 삭제
+    let hashedPassword = await argon2.hash('dummy');
+    // 더미 사용자 생성
+    await prisma.user.create({
       data: {
+        email: 'dummy@naver.com',
+        nickname: 'dummy',
+        password: hashedPassword,
+        token: crypto.randomBytes(20).toString('hex'),
         currentMoney: BigInt(10000000000),
         initialSeed: BigInt(10000000000),
         totalAsset: BigInt(10000000000),
         isVerified: true,
+        dummy: true,
       },
     });
+    // 회사 이름과 현재가격을 배열로 저장
     const companies = ['항해 전자', '항해 자동차', '항해 화학'];
     const companyPrices = [300000, 500000, 1000000];
+    // 더미 회사 생성
     for (let i = 0; i < companies.length; i++) {
       await prisma.company.create({
         data: {
