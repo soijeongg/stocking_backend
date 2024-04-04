@@ -105,17 +105,12 @@ export class OrderController {
         return res.status(400).json({ message: '잘못된 회사정보입니다.' });
       }
 
-      // 2.type 확인
-      let type = orderData.type;
-      if (type != 'buy' && type != 'sell') {
-        return res.status(400).json({ message: '잘못된 주문요청입니다. 매수/매도 주문만 가능합니다.' });
-      }
-      // 3. quantity 확인
+      // 2. quantity 확인
       let quantity = parseInt(orderData.quantity);
       if (quantity < 1 || !Number.isInteger(quantity)) {
         return res.status(400).json({ message: '잘못된 주문수량입니다.' });
       }
-      // 4. 가격 확인
+      // 3. 가격 확인
       let price = parseInt(orderData.price);
       if (price == null) {
         return res.status(400).json({ message: '지정가 주문만 가능합니다.' });
