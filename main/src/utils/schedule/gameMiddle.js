@@ -10,12 +10,12 @@ function getRandomNumber(effectNum, effectProb) {
 
 async function createDummyEvent() {
   try {
-    console.log('이벤트 생성중...');
+    // console.log('이벤트 생성중...');
     //0부터 1까지 랜덤으로된 숫자 생성
     let random = Math.random();
     let probability = 0.01;
     if (random < probability) return;
-    console.log('이벤트 발생!');
+    // console.log('이벤트 발생!');
     random = Math.random();
     const dummyUser = await prisma.user.findFirst({
       where: {
@@ -47,7 +47,7 @@ async function createDummyEvent() {
     ];
     let company = companies[Math.floor(Math.random() * companies.length)];
     company = companies[1];
-    console.log(company.name);
+    // console.log(company.name);
     const totalQuantity = await prisma.order.groupBy({
       where: {
         companyId: company.companyId,
@@ -58,48 +58,48 @@ async function createDummyEvent() {
         quantity: true,
       },
     });
-    console.log(totalQuantity[0]);
     const event = events[Math.floor(Math.random() * events.length)];
     const coefficent = getRandomNumber(event[1], event[2]);
     const constant = Math.ceil(2000000 / company.currentPrice);
-    const quantity = Math.floor((constant + totalQuantity[0]._sum.quantity) * coefficent);
-    console.log(constant, quantity);
-    // execution(userId, companyId, orderId, type, quantity, price)
+    // console.log(totalQuantity);
+    let nowQuantity = 1;
+    if (totalQuantity.length > 0) nowQuantity = totalQuantity[0]._sum.quantity;
+    const quantity = Math.ceil((constant + nowQuantity) * coefficent);
     if (random < 0.33) {
       // 시장가 주문 생성
-      console.log('1번');
-      console.log(event[0]);
+      // console.log('1번');
+      // console.log(event[0]);
       if (quantity == 0) return;
-      else if (quantity < 0) console.log(await execution(dummyUser.userId, company.companyId, null, 'sell', -quantity, null));
-      else if (quantity > 0) console.log(await execution(dummyUser.userId, company.companyId, null, 'buy', quantity, null));
+      else if (quantity < 0) await execution(dummyUser.userId, company.companyId, null, 'sell', -quantity, null);
+      else if (quantity > 0) await execution(dummyUser.userId, company.companyId, null, 'buy', quantity, null);
     } else if (random < 0.66) {
       // 지정가 주문 생성
-      console.log('2번');
-      console.log(event[0]);
+      // console.log('2번');
+      // console.log(event[0]);
       const constprice = Math.floor(Math.random() * 6);
       if (quantity == 0) return;
-      else if (quantity < 0) console.log(await execution(dummyUser.userId, company.companyId, null, 'sell', -quantity, company.currentPrice + constprice * 10000));
-      else if (quantity > 0) console.log(await execution(dummyUser.userId, company.companyId, null, 'buy', quantity, company.currentPrice - constprice * 10000));
+      else if (quantity < 0) await execution(dummyUser.userId, company.companyId, null, 'sell', -quantity, company.currentPrice + constprice * 10000);
+      else if (quantity > 0) await execution(dummyUser.userId, company.companyId, null, 'buy', quantity, company.currentPrice - constprice * 10000);
     } else if (random < 0.94) {
       // 매도/매수 주문 모두 생성
-      console.log('3번');
-      console.log(event[0]);
+      // console.log('3번');
+      // console.log(event[0]);
       for (let i = -5; i < 0; ++i) {
-        console.log(await execution(dummyUser.userId, company.companyId, null, 'buy', Math.floor(Math.random() * Math.abs(quantity)), company.currentPrice + i * 10000));
+        await execution(dummyUser.userId, company.companyId, null, 'buy', Math.floor(Math.random() * Math.abs(quantity)), company.currentPrice + i * 10000);
       }
       for (let i = 0; i <= 5; ++i) {
-        console.log(await execution(dummyUser.userId, company.companyId, null, 'sell', Math.floor(Math.random() * Math.abs(quantity)), company.currentPrice + i * 10000));
+        await execution(dummyUser.userId, company.companyId, null, 'sell', Math.floor(Math.random() * Math.abs(quantity)), company.currentPrice + i * 10000);
       }
     } else if (random < 0.97) {
       // 주식 대상승
-      console.log('4');
-      console.log('주식 대폭등!');
-      console.log(await execution(dummyUser.userId, company.companyId, null, 'sell', Math.abs(5 * quantity), null));
+      // console.log('4');
+      // console.log('주식 대폭등!');
+      await execution(dummyUser.userId, company.companyId, null, 'sell', Math.abs(5 * quantity), null);
     } else {
       // 주식 대폭락
-      console.log('5번');
-      console.log('주식 대폭락!');
-      console.log(await execution(dummyUser.userId, company.companyId, null, 'buy', Math.abs(5 * quantity), null));
+      // console.log('5번');
+      // console.log('주식 대폭락!');
+      await execution(dummyUser.userId, company.companyId, null, 'buy', Math.abs(5 * quantity), null);
     }
   } catch (err) {
     console.error(err);
