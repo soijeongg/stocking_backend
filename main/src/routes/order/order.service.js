@@ -31,6 +31,10 @@ export class OrderService {
     await this.orderRepository
       .getUserStockInfo(poppedArray.userId, poppedArray.companyId, tx)
       .then((stockIdObject) => this.orderRepository.decreaseUserStockInfo(stockIdObject.stockId, remainingQuantity, tx));
+
+    // 기존 주문 변경 - quantity 감소 
+    await this.orderRepository.decreaseOrderQuantity(poppedArray, orderData.quantity,tx);
+
     // ___________2. 매수자(클라이언트)의 기록 처리___________
     // 체결 기록 생성 - 매수자
     await this.orderRepository.createConcludedOrder(orderData.userId, orderData.companyId, orderData.type, poppedArray.price, remainingQuantity, tx);
@@ -78,6 +82,8 @@ export class OrderService {
         return this.orderRepository.increaseUserStockInfo_firstBuying(poppedArray.userId, orderData.companyId, poppedArray.price, remainingQuantity, tx);
       }
     });
+    // 기존 주문 변경 - 수량 감소
+    await this.orderRepository.decreaseOrderQuantity(poppedArray, orderData.quantity, tx); 
 
     // 현재가 변경
     await this.orderRepository.changeCurrentPrice(orderData.companyId, poppedArray.price, tx);
@@ -93,7 +99,8 @@ export class OrderService {
           if (concludedOrderInfo.price * concludedOrderInfo.quantity > userCurrentMoney) {
             return { message: '체결과정에서 사용자의 잔고가 부족해져서 거래가 중단됐습니다.\n사용자의 잔액:', userCurrentMoney };
           }
-          await this.orderConcludeBuyingProcess(orderData, concludedOrderInfo, tx);
+          
+          await this.orderConcludeBuyingProcess(orderData, concludedOrderInfo, remainingQuantity, tx);
           remainingQuantity -= concludedOrderInfo.quantity;
         });
       }
@@ -215,7 +222,13 @@ export class OrderService {
         return { message: '정상적으로 시장가 매도 주문이 처리되었습니다.' }; // 생성된 주문 결과 반환
       } else if (orderData.type == 'buy') {
         // ---------------------------------------------시장가 '매수' ------------------------------------------
-        let mostCheapestSellings = await this.orderRepository.getMostCheapestSellings(orderData.companyId, orderData.quantity); // mostCheapestSellings는 [{userId:1, orderId:2, price:30000, quantity:40},{},{},...] 이런형태일 것
+        let mostCheapestSellings = await this.orderRepository.getMostCheapestSellings(orderData.companyId, orderData.quantity);
+        //userId: order.userId,
+        // orderId: order.orderId,
+        // type: order.type,
+        // price: order.price,
+        // quantity: order.quantity,
+
         if (mostCheapestSellings.length == 0) {
           return { message: '현재 시장가 매수가 불가합니다: 시장에 매도 주문이 없습니다.' };
         }
@@ -249,7 +262,7 @@ export class OrderService {
     } catch (error) {
       console.log(error.message);
       console.log(error.status);
-      return error('시장가 주문 생성 도중 에러가 발생했습니다.');
+      return { message: '시장가 주문 생성 도중 에러가 발생했습니다.' };
     }
   };
 
@@ -328,7 +341,8 @@ export class OrderService {
         }
       } else if (orderData.type == 'buy') {
         // -----------------------------------------------------------------2. 매수 주문------------------------------------------------------------------
-
+        console.log(orderData);
+        console.log('_____________________________________');
         // 주문 총액 > 유저의 현재 잔고 일 경우 시작도 안함
         if (orderData.price * orderData.quantity > userCurrentMoney) {
           return { message: '주문총액보다 잔고가 부족합니다' };
@@ -346,8 +360,10 @@ export class OrderService {
           let lastCheapestSelling = mostCheapestSellings.pop();
 
           let remainingQuantity = orderData.quantity; // 매도 주문의 잔여 매도 수량이 앞으로 체결되면서 줄어들꺼임.
+          console.log(remainingQuantity);
           console.log('매수 초기 거래 체결전');
-
+          console.log(mostCheapestSellings);
+          console.log(lastCheapestSelling);
           // 초기 주문 체결
           if (mostCheapestSellings.length > 0) {
             try {
@@ -368,9 +384,12 @@ export class OrderService {
 
             // last 주문 체결
             try {
+              console.log('확인!!!!!!!!!!!!!!!!!');
+              console.log(lastCheapestSelling);
               await this.orderConcludeBuyingProcess(orderData, lastCheapestSelling, remainingQuantity, tx);
             } catch (error) {
-              console.log('order.service 지정가-매수-마지막 주문 체결과정에서 에러가 발생했습니다\n', error.message);
+              console.log(lastCheapestSelling);
+              console.log('order.service 지정가-매수-마지막 주문 체결과정에서 에러가 발생했습니다');
               console.log(error.stack);
             }
           });
@@ -499,7 +518,7 @@ export class OrderService {
 
           let remainingQuantity = orderData.quantity; // 매도 주문의 잔여 매도 수량이 앞으로 체결되면서 줄어들꺼임.
           console.log('매수 초기 거래 체결전');
-
+          console.log(lastCheapestSelling);
           // 초기 주문 체결
           if (mostCheapestSellings.length > 0) {
             try {
