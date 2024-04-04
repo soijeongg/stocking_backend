@@ -99,23 +99,21 @@ export class OrderController {
 
       // 정정 주문 데이터 유효성 확인- 나중에 joi로 바꿔야함--------------------------------controller단에서 가져온 데이터를 정수로(해당 데이터가 정수 데이터라면) 미리 바꿔서 전달
       // 주문 정정은 지정가에만 가능 - 시장가는 이미 취소되거나 체결됐을테니
-      // 1. 회사id 확인
-      let companyId = parseInt(orderData.companyId);
-      if (companyId < 1 || !Number.isInteger(companyId)) {
-        return res.status(400).json({ message: '잘못된 회사정보입니다.' });
+      // 회사id랑 type은 query로 받은 orderId로 확인
+      const originalOrder = await this.orderService.getOrderForUpdate(userId, originalOrderId);
+      if (originalOrder == null) {
+        return res.status(400).json({ message: '존재하지 않는 주문입니다.' });
       }
+      let type = originalOrder.type;
+      let companyId = originalOrder.companyId;
+      let orderId = originalOrder.orderId;
 
-      // 2.type 확인
-      let type = orderData.type;
-      if (type != 'buy' && type != 'sell') {
-        return res.status(400).json({ message: '잘못된 주문요청입니다. 매수/매도 주문만 가능합니다.' });
-      }
-      // 3. quantity 확인
+      // 1. quantity 확인
       let quantity = parseInt(orderData.quantity);
       if (quantity < 1 || !Number.isInteger(quantity)) {
         return res.status(400).json({ message: '잘못된 주문수량입니다.' });
       }
-      // 4. 가격 확인
+      // 2. 가격 확인
       let price = parseInt(orderData.price);
       if (price == null) {
         return res.status(400).json({ message: '지정가 주문만 가능합니다.' });
@@ -129,7 +127,9 @@ export class OrderController {
       orderData.companyId = +orderData.companyId;
       orderData.quantity = +orderData.quantity;
       orderData.price = +orderData.price;
-      await execution(userId, companyId, originalOrderId, type, quantity, correctedPrice); // execution 함수 호출
+
+      // 정정 주문 실행
+      await execution(userId, companyId, orderId, type, quantity, correctedPrice); // execution 함수 호출
       return res.json({ message: '주문이 성공적으로 처리되었습니다.' });
     } catch (error) {
       console.log(error.stack);
