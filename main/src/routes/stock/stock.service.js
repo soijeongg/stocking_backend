@@ -10,6 +10,9 @@ export class StockService {
    */
   getStock = async (userId) => {
     const stocks = await this.stockrepository.findStockByUserId(userId);
+    if (stocks.message) {
+      return stocks;
+    }
     stocks.sort((a, b) => {
       const profitA = (a.Company.currentPrice - a.averagePrice) / a.averagePrice;
       const profitB = (b.Company.currentPrice - b.averagePrice) / b.averagePrice;
