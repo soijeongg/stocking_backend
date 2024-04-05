@@ -410,12 +410,12 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
             ],
           });
           for (let buyerOrder of buyerOrders) {
-            const buyerUser = await tx.order.findFirst({
+            const buyer = await tx.order.findFirst({
               where: {
                 userId: buyerOrder.userId,
               },
             });
-            if (buyerUser.currentMoney < buyerOrder.price * buyerOrder.quantity) {
+            if (buyer.currentMoney < buyerOrder.price * buyerOrder.quantity) {
               //돈이 부족하면 다음 주문으로 넘어감
               await tx.order.delete({
                 where: {
