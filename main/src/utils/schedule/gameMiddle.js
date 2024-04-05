@@ -1,5 +1,11 @@
 import { prisma } from '../prisma/index.js';
 import { execution } from '../execution/index.js';
+import { sendNoticesToAllClients } from '../chatting/chatting.js';
+
+function sendToClient(notices) {
+  sendNoticesToAllClients(notices);
+}
+
 function getRandomNumber(effectNum, effectProb) {
   let max = effectNum;
   let min = -effectNum * effectProb;
@@ -49,6 +55,7 @@ async function createDummyEvent() {
     if (random < 0.1) {
       // 시장가 주문 생성
       console.log(event[0]);
+      sendToClient(event[0]);
       //15초 대기
       await new Promise((resolve) => setTimeout(resolve, 15000));
       if (quantity == 0) return;
@@ -57,6 +64,7 @@ async function createDummyEvent() {
     } else if (random < 0.2) {
       // 지정가 주문 생성
       console.log(event[0]);
+      sendToClient(event[0]);
       //15초 대기
       await new Promise((resolve) => setTimeout(resolve, 15000));
       const constprice = Math.floor(Math.random() * 6);
