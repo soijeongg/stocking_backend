@@ -7,6 +7,13 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
   let notices = [];
   //기본적으로 주문이 완료되면 [userId:Int, companyId:Int, type:sell or buy, quantity:Int,price:Int ,executed:true] 형태로  notices에 추가
   //주문이 완료되지 않으면 [userId:Int, companyId:Int, type:sell or buy, quantity:Int, price:Int, executed:false] 형태로 notices에 추가
+  //주문이 체결이 된다면 문자열로 `${nickname}님의 ${companyName}종목에 대한 ${quantity}주, ${price}원 ${type}주문이 체결되었습니다.`
+  //주문이 체결이 안된다면 문자열로 `${nickname}님의 ${companyName}종목에 대한 ${quantity}주, ${price}원 ${type}주문이 체결되지 않았습니다.`
+  const company = await tx.company.findUnique({
+    where: {
+      companyId,
+    },
+  });
   try {
     await prisma.$transaction(
       async (tx) => {
@@ -81,6 +88,11 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
             ],
           });
           for (let sellerOrder of sellerOrders) {
+            const seller = await tx.order.findFirst({
+              where: {
+                userId: sellerOrder.userId,
+              },
+            });
             const sellerStock = await tx.stock.findFirst({
               where: {
                 userId: sellerOrder.userId,
@@ -94,7 +106,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                   orderId: sellerOrder.orderId,
                 },
               });
-              notices.push([sellerOrder.userId, companyId, 'sell', sellerOrder.quantity, sellerOrder.price, false]);
+              notices.push(`${seller.nickname}님의 ${company.name} 종목에 대한 ${sellerOrder.quantity}주, ${sellerOrder.price}원 판매주문이 체결되지 않았습니다.`);
               continue;
             }
             const buyerStock = await tx.stock.findFirst({
@@ -151,7 +163,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                   },
                 });
               }
-              notices.push([sellerOrder.userId, companyId, 'sell', sellerOrder.quantity, sellerOrder.price, true]);
+              notices.push(`${seller.nickname}님의 ${company.name} 종목에 대한 ${sellerOrder.quantity}주, ${sellerOrder.price}원 판매주문이 체결되었습니다.`);
               //주식 구매 처리
               await tx.order.update({
                 where: {
@@ -200,9 +212,9 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                 });
               }
               quantity -= sellerOrder.quantity;
+              notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${sellerOrder.quantity}주, ${sellerOrder.price}원 구매주문이 체결되었습니다.`);
               continue;
             }
-            notices.push([userId, companyId, 'buy', sellerOrder.quantity, sellerOrder.price, true]);
             //판매주문량이 구매주문량보다 많거나 같을 때
             //결제되는 양: quantity
             //결제되는 금액: sellerOrder.price
@@ -247,7 +259,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                 },
               });
             }
-            notices.push([userId, companyId, 'buy', quantity, sellerOrder.price, true]);
+            notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${quantity}주, ${sellerOrder.price}원 구매주문이 체결되었습니다.`);
             // 주식 판매 처리
             if (sellerOrder.quantity === quantity) {
               await tx.order.delete({
@@ -306,12 +318,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                 },
               });
             }
-            notices.push([sellerOrder.userId, companyId, 'sell', quantity, sellerOrder.price, true]);
-            const company = await tx.company.findUnique({
-              where: {
-                companyId,
-              },
-            });
+            notices.push(`${seller.nickname}님의 ${company.name} 종목에 대한 ${quantity}주, ${sellerOrder.price}원 판매주문이 체결되었습니다.`);
             const currentPrice = sellerOrder.price;
             const lowPrice = Math.min(currentPrice, company.lowPrice);
             const highPrice = Math.max(currentPrice, company.highPrice);
@@ -341,6 +348,11 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
           //종결
         } else {
           //매도 주문
+          const seller = await tx.user.findUnique({
+            where: {
+              userId,
+            },
+          });
           let sellerStock = await tx.stock.findFirst({
             where: {
               userId,
@@ -410,19 +422,19 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
             ],
           });
           for (let buyerOrder of buyerOrders) {
-            const buyerUser = await tx.order.findFirst({
+            const buyer = await tx.order.findFirst({
               where: {
                 userId: buyerOrder.userId,
               },
             });
-            if (buyerUser.currentMoney < buyerOrder.price * buyerOrder.quantity) {
+            if (buyer.currentMoney < buyerOrder.price * buyerOrder.quantity) {
               //돈이 부족하면 다음 주문으로 넘어감
               await tx.order.delete({
                 where: {
                   orderId: buyerOrder.orderId,
                 },
               });
-              notices.push([buyerOrder.userId, companyId, 'buy', buyerOrder.quantity, buyerOrder.price, false]);
+              notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${buyerOrder.quantity}주, ${buyerOrder.price}원 구매주문이 체결되지 않았습니다.`);
               continue;
             }
             const buyerStock = await tx.stock.findFirst({
@@ -488,7 +500,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                   },
                 });
               }
-              notices.push([buyerOrder.userId, companyId, 'buy', buyerOrder.quantity, buyerOrder.price, true]);
+              notices.push(`${seller.nickname}님의 ${company.name} 종목에 대한 ${buyerOrder.quantity}주, ${buyerOrder.price}원 구매주문이 체결되었습니다.`);
               //주식 판매 처리
               await tx.order.update({
                 where: {
@@ -531,7 +543,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                   averagePrice: (sellerStock.averagePrice * sellerStock.quantity - buyerOrder.price * buyerOrder.quantity) / (sellerStock.quantity - buyerOrder.quantity),
                 },
               });
-              notices.push([userId, companyId, 'sell', buyerOrder.quantity, buyerOrder.price, true]);
+              notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${buyerOrder.quantity}주, ${buyerOrder.price}원 판매주문이 체결되었습니다.`);
               quantity -= buyerOrder.quantity;
               continue;
             }
@@ -582,7 +594,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                 },
               });
             }
-            notices.push([userId, companyId, 'sell', quantity, buyerOrder.price, true]);
+            notices.push(`${seller.nickname}님의 ${company.name} 종목에 대한 ${quantity}주, ${buyerOrder.price}원 판매주문이 체결되었습니다.`);
             // 주식 구매 처리
             if (buyerOrder.quantity === quantity) {
               await tx.order.delete({
@@ -644,12 +656,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                 },
               });
             }
-            notices.push([buyerOrder.userId, companyId, 'buy', quantity, buyerOrder.price, true]);
-            const company = await tx.company.findUnique({
-              where: {
-                companyId,
-              },
-            });
+            notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${quantity}주, ${buyerOrder.price}원 구매주문이 체결되었습니다.`);
             const currentPrice = buyerOrder.price;
             const lowPrice = Math.min(currentPrice, company.lowPrice);
             const highPrice = Math.max(currentPrice, company.highPrice);
@@ -678,10 +685,9 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
       }
     );
   } catch (err) {
-    notices = [];
-    notices.push([userId, companyId, type, quantity, price, false]);
     throw err;
   }
+  //여기서 notices 배열을 이용하여 채팅창으로 사용자들에게 체결 내역 전달
 }
 
 export { execution };

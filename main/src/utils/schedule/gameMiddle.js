@@ -49,12 +49,16 @@ async function createDummyEvent() {
     if (random < 0.1) {
       // 시장가 주문 생성
       console.log(event[0]);
+      //15초 대기
+      await new Promise((resolve) => setTimeout(resolve, 15000));
       if (quantity == 0) return;
       else if (quantity < 0) await execution(dummyUser.userId, company.companyId, null, 'sell', -quantity, null);
       else await execution(dummyUser.userId, company.companyId, null, 'buy', quantity, null);
     } else if (random < 0.2) {
       // 지정가 주문 생성
       console.log(event[0]);
+      //15초 대기
+      await new Promise((resolve) => setTimeout(resolve, 15000));
       const constprice = Math.floor(Math.random() * 6);
       if (quantity == 0) return;
       else if (quantity < 0) await execution(dummyUser.userId, company.companyId, null, 'sell', -quantity, company.currentPrice + constprice * 10000);
