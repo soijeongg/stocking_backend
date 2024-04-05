@@ -85,4 +85,4 @@ async function createDummyEvent() {
   }
 }
 
-setInterval(createDummyEvent, 5000);
+export { createDummyEvent };
