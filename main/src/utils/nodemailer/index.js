@@ -23,7 +23,7 @@ export const sendVerificationEmail = (userEmail, token) => {
     to: userEmail,
     subject: 'STOCKKING 회원가입 인증 이메일입니다',
     html: `<p>아래의 링크를 클릭하여 회원가입을 완료하세요.</p>
-           <p><a href="http://localhost:3000/api/verify?token=${token}">회원가입 인증하기</a></p>`,
+           <p><a href="${process.env.BACKEND_URL}/api/verify?token=${token}">회원가입 인증하기</a></p>`,
   };
   // 이메일을 보내는 함수
   transporter.sendMail(mailOptions, (error, info) => {

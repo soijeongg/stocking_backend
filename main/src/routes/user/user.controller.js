@@ -133,7 +133,7 @@ export class userController {
         return res.status(400).send('유효하지 않은 토큰입니다.');
       }
       //res.send('<h1>인증완료 </h1>');
-      return res.send('<h1>인증완료 </h1> <a href=localhost:3000">메인페이지로 가기</a>');
+      return res.send(`<h1>인증완료 </h1> <a href=${process.env.BACKEND_URL}">메인페이지로 가기</a>`);
     } catch (error) {
       next(error);
     }
