@@ -7,6 +7,11 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
   let notices = [];
   //기본적으로 주문이 완료되면 [userId:Int, companyId:Int, type:sell or buy, quantity:Int,price:Int ,executed:true] 형태로  notices에 추가
   //주문이 완료되지 않으면 [userId:Int, companyId:Int, type:sell or buy, quantity:Int, price:Int, executed:false] 형태로 notices에 추가
+  const company = await tx.company.findUnique({
+    where: {
+      companyId,
+    },
+  });
   try {
     await prisma.$transaction(
       async (tx) => {
@@ -94,7 +99,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                   orderId: sellerOrder.orderId,
                 },
               });
-              notices.push([sellerOrder.userId, companyId, 'sell', sellerOrder.quantity, sellerOrder.price, false]);
+              notices.push([sellerOrder.userId, company.name, 'sell', sellerOrder.quantity, sellerOrder.price, false]);
               continue;
             }
             const buyerStock = await tx.stock.findFirst({
@@ -151,7 +156,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                   },
                 });
               }
-              notices.push([sellerOrder.userId, companyId, 'sell', sellerOrder.quantity, sellerOrder.price, true]);
+              notices.push([sellerOrder.userId, company.name, 'sell', sellerOrder.quantity, sellerOrder.price, true]);
               //주식 구매 처리
               await tx.order.update({
                 where: {
@@ -200,9 +205,9 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                 });
               }
               quantity -= sellerOrder.quantity;
+              notices.push([userId, company.name, 'buy', sellerOrder.quantity, sellerOrder.price, true]);
               continue;
             }
-            notices.push([userId, companyId, 'buy', sellerOrder.quantity, sellerOrder.price, true]);
             //판매주문량이 구매주문량보다 많거나 같을 때
             //결제되는 양: quantity
             //결제되는 금액: sellerOrder.price
@@ -247,7 +252,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                 },
               });
             }
-            notices.push([userId, companyId, 'buy', quantity, sellerOrder.price, true]);
+            notices.push([userId, company.name, 'buy', quantity, sellerOrder.price, true]);
             // 주식 판매 처리
             if (sellerOrder.quantity === quantity) {
               await tx.order.delete({
@@ -306,12 +311,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                 },
               });
             }
-            notices.push([sellerOrder.userId, companyId, 'sell', quantity, sellerOrder.price, true]);
-            const company = await tx.company.findUnique({
-              where: {
-                companyId,
-              },
-            });
+            notices.push([sellerOrder.userId, company.name, 'sell', quantity, sellerOrder.price, true]);
             const currentPrice = sellerOrder.price;
             const lowPrice = Math.min(currentPrice, company.lowPrice);
             const highPrice = Math.max(currentPrice, company.highPrice);
@@ -422,7 +422,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                   orderId: buyerOrder.orderId,
                 },
               });
-              notices.push([buyerOrder.userId, companyId, 'buy', buyerOrder.quantity, buyerOrder.price, false]);
+              notices.push([buyerOrder.userId, company.name, 'buy', buyerOrder.quantity, buyerOrder.price, false]);
               continue;
             }
             const buyerStock = await tx.stock.findFirst({
@@ -488,7 +488,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                   },
                 });
               }
-              notices.push([buyerOrder.userId, companyId, 'buy', buyerOrder.quantity, buyerOrder.price, true]);
+              notices.push([buyerOrder.userId, company.name, 'buy', buyerOrder.quantity, buyerOrder.price, true]);
               //주식 판매 처리
               await tx.order.update({
                 where: {
@@ -531,7 +531,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                   averagePrice: (sellerStock.averagePrice * sellerStock.quantity - buyerOrder.price * buyerOrder.quantity) / (sellerStock.quantity - buyerOrder.quantity),
                 },
               });
-              notices.push([userId, companyId, 'sell', buyerOrder.quantity, buyerOrder.price, true]);
+              notices.push([userId, company.name, 'sell', buyerOrder.quantity, buyerOrder.price, true]);
               quantity -= buyerOrder.quantity;
               continue;
             }
@@ -582,7 +582,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                 },
               });
             }
-            notices.push([userId, companyId, 'sell', quantity, buyerOrder.price, true]);
+            notices.push([userId, company.name, 'sell', quantity, buyerOrder.price, true]);
             // 주식 구매 처리
             if (buyerOrder.quantity === quantity) {
               await tx.order.delete({
@@ -644,12 +644,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                 },
               });
             }
-            notices.push([buyerOrder.userId, companyId, 'buy', quantity, buyerOrder.price, true]);
-            const company = await tx.company.findUnique({
-              where: {
-                companyId,
-              },
-            });
+            notices.push([buyerOrder.userId, company.name, 'buy', quantity, buyerOrder.price, true]);
             const currentPrice = buyerOrder.price;
             const lowPrice = Math.min(currentPrice, company.lowPrice);
             const highPrice = Math.max(currentPrice, company.highPrice);
@@ -679,7 +674,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
     );
   } catch (err) {
     notices = [];
-    notices.push([userId, companyId, type, quantity, price, false]);
+    notices.push([userId, company.name, type, quantity, price, false]);
     throw err;
   }
 }
