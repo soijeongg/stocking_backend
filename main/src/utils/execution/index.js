@@ -684,10 +684,10 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
         isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
       }
     );
+  //여기서 notices 배열을 이용하여 채팅창으로 사용자들에게 체결 내역 전달
   } catch (err) {
     throw err;
   }
-  //여기서 notices 배열을 이용하여 채팅창으로 사용자들에게 체결 내역 전달
 }
 
 export { execution };
