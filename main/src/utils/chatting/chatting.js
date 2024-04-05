@@ -4,8 +4,6 @@ import { prisma } from '../prisma/index.js';
 
 export function setupWebSocketServer2(server, sessionStore) {
   const wss = new WebSocketServer({ server });
-  
-  const clients = new Map(); // 클라이언트 저장을 위한 Map
 
   wss.on('connection', async function connection(ws, req) {
     console.log('클라이언트가 연결되었습니다.');
@@ -84,4 +82,25 @@ async function getUserNickname(userId) {
     where: { userId: +userId },
   });
   return user?.nickname; // 'nickname'은 유저 모델의 닉네임 필드입니다.
+}
+
+// 프론트로 메시지를 보내기 위해 사용(sendNoticesToAllClients, sendNoticesToClient)
+
+// 모든 사용자에게 메시지 전달
+export function sendNoticesToAllClients(notices) {
+  wss.clients.forEach(function each(client) {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify({ type: 'notices', notices }));
+    }
+  });
+}
+
+// 개별 사용자에게 메시지 전달
+export function sendNoticesToClient(userId, notices) {
+  if (clients.has(userId)) {
+    const client = clients.get(userId);
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify({ type: 'notices', notices }));
+    }
+  }
 }
