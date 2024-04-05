@@ -13,7 +13,8 @@ import passportConfig from './utils/passportConfig/index.js';
 import expressSession from 'express-session';
 import expressMySQLSession from 'express-mysql-session';
 import mysql from 'mysql';
-import { setupWebSocketServer } from './utils/chartData/chartData.js';
+import setupWebSocketServer from './utils/chartData/chartData.js';
+import { createServer } from 'http';
 import { setupWebSocketServerOrder } from './utils/orderData/orderData.js';
 import { setupWebSocketServer2 } from './utils/chatting/chatting.js';
 import passport from 'passport';
@@ -23,6 +24,7 @@ import { gameTotal } from './utils/schedule/gameTotal.js';
 dotenv.config();
 
 const app = express();
+const server = createServer(app);
 const PORT = process.env.PORT || 3000;
 
 app.use(LogMiddleware);
@@ -32,8 +34,7 @@ app.use(
     credentials: true, // 쿠키를 포함한 요청을 허용
   })
 );
-setupWebSocketServer(8080);
-setupWebSocketServerOrder(8090);
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
@@ -70,8 +71,7 @@ const sessionMiddleware = expressSession({
 
 app.use(sessionMiddleware);
 // Passport 초기화 및 세션 사용
-setupWebSocketServer2(9010, sessionStore);
-
+setupWebSocketServer(server, sessionStore);
 const connection = mysql.createConnection({
   host: process.env.DATABASE_HOST,
   user: process.env.DATABASE_USERNAME,
@@ -111,6 +111,6 @@ app.use('/api', router);
 app.use(notFoundErrorHandler);
 app.use(generalErrorHandler);
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(PORT, '포트로 서버가 열렸어요!');
 });

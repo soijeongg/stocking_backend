@@ -1,12 +1,9 @@
-import { WebSocketServer,WebSocket  } from 'ws';
+import { WebSocketServer, WebSocket } from 'ws';
 import { parse } from 'cookie';
 import { prisma } from '../prisma/index.js';
 
-const clients = new Map(); // 클라이언트 저장을 위한 Map
-let wss;
-
-export function setupWebSocketServer2(port, sessionStore) {
-  wss = new WebSocketServer({ port });
+export function setupWebSocketServer2(server, sessionStore) {
+  const wss = new WebSocketServer({ server });
 
   wss.on('connection', async function connection(ws, req) {
     console.log('클라이언트가 연결되었습니다.');
@@ -107,4 +104,3 @@ export function sendNoticesToClient(userId, notices) {
     }
   }
 }
-
