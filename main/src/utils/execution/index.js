@@ -307,12 +307,22 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
               });
             }
             notices.push([sellerOrder.userId, companyId, 'sell', quantity, sellerOrder.price, true]);
+            const company = await tx.company.findUnique({
+              where: {
+                companyId,
+              },
+            });
+            const currentPrice = sellerOrder.price;
+            const lowPrice = Math.min(currentPrice, company.lowPrice);
+            const highPrice = Math.max(currentPrice, company.highPrice);
             await tx.company.update({
               where: {
                 companyId,
               },
               data: {
-                currentPrice: sellerOrder.price,
+                currentPrice,
+                lowPrice,
+                highPrice,
               },
             });
             await tx.user.update({
@@ -635,12 +645,22 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
               });
             }
             notices.push([buyerOrder.userId, companyId, 'buy', quantity, buyerOrder.price, true]);
+            const company = await tx.company.findUnique({
+              where: {
+                companyId,
+              },
+            });
+            const currentPrice = buyerOrder.price;
+            const lowPrice = Math.min(currentPrice, company.lowPrice);
+            const highPrice = Math.max(currentPrice, company.highPrice);
             await tx.company.update({
               where: {
                 companyId,
               },
               data: {
-                currentPrice: buyerOrder.price,
+                currentPrice,
+                lowPrice,
+                highPrice,
               },
             });
             break;
