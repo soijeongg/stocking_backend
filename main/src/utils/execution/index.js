@@ -86,6 +86,11 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
             ],
           });
           for (let sellerOrder of sellerOrders) {
+            const seller = await tx.order.findFirst({
+              where: {
+                userId: sellerOrder.userId,
+              },
+            });
             const sellerStock = await tx.stock.findFirst({
               where: {
                 userId: sellerOrder.userId,
@@ -341,6 +346,11 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
           //종결
         } else {
           //매도 주문
+          const seller = await tx.user.findUnique({
+            where: {
+              userId,
+            },
+          });
           let sellerStock = await tx.stock.findFirst({
             where: {
               userId,
