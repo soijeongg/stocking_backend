@@ -106,5 +106,4 @@ async function createDummyEvent() {
   }
 }
 
-// createDummyEvent()를 5초마다 실행
-setInterval(createDummyEvent, 5000);
+export { createDummyEvent };
