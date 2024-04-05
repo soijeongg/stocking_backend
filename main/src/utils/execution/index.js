@@ -1,5 +1,10 @@
 import { prisma } from '../prisma/index.js';
 import { Prisma } from '@prisma/client';
+import { sendNoticesToClient } from '../chatting/chatting.js';
+
+function sendToClient(userId, notices) {
+  sendNoticesToClient(userId, notices);
+}
 
 async function execution(userId, companyId, orderId, type, quantity, price) {
   if (quantity <= 0) return;
@@ -670,6 +675,8 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                 highPrice,
               },
             });
+
+            sendToClient(userId, notices);
             break;
           }
           // let endTime = performance.now();
@@ -684,7 +691,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
         isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
       }
     );
-  //여기서 notices 배열을 이용하여 채팅창으로 사용자들에게 체결 내역 전달
+    //여기서 notices 배열을 이용하여 채팅창으로 사용자들에게 체결 내역 전달
   } catch (err) {
     throw err;
   }
