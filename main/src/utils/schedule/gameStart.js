@@ -83,6 +83,8 @@ async function createCompany() {
           name: companies[i],
           currentPrice: companyPrices[i],
           initialPrice: companyPrices[i],
+          lowPrice: companyPrices[i],
+          highPrice: companyPrices[i],
         },
       });
     }
