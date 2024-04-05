@@ -1,5 +1,15 @@
 import { prisma } from '../prisma/index.js';
 import { Prisma } from '@prisma/client';
+import { sendNoticesToClient, sendNoticesToAllClients } from '../chatting/chatting.js';
+
+// 전체 유저에게 전송
+function sendToAllClient(notices) {
+  sendNoticesToAllClients(notices);
+}
+// 개별 유저에게 전송
+function sendToClient(userId, notices) {
+  sendNoticesToClient(userId, notices);
+}
 
 async function execution(userId, companyId, orderId, type, quantity, price) {
   if (quantity <= 0) return;
@@ -88,7 +98,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
             ],
           });
           for (let sellerOrder of sellerOrders) {
-            const seller = await tx.order.findFirst({
+            const seller = await tx.user.findFirst({
               where: {
                 userId: sellerOrder.userId,
               },
@@ -344,6 +354,9 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
           }
           // let endTime = performance.now();
           // console.log(`Execution time: ${endTime - startTime} ms`);
+          console.log('notices', notices);
+          // sendToClient(userId, notices);
+          sendToAllClient(notices);
           return '요청한 주문이 완료되었습니다.';
           //종결
         } else {
@@ -422,7 +435,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
             ],
           });
           for (let buyerOrder of buyerOrders) {
-            const buyer = await tx.order.findFirst({
+            const buyer = await tx.user.findFirst({
               where: {
                 userId: buyerOrder.userId,
               },
@@ -670,10 +683,14 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                 highPrice,
               },
             });
+
             break;
           }
           // let endTime = performance.now();
           // console.log(`Execution time: ${endTime - startTime} ms`);
+          // sendToClient(userId, notices);
+          sendToAllClient(notices);
+          sendT;
           return '주문이 완료되었습니다.';
           //종결
         }

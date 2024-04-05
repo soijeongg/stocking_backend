@@ -30,7 +30,7 @@ export class userService {
   //이메일 중복체크를 해보자
   checkEmailService = async (email) => {
     let checkdEmail = await this.userRepository.checkemail(email);
-    if (!checkdEmail) {
+    if (checkdEmail) {
       const error = new Error('이미 등록된 이메일 입니다');
       error.status = 401;
       throw error;
