@@ -103,11 +103,11 @@ app.use(passport.session());
 passportConfig(passport);
 
 app.use('/api', router);
-schedule.scheduleJob('*/12 * * * *', async function () {
-  console.log('게임 시작...');
-  await gameTotal();
-  console.log('다음 게임까지 대기 중...');
-});
+// schedule.scheduleJob('*/12 * * * *', async function () {
+//   console.log('게임 시작...');
+//   await gameTotal();
+//   console.log('다음 게임까지 대기 중...');
+// });
 app.use(notFoundErrorHandler);
 app.use(generalErrorHandler);
 

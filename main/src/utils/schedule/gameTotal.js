@@ -10,7 +10,7 @@ import { deleteDummyUser, deleteCompany, updateStockToCash, updateRankBoard, upd
 async function gameTotal() {
   console.log('게임 시작 대기 중...');
   // 게임 시작 대기 (0~5분)
-  await new Promise((resolve) => setTimeout(resolve, 300000));
+    await new Promise((resolve) => setTimeout(resolve, 300000));
 
   // 게임 세팅 (5분)
   console.log('게임 세팅 중...');

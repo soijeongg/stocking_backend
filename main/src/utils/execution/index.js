@@ -9,7 +9,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
   //주문이 완료되지 않으면 [userId:Int, companyId:Int, type:sell or buy, quantity:Int, price:Int, executed:false] 형태로 notices에 추가
   //주문이 체결이 된다면 문자열로 `${nickname}님의 ${companyName}종목에 대한 ${quantity}주, ${price}원 ${type}주문이 체결되었습니다.`
   //주문이 체결이 안된다면 문자열로 `${nickname}님의 ${companyName}종목에 대한 ${quantity}주, ${price}원 ${type}주문이 체결되지 않았습니다.`
-  const company = await tx.company.findUnique({
+  const company = await prisma.company.findUnique({
     where: {
       companyId,
     },
@@ -684,7 +684,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
         isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
       }
     );
-  //여기서 notices 배열을 이용하여 채팅창으로 사용자들에게 체결 내역 전달
+    //여기서 notices 배열을 이용하여 채팅창으로 사용자들에게 체결 내역 전달
   } catch (err) {
     throw err;
   }
