@@ -1,6 +1,6 @@
 import { prisma } from '../prisma/index.js';
 import { Prisma } from '@prisma/client';
-import { sendNoticesToClient, sendNoticesToAllClients } from '../chatting/chatting.js';
+import { sendNoticesToClient, sendNoticesToAllClients } from '../chartData/chartData.js';
 
 // 전체 유저에게 전송
 function sendToAllClient(notices) {
@@ -690,7 +690,6 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
           // console.log(`Execution time: ${endTime - startTime} ms`);
           // sendToClient(userId, notices);
           sendToAllClient(notices);
-          sendT;
           return '주문이 완료되었습니다.';
           //종결
         }

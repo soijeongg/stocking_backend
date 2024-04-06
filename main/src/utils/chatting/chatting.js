@@ -1,12 +1,10 @@
-import { WebSocketServer,WebSocket  } from 'ws';
+import { WebSocketServer, WebSocket } from 'ws';
 import { parse } from 'cookie';
 import { prisma } from '../prisma/index.js';
-
-const clients = new Map(); // 클라이언트 저장을 위한 Map
 let wss;
-
-export function setupWebSocketServer2(port, sessionStore) {
-  wss = new WebSocketServer({ port });
+const clients = new Map();
+export function setupWebSocketServer2(server, sessionStore) {
+  const wss = new WebSocketServer({ server });
 
   wss.on('connection', async function connection(ws, req) {
     console.log('클라이언트가 연결되었습니다.');
@@ -19,7 +17,7 @@ export function setupWebSocketServer2(port, sessionStore) {
       return;
     }
 
-    console.log('session: ' + JSON.stringify(session, null, 2));
+    // console.log('session: ' + JSON.stringify(session, null, 2));
     const userId = session.passport?.user;
     if (!userId) {
       console.log('세션에서 사용자 ID를 찾을 수 없습니다.');
@@ -107,4 +105,3 @@ export function sendNoticesToClient(userId, notices) {
     }
   }
 }
-
