@@ -1,6 +1,6 @@
 import { prisma } from '../prisma/index.js';
 import { execution } from '../execution/index.js';
-import { sendNoticesToAllClients } from '../chatting/chatting.js';
+import { sendNoticesToAllClients } from '../chartData/chartData.js';
 
 // 전체 유저에게 전송
 function sendToAllClient(notices) {
@@ -56,7 +56,7 @@ async function createDummyEvent() {
     if (random < 0.1) {
       // 시장가 주문 생성
       console.log(event[0]);
-      sendToAllClient(event[0]);  // 아마 이부분은 수정이 필요할듯..?
+      sendToAllClient(event[0]); // 아마 이부분은 수정이 필요할듯..?
       //15초 대기
       await new Promise((resolve) => setTimeout(resolve, 15000));
       if (quantity == 0) return;
@@ -65,7 +65,7 @@ async function createDummyEvent() {
     } else if (random < 0.2) {
       // 지정가 주문 생성
       console.log(event[0]);
-      sendToAllClient(event[0]);  // 아마 이부분은 수정이 필요할듯..?
+      sendToAllClient(event[0]); // 아마 이부분은 수정이 필요할듯..?
       //15초 대기
       await new Promise((resolve) => setTimeout(resolve, 15000));
       const constprice = Math.floor(Math.random() * 6);

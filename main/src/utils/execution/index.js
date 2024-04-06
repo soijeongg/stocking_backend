@@ -354,7 +354,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
           }
           // let endTime = performance.now();
           // console.log(`Execution time: ${endTime - startTime} ms`);
-          console.log('notices', notices);
+          // console.log('notices', notices);
           // sendToClient(userId, notices);
           sendToAllClient(notices);
           return '요청한 주문이 완료되었습니다.';
