@@ -51,6 +51,8 @@ const notifyTimeRemaining = () => {
   sendNoticesToAllClients(`게임종료까지 남은 시간 : ${timeRemainingMinutes}분 ${timeRemainingSeconds}초`);
 };
 async function gameTotal() {
+  await deleteDummyUser();
+  await deleteCompany();
   sendNoticesToAllClients('게임 세팅 중...1분뒤 시작입니다!');
   await resetUserMoney();
   await createDummyUser();
@@ -78,8 +80,8 @@ async function gameTotal() {
   await waitForMinuteRemainder(6);
   sendNoticesToAllClients('게임 종료! 결과 정리 중...');
   await deleteDummyUser();
-  await deleteCompany();
   await updateStockToCash();
+  await deleteCompany();
   await updateRankBoard();
   await updateMMR();
   sendNoticesToAllClients('결과가 반영되었습니다!');
