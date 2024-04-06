@@ -1,7 +1,8 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { parse } from 'cookie';
 import { prisma } from '../prisma/index.js';
-
+let wss;
+const clients = new Map();
 export function setupWebSocketServer2(server, sessionStore) {
   const wss = new WebSocketServer({ server });
 
