@@ -17,7 +17,7 @@ export function setupWebSocketServer2(server, sessionStore) {
       return;
     }
 
-    console.log('session: ' + JSON.stringify(session, null, 2));
+    // console.log('session: ' + JSON.stringify(session, null, 2));
     const userId = session.passport?.user;
     if (!userId) {
       console.log('세션에서 사용자 ID를 찾을 수 없습니다.');

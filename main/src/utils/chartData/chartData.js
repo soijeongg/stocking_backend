@@ -84,55 +84,53 @@ function setupWebSocketServer(server, sessionStore) {
         console.log('클라이언트와의 연결이 끊겼습니다.');
       });
     } else if (pathSegments[1] === 'ws' && pathSegments[2] === 'chatting') {
-      wss.on('connection', async function connection(ws, req) {
-        console.log('클라이언트가 연결되었습니다.');
+      console.log('클라이언트가 연결되었습니다.');
 
-        const sessionCookie = req.headers.cookie;
-        const session = await findSessionByCookie(sessionCookie, sessionStore);
-        if (!session) {
-          console.log('세션 정보를 찾을 수 없습니다.');
-          ws.close(); // 세션 정보가 없는 경우 연결 종료
-          return;
-        }
+      const sessionCookie = req.headers.cookie;
+      const session = await findSessionByCookie(sessionCookie, sessionStore);
+      if (!session) {
+        console.log('세션 정보를 찾을 수 없습니다.');
+        ws.close(); // 세션 정보가 없는 경우 연결 종료
+        return;
+      }
 
-        console.log('session: ' + JSON.stringify(session, null, 2));
-        const userId = session.passport?.user;
-        if (!userId) {
-          console.log('세션에서 사용자 ID를 찾을 수 없습니다.');
-          ws.close(); // 사용자 ID가 없는 경우 종료
-          return;
-        }
+      // console.log('session: ' + JSON.stringify(session, null, 2));
+      const userId = session.passport?.user;
+      if (!userId) {
+        console.log('세션에서 사용자 ID를 찾을 수 없습니다.');
+        ws.close(); // 사용자 ID가 없는 경우 종료
+        return;
+      }
 
-        clients.set(userId, ws); // 사용자 ID를 키로 WebSocket 연결 저장
+      clients.set(userId, ws); // 사용자 ID를 키로 WebSocket 연결 저장
 
-        const nickname = await getUserNickname(userId);
-        console.log('nickname: ', nickname);
+      const nickname = await getUserNickname(userId);
+      // console.log('nickname: ', nickname);
 
-        ws.on('message', function incoming(message) {
-          const messageData = JSON.parse(message);
-          const { text, receiverId } = messageData; // 수신자 ID 포함
+      ws.on('message', function incoming(message) {
+        const messageData = JSON.parse(message);
+        const { text, receiverId } = messageData; // 수신자 ID 포함
 
-          console.log(`${nickname}: ${text}`);
+        console.log(`${nickname}: ${text}`);
 
-          if (receiverId && clients.has(receiverId)) {
-            const receiverWs = clients.get(receiverId);
-            if (receiverWs.readyState === WebSocket.OPEN) {
-              receiverWs.send(JSON.stringify({ nickname, text })); // 지정된 수신자에게만 메시지 전송
-            }
-          } else {
-            // 수신자가 지정되지 않았거나 찾을 수 없는 경우 모든 클라이언트에게 메시지 브로드캐스트 (선택적)
-            wss.clients.forEach(function each(client) {
-              if (client !== ws && client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({ nickname, text }));
-              }
-            });
+        if (receiverId && clients.has(receiverId)) {
+          const receiverWs = clients.get(receiverId);
+          if (receiverWs.readyState === WebSocket.OPEN) {
+            receiverWs.send(JSON.stringify({ nickname, text })); // 지정된 수신자에게만 메시지 전송
           }
-        });
+        } else {
+          // 수신자가 지정되지 않았거나 찾을 수 없는 경우 모든 클라이언트에게 메시지 브로드캐스트 (선택적)
+          wss.clients.forEach(function each(client) {
+            if (client !== ws && client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify({ nickname, text }));
+            }
+          });
+        }
+      });
 
-        ws.on('close', () => {
-          console.log('클라이언트와의 연결이 끊겼습니다.');
-          clients.delete(userId); // 연결이 종료되면 클라이언트 목록에서 제거
-        });
+      ws.on('close', () => {
+        console.log('클라이언트와의 연결이 끊겼습니다.');
+        clients.delete(userId); // 연결이 종료되면 클라이언트 목록에서 제거
       });
     }
   });
