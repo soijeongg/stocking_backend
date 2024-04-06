@@ -59,11 +59,8 @@ async function gameTotal() {
   await createCompany();
   await createDummyOrderAndStock();
   await waitForMinuteRemainder(1);
-  sendNoticesToAllClients('게임 시작!...게임 시간은 5분간 진행됩니다!');
-
-  // 1분 대기 후 게임 시작
-  await new Promise((resolve) => setTimeout(resolve, 60000));
   // 게임 시작(1분)
+  sendNoticesToAllClients('게임 시작!...게임 시간은 5분간 진행됩니다!');
   // 게임 이벤트 생성 (5초마다)
   const eventInterval = setInterval(createDummyEvent, 5000);
   // 현재 분을 12로 나눈뒤에  6분이 되기까지 남은 시간을 "게임종료까지 남은 시간 : 00분 00초"로 출력
@@ -84,6 +81,6 @@ async function gameTotal() {
   await deleteCompany();
   await updateRankBoard();
   await updateMMR();
-  sendNoticesToAllClients('결과가 반영되었습니다!');
+  sendNoticesToAllClients('랭킹이 업데이트 되었습니다!');
 }
 export { gameTotal };

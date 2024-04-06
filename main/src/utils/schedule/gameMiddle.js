@@ -14,7 +14,13 @@ function getRandomNumber(effectNum, effectProb) {
   if (max < min) [max, min] = [min, max];
   return Math.random() * (max - min) + min;
 }
-
+function customCeil(value) {
+  if (value < 0 && value % 1 === -0.5) {
+    return Math.ceil(value) - 1;
+  } else {
+    return Math.ceil(value);
+  }
+}
 async function createDummyEvent() {
   try {
     const dummyUser = await prisma.user.findFirst({
@@ -49,23 +55,23 @@ async function createDummyEvent() {
     console.log(company.name);
     const event = events[Math.floor(Math.random() * events.length)];
     const coefficent = getRandomNumber(event[1], event[2]);
-    const quantity = Math.ceil(Math.random() * 5 * coefficent);
+    const quantity = customCeil(Math.random() * 5 * coefficent);
     console.log(quantity);
     //사건에 따라 정해진 확률로 quantity가 정해짐
     let random = Math.random();
-    if (random < 0.1) {
+    if (random < 0.2) {
       // 시장가 주문 생성
       console.log(event[0]);
-      sendToAllClient(event[0]); // 아마 이부분은 수정이 필요할듯..?
+      sendToAllClient(`${company.name}, ${event[0]}`); // 아마 이부분은 수정이 필요할듯..?
       //15초 대기
       await new Promise((resolve) => setTimeout(resolve, 15000));
       if (quantity == 0) return;
       else if (quantity < 0) await execution(dummyUser.userId, company.companyId, null, 'sell', -quantity, null);
       else await execution(dummyUser.userId, company.companyId, null, 'buy', quantity, null);
-    } else if (random < 0.2) {
+    } else if (random < 0.4) {
       // 지정가 주문 생성
       console.log(event[0]);
-      sendToAllClient(event[0]); // 아마 이부분은 수정이 필요할듯..?
+      sendToAllClient(`${company.name}, ${event[0]}`); // 아마 이부분은 수정이 필요할듯..?
       //15초 대기
       await new Promise((resolve) => setTimeout(resolve, 15000));
       const constprice = Math.floor(Math.random() * 6);
