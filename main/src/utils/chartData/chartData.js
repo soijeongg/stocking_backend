@@ -95,7 +95,7 @@ function setupWebSocketServer(server, sessionStore) {
           return;
         }
 
-        console.log('session: ' + JSON.stringify(session, null, 2));
+        // console.log('session: ' + JSON.stringify(session, null, 2));
         const userId = session.passport?.user;
         if (!userId) {
           console.log('세션에서 사용자 ID를 찾을 수 없습니다.');
@@ -106,7 +106,7 @@ function setupWebSocketServer(server, sessionStore) {
         clients.set(userId, ws); // 사용자 ID를 키로 WebSocket 연결 저장
 
         const nickname = await getUserNickname(userId);
-        console.log('nickname: ', nickname);
+        // console.log('nickname: ', nickname);
 
         ws.on('message', function incoming(message) {
           const messageData = JSON.parse(message);
