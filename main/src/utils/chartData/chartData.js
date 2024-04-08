@@ -2,14 +2,35 @@ import { WebSocketServer, WebSocket } from 'ws';
 import url from 'url';
 import { parse } from 'cookie';
 import { prisma } from '../prisma/index.js';
+import { deleteSessionsByUserId } from '../../app.js';
 let wss;
 const clients = new Map();
+let notices = [];
+const clients_id = new Map();
 function setupWebSocketServer(server, sessionStore) {
   wss = new WebSocketServer({ server });
 
   wss.on('connection', async function connection(ws, req) {
     // const requestUrl = new URL(req.url, 'ws://localhost:3000/ws/chartData/:companyId'); // 기본 URL을 제공해야 합니다.
-    console.log('Received request URL:', req.url);
+    //console.log('Received request URL:', req.url);
+    const sessionCookie = req.headers.cookie;
+    const session = await findSessionByCookie(sessionCookie, sessionStore);
+    if (!session) {
+      console.log('세션 정보를 찾을 수 없습니다.');
+      ws.close(); // 세션 정보가 없는 경우 연결 종료
+      return;
+    }
+
+    //console.log('session: ' + JSON.stringify(session, null, 2));
+    const userId = session.passport?.user;
+    if (!userId) {
+      console.log('세션에서 사용자 ID를 찾을 수 없습니다.');
+      ws.close(); // 사용자 ID가 없는 경우 종료
+      return;
+    }
+
+    clients_id.set(userId, ws); // 사용자 ID를 키로 WebSocket 연결 저장
+
     const pathSegments = req.url.split('/');
     if (pathSegments[1] === 'ws' && pathSegments[2] === 'chartData') {
       const companyId = Number(pathSegments[pathSegments.length - 1]);
@@ -181,6 +202,29 @@ export function sendNoticesToClient(userId, notices) {
     if (client.readyState === WebSocket.OPEN) {
       client.send(JSON.stringify({ type: 'notices', notices }));
     }
+  }
+}
+
+export async function sendSocketMessage(userId, notice) {
+  const ws = clients_id.get(userId);
+  if (ws) {
+    if (ws.readyState === WebSocket.OPEN) {
+      notices.push(notice);
+      ws.send(JSON.stringify({ type: 'notices', notices }));
+
+      console.log(`Message sent to user ${userId}:`, notice);
+      const index = notices.indexOf(notice);
+      if (index !== -1) {
+        notices.splice(index, 1);
+      }
+
+      // 여기에 세션 삭제 부분 추가
+      await deleteSessionsByUserId(userId);
+    } else {
+      console.log(`WebSocket connection for user ${userId} is not open.`);
+    }
+  } else {
+    console.log(`WebSocket connection for user ${userId} not found.`);
   }
 }
 

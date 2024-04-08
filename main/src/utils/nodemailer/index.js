@@ -12,14 +12,14 @@ const transporter = nodemailer.createTransport({
   secure: false,
   requireTLS: true,
   auth: {
-    user: process.env.USER,
-    pass: process.env.PASS,
+    user: 'writer__soi@naver.com',
+    pass: 'ninosoi2001!',
   },
 });
 //이메일의 내용을 정하는 함수
 export const sendVerificationEmail = (userEmail, token) => {
   const mailOptions = {
-    from: `${process.env.USER}@naver.com`,
+    from: `writer__soi@naver.com`,
     to: userEmail,
     subject: 'STOCKKING 회원가입 인증 이메일입니다',
     html: `<p>아래의 링크를 클릭하여 회원가입을 완료하세요.</p>

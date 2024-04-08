@@ -19,7 +19,7 @@ export class userRepository {
     let createdUser = await this.prisma.$transaction(async (tx) => {
       let hashedPassword = await argon2.hash(password);
       let user = await tx.User.create({
-        data: { email, password: hashedPassword, nickname, token },
+        data: { email, password: hashedPassword, nickname, token, isVerified: true, currentMoney: 1000000, initialSeed: 1000000 },
       });
       const emailSent = await sendVerificationEmail(email, token);
       if (!emailSent) {

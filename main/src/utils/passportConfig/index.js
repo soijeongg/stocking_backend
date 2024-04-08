@@ -58,7 +58,7 @@ export default function passportConfig() {
       {
         clientID: process.env.GOOGLE_ID, // 구글 로그인에서 발급받은 REST API 키
         clientSecret: process.env.GOOGLE_SECRET,
-        callbackURL: `${process.env.BACKEND_URL}/api/auth/google/callback`, // 구글 로그인 Redirect URI 경로
+        callbackURL: `http://${process.env.BACKEND_URL}/api/auth/google/callback`, // 구글 로그인 Redirect URI 경로
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
@@ -100,7 +100,7 @@ export default function passportConfig() {
     new KakaoStrategy(
       {
         clientID: process.env.KAKAO_ID, // 구글 로그인에서 발급받은 REST API 키=
-        callbackURL: `{process.env.BACKEND_URL}/api/auth/kakao/callback`, // 구글 로그인 Redirect URI 경로
+        callbackURL: `http://${process.env.BACKEND_URL}/api/auth/kakao/callback`, // 구글 로그인 Redirect URI 경로
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
@@ -144,7 +144,7 @@ export default function passportConfig() {
       {
         clientID: process.env.NAVER_ID, // 구글 로그인에서 발급받은 REST API 키
         clientSecret: process.env.NAVER_SECRET,
-        callbackURL: `${process.env.BACKEND_URL}/api/auth/naver/callback`, // 구글 로그인 Redirect URI 경로
+        callbackURL: `http://${process.env.BACKEND_URL}/api/auth/naver/callback`, // 구글 로그인 Redirect URI 경로
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
