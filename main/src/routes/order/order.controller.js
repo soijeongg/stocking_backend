@@ -174,7 +174,7 @@ export class OrderController {
       };
       const jsonOrderDataString = JSON.stringify(jsonOrderData);
       insertOrderMessageQueue(jsonOrderDataString);
-      return res.json({ deleteOrder });
+      return res.json({ message: '주문이  접수되었습니다.' });
     } catch (error) {
       console.log(error.stack);
       return res.status(400).json({ message: '주문 삭제 도중 문제가 발생했습니다.' });
