@@ -85,7 +85,7 @@ router.get('/auth/google/callback', (req, res, next) => {
         return res.status(500).json({ error: '로그인 처리 중 에러가 발생했습니다.' });
       }
       // 인증 및 로그인 성공
-      return res.redirect(`${process.env.FRONT_URL}`);
+      return res.redirect(`${process.env.FRONTEND_URL}`);
     });
   })(req, res, next);
 });
@@ -118,7 +118,7 @@ router.get('/auth/naver/callback', (req, res, next) => {
         return res.status(500).json({ error: '로그인 처리 중 에러가 발생했습니다.' });
       }
       // 인증 및 로그인 성공
-      return res.redirect('${process.env.FRONT_URL}');
+      return res.redirect(`${process.env.FRONTEND_URL}`);
     });
   })(req, res, next);
 });
@@ -151,7 +151,7 @@ router.get('/auth/kakao/callback', (req, res, next) => {
         return res.status(500).json({ error: '로그인 처리 중 에러가 발생했습니다.' });
       }
       // 인증 및 로그인 성공
-      return res.redirect('${process.env.FRONT_URL}');
+      return res.redirect(`${process.env.FRONTEND_URL}`);
     });
   })(req, res, next);
 });
