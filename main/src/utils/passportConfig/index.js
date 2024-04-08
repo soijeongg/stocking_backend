@@ -45,6 +45,9 @@ export default function passportConfig() {
           if (!isValidPassword) {
             return done(null, false, { message: '비밀번호가 일치하지 않습니다.' });
           }
+          if(!user.isVerified){
+            return done(null, false, { message: '이메일 인증이 필요합니다' });
+          }
           return done(null, user);
         } catch (error) {
           return done(error);
