@@ -52,25 +52,25 @@ async function createDummyEvent() {
       ['정부로부터 대규모 연구 개발 자금을 지원받아!', 1.6, 0.1],
     ];
     let company = companies[Math.floor(Math.random() * companies.length)];
-    console.log(company.name);
+    // console.log(company.name);
     const event = events[Math.floor(Math.random() * events.length)];
     const coefficent = getRandomNumber(event[1], event[2]);
     const quantity = customCeil(Math.random() * 5 * coefficent);
-    console.log(quantity);
+    // console.log(quantity);
     //사건에 따라 정해진 확률로 quantity가 정해짐
     let random = Math.random();
+    const jsonOrderData = {
+      orderType: 'create',
+      userId: dummyUser.userId,
+      companyId: company.companyId,
+      orderId: null,
+    };
     if (random < 0.2) {
       // 시장가 주문 생성
-      console.log(event[0]);
+      // console.log(event[0]);
       sendToAllClient(`${company.name}, ${event[0]}`); // 아마 이부분은 수정이 필요할듯..?
       //15초 대기
       await new Promise((resolve) => setTimeout(resolve, 15000));
-      const jsonOrderData = {
-        orderType: 'create',
-        userId: dummyUser.userId,
-        companyId: company.companyId,
-        orderId: null,
-      };
       if (quantity == 0) return;
       else if (quantity < 0) {
         jsonOrderData.type = 'sell';
@@ -87,7 +87,7 @@ async function createDummyEvent() {
       }
     } else if (random < 0.4) {
       // 지정가 주문 생성
-      console.log(event[0]);
+      // console.log(event[0]);
       sendToAllClient(`${company.name}, ${event[0]}`);
       //15초 대기
       await new Promise((resolve) => setTimeout(resolve, 15000));

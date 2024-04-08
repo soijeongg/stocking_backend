@@ -1,40 +1,69 @@
+import { prisma } from '../prisma/index.js';
+import { execution } from '../execution/index.js';
 class Queue {
   constructor() {
     this.items = [];
+    this.isProcessing = false; // 처리 중인지 상태를 나타내는 플래그
   }
 
   enqueue(item) {
-    this.items.push(item); // 큐의 끝에 요소 추가
+    this.items.push(item);
+    this.startProcessing(); // 항목 추가 시 처리 시작을 시도
   }
 
   dequeue() {
     if (this.isEmpty()) {
-      return 'Queue is empty';
+      return null; // 큐가 비어있으면 null 반환
     }
-    return this.items.shift(); // 큐의 앞에서 요소 제거 및 반환
+    return this.items.shift();
   }
 
   isEmpty() {
-    return this.items.length === 0; // 큐가 비어있는지 확인
+    return this.items.length === 0;
   }
 
-  peek() {
-    if (this.isEmpty()) {
-      return 'Queue is empty';
+  // 큐의 처리를 시작하는 함수
+  async startProcessing() {
+    if (this.isProcessing) {
+      return; // 이미 처리 중이면 더 이상 진행하지 않음
     }
-    return this.items[0]; // 큐의 맨 앞 요소 반환
+    this.isProcessing = true; // 처리 시작
+
+    while (!this.isEmpty()) {
+      console.log(this.items.length);
+      const message = this.dequeue();
+
+      const startTime = Date.now(); // 처리 시작 시간
+      await this.processMessage(message);
+      const endTime = Date.now(); // 처리 완료 시간
+
+      const duration = endTime - startTime; // 처리 시간 계산
+      console.log(`Message processing time: ${duration}ms`); // 처리 시간 로깅
+    }
+
+    this.isProcessing = false; // 모든 항목 처리 완료
   }
 
-  size() {
-    return this.items.length; // 큐의 크기 반환
+  // 실제 메시지를 처리하는 함수
+  async processMessage(message) {
+    const jsonOrderData = JSON.parse(message);
+    const { orderType, userId, companyId, orderId, type, quantity, price } = jsonOrderData;
+    if (orderType === 'delete') {
+      await prisma.order.delete({
+        where: {
+          orderId: orderId,
+        },
+      });
+    } else {
+      await execution(userId, companyId, orderId, type, quantity, price);
+    }
   }
 }
+
 const orderQueue = new Queue();
 
 async function insertOrderMessageQueue(messageString) {
   orderQueue.enqueue(messageString);
-  while (!orderQueue.isEmpty()) {
-    const message = orderQueue.dequeue();
-  }
 }
+
 export { insertOrderMessageQueue };
