@@ -361,6 +361,173 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
             }
           }
         }
+        // 주문 체결 결과 전송
+        // messageQueue 배열을 queue처럼 사용하여 순차적으로 처리
+        while (messageQueue.length > 0) {
+          const message = messageQueue.shift();
+          if (message.orderType === 'tradableMoneyUpdate') {
+            await tx.user.update({
+              where: {
+                userId: message.userId,
+              },
+              data: {
+                tradableMoney: message.tradableMoney,
+              },
+            });
+          } else if (message.orderType === 'tradableStockUpdate') {
+            await tx.stock.update({
+              where: {
+                stockId: message.stockId,
+              },
+              data: {
+                tradableStock: message.tradableStock,
+              },
+            });
+          } else if (message.orderType === 'execution') {
+            if (message.order.type === 'buy') {
+              if (message.executionType === 'complete') {
+                await tx.order.delete({
+                  where: {
+                    orderId: message.order.orderId,
+                  },
+                });
+              } else {
+                await tx.order.update({
+                  where: {
+                    orderId: message.order.orderId,
+                  },
+                  data: {
+                    updatedAt: message.order.updatedAt,
+                    quantity: {
+                      decrement: message.quantity,
+                    },
+                  },
+                });
+              }
+              await tx.concluded.create({
+                data: {
+                  userId: message.order.userId,
+                  companyId: message.order.companyId,
+                  type: message.order.type,
+                  price: message.price,
+                  quantity: message.quantity,
+                },
+              });
+              await tx.user.update({
+                where: {
+                  userId: message.order.userId,
+                },
+                data: {
+                  currentMoney: {
+                    decrement: message.price * message.quantity,
+                  },
+                },
+              });
+              const stock = await tx.stock.findFirst({
+                where: {
+                  userId: message.order.userId,
+                  companyId: message.order.companyId,
+                },
+              });
+              if (stock) {
+                await tx.stock.update({
+                  where: {
+                    stockId: stock.stockId,
+                  },
+                  data: {
+                    quantity: {
+                      increment: message.quantity,
+                    },
+                    tradableQuantity: {
+                      increment: message.quantity,
+                    },
+                    averagePrice: (stock.averagePrice * stock.quantity + message.price * message.quantity) / (stock.quantity + message.quantity),
+                  },
+                });
+              } else {
+                await tx.stock.create({
+                  data: {
+                    userId: message.order.userId,
+                    companyId: message.order.companyId,
+                    quantity: message.quantity,
+                    tradableQuantity: message.quantity,
+                    averagePrice: message.price,
+                  },
+                });
+              }
+            } else {
+              if (message.executionType === 'complete') {
+                await tx.order.delete({
+                  where: {
+                    orderId: message.order.orderId,
+                  },
+                });
+              } else {
+                await tx.order.update({
+                  where: {
+                    orderId: message.order.orderId,
+                  },
+                  data: {
+                    updatedAt: message.order.updatedAt,
+                    quantity: {
+                      decrement: message.quantity,
+                    },
+                  },
+                });
+              }
+              await tx.concluded.create({
+                data: {
+                  userId: message.order.userId,
+                  companyId: message.order.companyId,
+                  type: message.order.type,
+                  price: message.price,
+                  quantity: message.quantity,
+                },
+              });
+              await tx.user.update({
+                where: {
+                  userId: message.order.userId,
+                },
+                data: {
+                  currentMoney: {
+                    increment: message.price * message.quantity,
+                  },
+                  tradableMoney: {
+                    increment: message.price * message.quantity,
+                  },
+                },
+              });
+              const stock = await tx.stock.findFirst({
+                where: {
+                  userId: message.order.userId,
+                  companyId: message.order.companyId,
+                },
+              });
+              if (stock.quantity === message.quantity) {
+                await tx.stock.delete({
+                  where: {
+                    stockId: stock.stockId,
+                  },
+                });
+              } else {
+                await tx.stock.update({
+                  where: {
+                    stockId: stock.stockId,
+                  },
+                  data: {
+                    quantity: {
+                      decrement: message.quantity,
+                    },
+                    tradableQuantity: {
+                      decrement: message.quantity,
+                    },
+                    averagePrice: (stock.averagePrice * stock.quantity - message.price * message.quantity) / (stock.quantity - message.quantity),
+                  },
+                });
+              }
+            }
+          }
+        }
       },
       {
         maxWait: 5000, // default: 2000
