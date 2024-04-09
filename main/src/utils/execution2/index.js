@@ -231,7 +231,136 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
         } else {
           messageQueue.push({ orderType: 'tradableMoneyUpdate', userId: user.userId, tradableMoney: user.tradableMoney });
         }
-        // 주문 체결 파트
+        // 주문 매칭 파트
+        const sellerOrders = await tx.order.findMany({
+          where: {
+            companyId,
+            type: 'sell',
+          },
+          orderBy: {
+            price: 'asc',
+            updatedAt: 'asc',
+          },
+        });
+        const buyerOrders = await tx.order.findMany({
+          where: {
+            companyId,
+            type: 'buy',
+          },
+          orderBy: {
+            price: 'desc',
+            updatedAt: 'asc',
+          },
+        });
+        if (type === 'buy') {
+          // 매수 주문의 경우
+          for (const buyerOrder of buyerOrders) {
+            if (buyerOrder.price < sellerOrders[0].price) break;
+            while (buyerOrder.quantity > 0 && buyerOrder.price >= sellerOrders[0].price) {
+              const sellerOrder = sellerOrders[0];
+              if (buyerOrder.quantity > sellerOrder.quantity) {
+                messageQueue.push({
+                  orderType: 'execution',
+                  executionType: 'complete',
+                  order: sellerOrder,
+                  quantity: sellerOrder.quantity,
+                  price: sellerOrder.price,
+                });
+                sellerOrders.shift();
+                messageQueue.push({
+                  orderType: 'execution',
+                  executionType: 'partial',
+                  order: buyerOrder,
+                  quantity: sellerOrder.quantity,
+                  price: sellerOrder.price,
+                });
+                buyerOrder.quantity -= sellerOrder.quantity;
+                continue;
+              }
+              if (buyerOrder.quantity === sellerOrder.quantity) {
+                messageQueue.push({
+                  orderType: 'execution',
+                  executionType: 'complete',
+                  order: sellerOrder,
+                  quantity: buyerOrder.quantity,
+                  price: sellerOrder.price,
+                });
+                sellerOrders.shift();
+              } else {
+                messageQueue.push({
+                  orderType: 'execution',
+                  executionType: 'partial',
+                  order: sellerOrder,
+                  quantity: buyerOrder.quantity,
+                  price: sellerOrder.price,
+                });
+                sellerOrder.quantity -= buyerOrder.quantity;
+              }
+              messageQueue.push({
+                orderType: 'execution',
+                executionType: 'complete',
+                order: buyerOrder,
+                quantity: buyerOrder.quantity,
+                price: sellerOrder.price,
+              });
+              buyerOrder.quantity = 0;
+            }
+          }
+        } else {
+          // 매도 주문의 경우
+          for (const sellerOrder of sellerOrders) {
+            if (sellerOrder.price > buyerOrders[0].price) break;
+            while (sellerOrder.quantity > 0 && sellerOrder.price <= buyerOrders[0].price) {
+              const buyerOrder = buyerOrders[0];
+              if (sellerOrder.quantity > buyerOrder.quantity) {
+                messageQueue.push({
+                  orderType: 'execution',
+                  executionType: 'complete',
+                  order: buyerOrder,
+                  quantity: buyerOrder.quantity,
+                  price: buyerOrder.price,
+                });
+                buyerOrders.shift();
+                messageQueue.push({
+                  orderType: 'execution',
+                  executionType: 'partial',
+                  order: sellerOrder,
+                  quantity: buyerOrder.quantity,
+                  price: buyerOrder.price,
+                });
+                sellerOrder.quantity -= buyerOrder.quantity;
+                continue;
+              }
+              if (sellerOrder.quantity === buyerOrder.quantity) {
+                messageQueue.push({
+                  orderType: 'execution',
+                  executionType: 'complete',
+                  order: buyerOrder,
+                  quantity: sellerOrder.quantity,
+                  price: buyerOrder.price,
+                });
+                buyerOrders.shift();
+              } else {
+                messageQueue.push({
+                  orderType: 'execution',
+                  executionType: 'partial',
+                  order: buyerOrder,
+                  quantity: sellerOrder.quantity,
+                  price: buyerOrder.price,
+                });
+                buyerOrder.quantity -= sellerOrder.quantity;
+              }
+              messageQueue.push({
+                orderType: 'execution',
+                executionType: 'complete',
+                order: sellerOrder,
+                quantity: sellerOrder.quantity,
+                price: buyerOrder.price,
+              });
+              sellerOrder.quantity = 0;
+            }
+          }
+        }
       },
       {
         maxWait: 5000, // default: 2000
