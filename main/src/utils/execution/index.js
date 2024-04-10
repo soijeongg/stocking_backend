@@ -27,6 +27,10 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
   try {
     await prisma.$transaction(
       async (tx) => {
+        if (!company) {
+          console.log('존재하지 않는 종목입니다.');
+          throw new Error('존재하지 않는 종목입니다.');
+        }
         // let startTime = performance.now();
         if (type === 'buy') {
           //매수 주문
@@ -49,6 +53,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
               quantity: true,
             },
           });
+          console.log(totalQuantity[0]._sum.quantity, quantity);
           if (totalQuantity[0]._sum.quantity < quantity) {
             throw new Error(`최대 ${totalQuantity[0]._sum.quantity}주까지만 구매할 수 있습니다.`);
           }
@@ -386,6 +391,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
               quantity: true,
             },
           });
+          console.log(totalQuantity[0]._sum.quantity, quantity);
           if (totalQuantity[0]._sum.quantity < quantity) {
             throw new Error(`최대 ${totalQuantity[0]._sum.quantity}주까지만 판매할 수 있습니다.`);
           }
