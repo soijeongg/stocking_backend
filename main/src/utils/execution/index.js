@@ -335,16 +335,12 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
             }
             notices.push(`${seller.nickname}님의 ${company.name} 종목에 대한 ${quantity}주, ${sellerOrder.price}원 판매주문이 체결되었습니다.`);
             const currentPrice = sellerOrder.price;
-            const lowPrice = Math.min(currentPrice, company.lowPrice);
-            const highPrice = Math.max(currentPrice, company.highPrice);
             await tx.company.update({
               where: {
                 companyId,
               },
               data: {
                 currentPrice,
-                lowPrice,
-                highPrice,
               },
             });
             await tx.user.update({
@@ -677,16 +673,12 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
             }
             notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${quantity}주, ${buyerOrder.price}원 구매주문이 체결되었습니다.`);
             const currentPrice = buyerOrder.price;
-            const lowPrice = Math.min(currentPrice, company.lowPrice);
-            const highPrice = Math.max(currentPrice, company.highPrice);
             await tx.company.update({
               where: {
                 companyId,
               },
               data: {
                 currentPrice,
-                lowPrice,
-                highPrice,
               },
             });
 
