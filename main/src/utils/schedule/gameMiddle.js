@@ -1,6 +1,6 @@
 import { prisma } from '../prisma/index.js';
-import { execution } from '../execution/index.js';
-import { sendNoticesToAllClients } from '../chatting/chatting.js';
+import { insertOrderMessageQueue } from '../orderQueue/index.js';
+import { sendNoticesToAllClients } from '../chartData/chartData.js';
 
 // 전체 유저에게 전송
 function sendToAllClient(notices) {
@@ -14,7 +14,13 @@ function getRandomNumber(effectNum, effectProb) {
   if (max < min) [max, min] = [min, max];
   return Math.random() * (max - min) + min;
 }
-
+function customCeil(value) {
+  if (value < 0 && value % 1 === -0.5) {
+    return Math.ceil(value) - 1;
+  } else {
+    return Math.ceil(value);
+  }
+}
 async function createDummyEvent() {
   try {
     const dummyUser = await prisma.user.findFirst({
@@ -46,39 +52,75 @@ async function createDummyEvent() {
       ['정부로부터 대규모 연구 개발 자금을 지원받아!', 1.6, 0.1],
     ];
     let company = companies[Math.floor(Math.random() * companies.length)];
-    console.log(company.name);
+    // console.log(company.name);
     const event = events[Math.floor(Math.random() * events.length)];
     const coefficent = getRandomNumber(event[1], event[2]);
-    const quantity = Math.ceil(Math.random() * 5 * coefficent);
-    console.log(quantity);
+    const quantity = customCeil(Math.random() * 5 * coefficent);
+    // console.log(quantity);
     //사건에 따라 정해진 확률로 quantity가 정해짐
     let random = Math.random();
-    if (random < 0.1) {
+    const jsonOrderData = {
+      orderType: 'create',
+      userId: dummyUser.userId,
+      companyId: company.companyId,
+      orderId: null,
+    };
+    if (random < 0.2) {
       // 시장가 주문 생성
-      console.log(event[0]);
-      sendToAllClient(event[0]);  // 아마 이부분은 수정이 필요할듯..?
+      // console.log(event[0]);
+      sendToAllClient(`${company.name}, ${event[0]}`); // 아마 이부분은 수정이 필요할듯..?
       //15초 대기
       await new Promise((resolve) => setTimeout(resolve, 15000));
       if (quantity == 0) return;
-      else if (quantity < 0) await execution(dummyUser.userId, company.companyId, null, 'sell', -quantity, null);
-      else await execution(dummyUser.userId, company.companyId, null, 'buy', quantity, null);
-    } else if (random < 0.2) {
+      else if (quantity < 0) {
+        jsonOrderData.type = 'sell';
+        jsonOrderData.quantity = -quantity;
+        jsonOrderData.price = null;
+        const jsonOrderDataString = JSON.stringify(jsonOrderData);
+        insertOrderMessageQueue(jsonOrderDataString);
+      } else {
+        jsonOrderData.type = 'buy';
+        jsonOrderData.quantity = quantity;
+        jsonOrderData.price = null;
+        const jsonOrderDataString = JSON.stringify(jsonOrderData);
+        insertOrderMessageQueue(jsonOrderDataString);
+      }
+    } else if (random < 0.4) {
       // 지정가 주문 생성
-      console.log(event[0]);
-      sendToAllClient(event[0]);  // 아마 이부분은 수정이 필요할듯..?
+      // console.log(event[0]);
+      sendToAllClient(`${company.name}, ${event[0]}`);
       //15초 대기
       await new Promise((resolve) => setTimeout(resolve, 15000));
       const constprice = Math.floor(Math.random() * 6);
       if (quantity == 0) return;
-      else if (quantity < 0) await execution(dummyUser.userId, company.companyId, null, 'sell', -quantity, company.currentPrice + constprice * 10000);
-      else await execution(dummyUser.userId, company.companyId, null, 'buy', quantity, company.currentPrice - constprice * 10000);
+      else if (quantity < 0) {
+        jsonOrderData.type = 'sell';
+        jsonOrderData.quantity = -quantity;
+        jsonOrderData.price = company.currentPrice + constprice * 10000;
+        const jsonOrderDataString = JSON.stringify(jsonOrderData);
+        insertOrderMessageQueue(jsonOrderDataString);
+      } else {
+        jsonOrderData.type = 'buy';
+        jsonOrderData.quantity = quantity;
+        jsonOrderData.price = company.currentPrice - constprice * 10000;
+        const jsonOrderDataString = JSON.stringify(jsonOrderData);
+        insertOrderMessageQueue(jsonOrderDataString);
+      }
     } else {
       // 사건과 관계없이 매도/매수 주문 모두 생성
       for (let i = -5; i < 0; ++i) {
-        await execution(dummyUser.userId, company.companyId, null, 'buy', Math.floor(Math.random() * 3), company.currentPrice + i * 10000);
+        jsonOrderData.type = 'buy';
+        jsonOrderData.quantity = Math.floor(Math.random() * 3);
+        jsonOrderData.price = company.currentPrice + i * 10000;
+        const jsonOrderDataString = JSON.stringify(jsonOrderData);
+        insertOrderMessageQueue(jsonOrderDataString);
       }
       for (let i = 0; i <= 5; ++i) {
-        await execution(dummyUser.userId, company.companyId, null, 'sell', Math.floor(Math.random() * 3), company.currentPrice + i * 10000);
+        jsonOrderData.type = 'sell';
+        jsonOrderData.quantity = Math.floor(Math.random() * 3);
+        jsonOrderData.price = company.currentPrice + i * 10000;
+        const jsonOrderDataString = JSON.stringify(jsonOrderData);
+        insertOrderMessageQueue(jsonOrderDataString);
       }
     }
   } catch (err) {

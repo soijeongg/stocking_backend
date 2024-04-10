@@ -1,6 +1,6 @@
 import { prisma } from '../prisma/index.js';
 import { Prisma } from '@prisma/client';
-import { sendNoticesToClient, sendNoticesToAllClients } from '../chatting/chatting.js';
+import { sendNoticesToClient, sendNoticesToAllClients } from '../chartData/chartData.js';
 
 // 전체 유저에게 전송
 function sendToAllClient(notices) {
@@ -27,6 +27,10 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
   try {
     await prisma.$transaction(
       async (tx) => {
+        if (!company) {
+          console.log('존재하지 않는 종목입니다.');
+          throw new Error('존재하지 않는 종목입니다.');
+        }
         // let startTime = performance.now();
         if (type === 'buy') {
           //매수 주문
@@ -49,6 +53,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
               quantity: true,
             },
           });
+          console.log(totalQuantity[0]._sum.quantity, quantity);
           if (totalQuantity[0]._sum.quantity < quantity) {
             throw new Error(`최대 ${totalQuantity[0]._sum.quantity}주까지만 구매할 수 있습니다.`);
           }
@@ -330,16 +335,12 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
             }
             notices.push(`${seller.nickname}님의 ${company.name} 종목에 대한 ${quantity}주, ${sellerOrder.price}원 판매주문이 체결되었습니다.`);
             const currentPrice = sellerOrder.price;
-            const lowPrice = Math.min(currentPrice, company.lowPrice);
-            const highPrice = Math.max(currentPrice, company.highPrice);
             await tx.company.update({
               where: {
                 companyId,
               },
               data: {
                 currentPrice,
-                lowPrice,
-                highPrice,
               },
             });
             await tx.user.update({
@@ -354,7 +355,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
           }
           // let endTime = performance.now();
           // console.log(`Execution time: ${endTime - startTime} ms`);
-          console.log('notices', notices);
+          // console.log('notices', notices);
           // sendToClient(userId, notices);
           sendToAllClient(notices);
           return '요청한 주문이 완료되었습니다.';
@@ -386,6 +387,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
               quantity: true,
             },
           });
+          console.log(totalQuantity[0]._sum.quantity, quantity);
           if (totalQuantity[0]._sum.quantity < quantity) {
             throw new Error(`최대 ${totalQuantity[0]._sum.quantity}주까지만 판매할 수 있습니다.`);
           }
@@ -671,16 +673,12 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
             }
             notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${quantity}주, ${buyerOrder.price}원 구매주문이 체결되었습니다.`);
             const currentPrice = buyerOrder.price;
-            const lowPrice = Math.min(currentPrice, company.lowPrice);
-            const highPrice = Math.max(currentPrice, company.highPrice);
             await tx.company.update({
               where: {
                 companyId,
               },
               data: {
                 currentPrice,
-                lowPrice,
-                highPrice,
               },
             });
 
@@ -690,7 +688,6 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
           // console.log(`Execution time: ${endTime - startTime} ms`);
           // sendToClient(userId, notices);
           sendToAllClient(notices);
-          sendT;
           return '주문이 완료되었습니다.';
           //종결
         }
@@ -703,7 +700,8 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
     );
     //여기서 notices 배열을 이용하여 채팅창으로 사용자들에게 체결 내역 전달
   } catch (err) {
-    throw err;
+    console.log(err.stack);
+    sendToClient(userId, [`요청 실패: ${err.message}`]);
   }
 }
 

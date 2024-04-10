@@ -1,7 +1,8 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { parse } from 'cookie';
 import { prisma } from '../prisma/index.js';
-
+let wss;
+const clients = new Map();
 export function setupWebSocketServer2(server, sessionStore) {
   const wss = new WebSocketServer({ server });
 
@@ -16,7 +17,7 @@ export function setupWebSocketServer2(server, sessionStore) {
       return;
     }
 
-    console.log('session: ' + JSON.stringify(session, null, 2));
+    // console.log('session: ' + JSON.stringify(session, null, 2));
     const userId = session.passport?.user;
     if (!userId) {
       console.log('세션에서 사용자 ID를 찾을 수 없습니다.');

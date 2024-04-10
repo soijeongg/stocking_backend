@@ -1,5 +1,4 @@
-import { execution } from '../../utils/execution/index.js';
-
+import { insertOrderMessageQueue } from '../../utils/orderQueue/index.js';
 export class OrderController {
   constructor(orderService) {
     this.orderService = orderService;
@@ -71,8 +70,18 @@ export class OrderController {
       orderData.price = 10000 * Math.floor(+orderData.price / 10000);
     }
     try {
-      await execution(userId, companyId, null, type, quantity, orderData.price); // execution 함수 호출(시장가 주문일 경우 orderId는 null
-      return res.json({ message: '주문이 성공적으로 처리되었습니다.' });
+      const jsonOrderData = {
+        orderType: 'create',
+        userId: userId,
+        companyId: companyId,
+        orderId: null,
+        type: type,
+        quantity: quantity,
+        price: orderData.price,
+      };
+      const jsonOrderDataString = JSON.stringify(jsonOrderData);
+      insertOrderMessageQueue(jsonOrderDataString);
+      return res.json({ message: '주문이 접수 되었습니다.' });
     } catch (error) {
       console.log(error.stack);
       const { message } = error.message ? error : { message: '주문 생성 도중 문제가 발생했습니다.' };
@@ -125,8 +134,18 @@ export class OrderController {
       orderData.price = +orderData.price;
 
       // 정정 주문 실행
-      await execution(userId, companyId, orderId, type, quantity, correctedPrice); // execution 함수 호출
-      return res.json({ message: '주문이 성공적으로 처리되었습니다.' });
+      const jsonOrderData = {
+        orderType: 'update',
+        userId: userId,
+        companyId: companyId,
+        orderId: orderId,
+        type: type,
+        quantity: quantity,
+        price: correctedPrice,
+      };
+      const jsonOrderDataString = JSON.stringify(jsonOrderData);
+      insertOrderMessageQueue(jsonOrderDataString);
+      return res.json({ message: '주문이  접수되었습니다.' });
     } catch (error) {
       console.log(error.stack);
       const { message } = error.message ? error : { message: '주문 정정 도중 문제가 발생했습니다.' };
@@ -144,8 +163,18 @@ export class OrderController {
     try {
       const { userId } = res.locals.user;
       const orderId = parseInt(req.query.orderId);
-      const deleteOrder = await this.orderService.deleteOrder(userId, orderId);
-      return res.json({ deleteOrder });
+      const jsonOrderData = {
+        orderType: 'delete',
+        userId: userId,
+        companyId: null,
+        orderId: orderId,
+        type: null,
+        quantity: null,
+        price: null,
+      };
+      const jsonOrderDataString = JSON.stringify(jsonOrderData);
+      insertOrderMessageQueue(jsonOrderDataString);
+      return res.json({ message: '주문이  접수되었습니다.' });
     } catch (error) {
       console.log(error.stack);
       return res.status(400).json({ message: '주문 삭제 도중 문제가 발생했습니다.' });

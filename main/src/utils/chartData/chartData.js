@@ -2,8 +2,10 @@ import { WebSocketServer, WebSocket } from 'ws';
 import url from 'url';
 import { parse } from 'cookie';
 import { prisma } from '../prisma/index.js';
+let wss;
+const clients = new Map();
 function setupWebSocketServer(server, sessionStore) {
-  const wss = new WebSocketServer({ server });
+  wss = new WebSocketServer({ server });
 
   wss.on('connection', async function connection(ws, req) {
     // const requestUrl = new URL(req.url, 'ws://localhost:3000/ws/chartData/:companyId'); // 기본 URL을 제공해야 합니다.
@@ -17,11 +19,11 @@ function setupWebSocketServer(server, sessionStore) {
 
       const getCurrentPrice = async () => {
         let price = await prisma.Company.findFirst({
-          select: { currentPrice: true, initialPrice: true, highPrice: true, lowPrice: true },
+          select: { currentPrice: true, initialPrice: true },
           where: { companyId: +companyId },
         });
         ws.send(JSON.stringify(price));
-        console.log(`가격 정보 전송: ${JSON.stringify(price)}`);
+        // console.log(`가격 정보 전송: ${JSON.stringify(price)}`);
       };
       // 1초마다 가격 정보 전송
       const intervalId = setInterval(getCurrentPrice, 1000);
@@ -82,10 +84,8 @@ function setupWebSocketServer(server, sessionStore) {
         console.log('클라이언트와의 연결이 끊겼습니다.');
       });
     } else if (pathSegments[1] === 'ws' && pathSegments[2] === 'chatting') {
-      // const requestUrl = new URL(req.url, 'ws://localhost:3000/ws/chatting'); // 기본 URL을 제공해야 합니다.
       console.log('클라이언트가 연결되었습니다.');
-      const pathSegments = req.url.split('/');
-      const clients = new Map(); // 클라이언트 저장을 위한 Map
+
       const sessionCookie = req.headers.cookie;
       const session = await findSessionByCookie(sessionCookie, sessionStore);
       if (!session) {
@@ -94,7 +94,7 @@ function setupWebSocketServer(server, sessionStore) {
         return;
       }
 
-      console.log('session: ' + JSON.stringify(session, null, 2));
+      // console.log('session: ' + JSON.stringify(session, null, 2));
       const userId = session.passport?.user;
       if (!userId) {
         console.log('세션에서 사용자 ID를 찾을 수 없습니다.');
@@ -105,7 +105,7 @@ function setupWebSocketServer(server, sessionStore) {
       clients.set(userId, ws); // 사용자 ID를 키로 WebSocket 연결 저장
 
       const nickname = await getUserNickname(userId);
-      console.log('nickname: ', nickname);
+      // console.log('nickname: ', nickname);
 
       ws.on('message', function incoming(message) {
         const messageData = JSON.parse(message);
@@ -133,34 +133,55 @@ function setupWebSocketServer(server, sessionStore) {
         clients.delete(userId); // 연결이 종료되면 클라이언트 목록에서 제거
       });
     }
+  });
+}
 
-    // 세션 쿠키를 사용하여 세션 스토어에서 세션 정보를 조회하는 함수
-    async function findSessionByCookie(sessionCookie, sessionStore) {
-      if (!sessionCookie) return null;
+// 세션 쿠키를 사용하여 세션 스토어에서 세션 정보를 조회하는 함수
+async function findSessionByCookie(sessionCookie, sessionStore) {
+  if (!sessionCookie) return null;
 
-      // express-session은 기본적으로 세션 쿠키 이름으로 'connect.sid'를 사용 + 우리 쿠키 이름도
-      const sessionIdCookie = parse(sessionCookie)['connect.sid'];
-      if (!sessionIdCookie) return null;
+  // express-session은 기본적으로 세션 쿠키 이름으로 'connect.sid'를 사용 + 우리 쿠키 이름도
+  const sessionIdCookie = parse(sessionCookie)['connect.sid'];
+  if (!sessionIdCookie) return null;
 
-      // 세션 ID를 추출하기 위한 정규 표현식
-      const sid = sessionIdCookie.split(':')[1].split('.')[0];
-      if (!sid) return null;
+  // 세션 ID를 추출하기 위한 정규 표현식
+  const sid = sessionIdCookie.split(':')[1].split('.')[0];
+  if (!sid) return null;
 
-      return new Promise((resolve, reject) => {
-        sessionStore.get(sid, (err, session) => {
-          if (err) reject(err);
-          else resolve(session);
-        });
-      });
-    }
+  return new Promise((resolve, reject) => {
+    sessionStore.get(sid, (err, session) => {
+      if (err) reject(err);
+      else resolve(session);
+    });
+  });
+}
 
-    async function getUserNickname(userId) {
-      const user = await prisma.user.findUnique({
-        where: { userId: +userId },
-      });
-      return user?.nickname; // 'nickname'은 유저 모델의 닉네임 필드입니다.
+async function getUserNickname(userId) {
+  const user = await prisma.user.findUnique({
+    where: { userId: +userId },
+  });
+  return user?.nickname; // 'nickname'은 유저 모델의 닉네임 필드입니다.
+}
+
+// 프론트로 메시지를 보내기 위해 사용(sendNoticesToAllClients, sendNoticesToClient)
+
+// 모든 사용자에게 메시지 전달
+export function sendNoticesToAllClients(notices) {
+  wss.clients.forEach(function each(client) {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify({ type: 'notices', notices }));
     }
   });
+}
+
+// 개별 사용자에게 메시지 전달
+export function sendNoticesToClient(userId, notices) {
+  if (clients.has(userId)) {
+    const client = clients.get(userId);
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify({ type: 'notices', notices }));
+    }
+  }
 }
 
 export default setupWebSocketServer;

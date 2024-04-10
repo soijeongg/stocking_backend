@@ -1,0 +1,78 @@
+name: Deploy to EC2 with ECR
+#ECRd∂S
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # AWS에 로그인
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Check if S3 credentials are set
+        run: |
+          if [[ -z "${{ secrets.S3_ACCESS_KEY }}" ]] || [[ -z "${{ secrets.S3_SECRET_ACCESS_KEY }}" ]]; then
+            echo "S3 credentials are not set."
+            exit 1
+          else
+            echo "S3 credentials are set."
+          fi
+
+      # ECR에 로그인
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+        with:
+          mask-password: 'true'
+
+      # Docker 이미지 빌드 및 푸시
+      - name: Build, tag, and push image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: stocking
+          IMAGE_TAG: latest
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            --build-arg DATABASE_URL=${{ secrets.DATABASE_URL }} \
+            --build-arg PORT=${{ secrets.PORT }} \
+            --build-arg DATABASE_HOST=${{ secrets.DATABASE_HOST }} \
+            --build-arg DATABASE_PORT=${{ secrets.DATABASE_PORT }} \
+            --build-arg DATABASE_NAME=${{ secrets.DATABASE_NAME }} \
+            --build-arg DATABASE_USERNAME=${{ secrets.DATABASE_USERNAME }} \
+            --build-arg DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }} \
+            --build-arg JWT_SECRET=${{ secrets.JWT_SECRET }} \
+            --build-arg S3_ACCESS_KEY=${{ secrets.S3_ACCESS_KEY }} \
+            --build-arg S3_SECRET_ACCESS_KEY=${{ secrets.S3_SECRET_ACCESS_KEY }} .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      # SSH로 EC2 인스턴스에 접속하여 Docker 컨테이너 재시작
+      - name: SSH into EC2 instance and restart Docker container
+        uses: appleboy/ssh-action@master
+        with:
+          key: ${{ secrets.REMOTE_PRIVATE_KEY }}
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          port: 22
+          script: |
+            docker login -u AWS -p $(aws ecr get-login-password --region ${{ secrets.AWS_REGION }}) ${{ steps.login-ecr.outputs.registry }}
+            docker pull ${{ steps.login-ecr.outputs.registry }}/stocking:latest
+            sudo docker ps -a
+            sudo docker stop $(docker ps -a -q)
+            sudo docker ps -a
+            sudo docker rm $(docker ps -a -q)
+            sudo docker ps -a
+            sudo docker images
+            sudo docker run -d --name stocking -p 3000:3000 ${{ steps.login-ecr.outputs.registry }}/stocking:latest
+            sudo docker ps -a
+            sudo docker system prune -a -f
+            sudo docker images
