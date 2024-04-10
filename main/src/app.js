@@ -20,7 +20,7 @@ import { setupWebSocketServer2 } from './utils/chatting/chatting.js';
 import passport from 'passport';
 //import RedisStore from 'connect-redis';
 import { gameTotal } from './utils/schedule/gameTotal.js';
-
+import { gameSetting } from './utils/schedule/gameSetting.js';
 dotenv.config();
 
 const app = express();
@@ -103,10 +103,10 @@ app.use(passport.session());
 passportConfig(passport);
 
 app.use('/api', router);
-schedule.scheduleJob('*/12 * * * *', async function () {
-  await gameTotal();
-});
-
+// schedule.scheduleJob('*/12 * * * *', async function () {
+//   await gameTotal();
+// });
+await gameSetting();
 app.use(notFoundErrorHandler);
 app.use(generalErrorHandler);
 server.listen(PORT, () => {

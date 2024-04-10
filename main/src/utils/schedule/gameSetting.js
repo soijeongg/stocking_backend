@@ -11,4 +11,4 @@ async function gameSetting() {
   console.log('게임 설정이 완료되었습니다.');
 }
 
-gameSetting();
+export { gameSetting };
