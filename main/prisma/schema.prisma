@@ -51,8 +51,6 @@ model Company {
   name          String    @unique @map("name")
   currentPrice  Int       @default(0) @map("currentPrice")
   initialPrice  Int       @map("initialPrice")
-  highPrice     Int       @map("highPrice")
-  lowPrice      Int       @map("lowPrice")
   Stocks        Stock[]
   Orders        Order[]
   Concludeds    Concluded[]
