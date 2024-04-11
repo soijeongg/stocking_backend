@@ -101,7 +101,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
             if (type === 'buy') {
               user.tradableMoney += deleteOrder.price * deleteOrder.quantity;
             } else {
-              stock.tradableStock += deleteOrder.quantity;
+              stock.tradableQuantity += deleteOrder.quantity;
             }
             continue;
           }
@@ -158,7 +158,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
                     quantity: nowQuantity,
                   },
                 });
-                user.tradableMoney -= nowPrice * nowQuantity;
+                user.tradableMoney -= BigInt(nowPrice) * BigInt(nowQuantity);
               }
               if (user.tradableMoney < requireMoney) {
                 throw new Error('에약 가능한 금액이 부족합니다.');
@@ -179,7 +179,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
             if (totalQuantity[0]._sum.quantity < quantity) {
               throw new Error(`최대 ${totalQuantity[0]._sum.quantity}주까지만 판매할 수 있습니다.`);
             }
-            if (!stock || stock.tradableStock < quantity) {
+            if (!stock || stock.tradableQuantity < quantity) {
               throw new Error(`보유 주식이 부족합니다.`);
             }
             let priceOrders = {};
@@ -216,14 +216,14 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
                   quantity: nowQuantity,
                 },
               });
-              stock.tradableStock -= nowQuantity;
+              stock.tradableQuantity -= nowQuantity;
             }
           }
         }
         if (type === 'buy') {
-          messageQueue.push({ orderType: 'tradableStockUpdate', stockId: stock.stockId, tradableStock: stock.tradableStock });
-        } else {
           messageQueue.push({ orderType: 'tradableMoneyUpdate', userId: user.userId, tradableMoney: user.tradableMoney });
+        } else {
+          messageQueue.push({ orderType: 'tradableQuantityUpdate', stockId: stock.stockId, tradableQuantity: stock.tradableQuantity });
         }
         // 주문 매칭 파트
         const sellerOrders = await tx.order.findMany({
@@ -368,13 +368,13 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
                 tradableMoney: message.tradableMoney,
               },
             });
-          } else if (message.orderType === 'tradableStockUpdate') {
+          } else if (message.orderType === 'tradableQuantityUpdate') {
             await tx.stock.update({
               where: {
                 stockId: message.stockId,
               },
               data: {
-                tradableStock: message.tradableStock,
+                tradableQuantity: message.tradableQuantity,
               },
             });
           } else if (message.orderType === 'execution') {
