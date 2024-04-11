@@ -1,4 +1,4 @@
-name: Continuous Integration Workflow 
+name: Continuous Integration Workflow
 
 on:
   pull_request:
@@ -7,8 +7,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      working-directory: ./main
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node.js
@@ -17,5 +15,7 @@ jobs:
           node-version: 18
       - name: Install dependencies
         run: yarn install
+        working-directory: ./main
       - name: Lint
         run: yarn lint
+        working-directory: ./main
