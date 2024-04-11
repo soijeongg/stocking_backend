@@ -14,20 +14,35 @@ export class userRepository {
     return checkEmail;
   };
 
-  //들어온 이메일과 비밀번호 닉네임을 가지거 회원 가입을 해보자
   createUser = async (email, password, nickname, token) => {
-    let createdUser = await this.prisma.$transaction(async (tx) => {
-      let hashedPassword = await argon2.hash(password);
-      let user = await tx.User.create({
-        data: { email, password: hashedPassword, nickname, token },
-      });
-      const emailSent = await sendVerificationEmail(email, token);
-      if (!emailSent) {
-        throw new Error('이메일 전송에 실패했습니다 다시 시도해주세요');
+    let MAX_RETRIES = 5;
+    let retryCount = 0;
+
+    while (retryCount < MAX_RETRIES) {
+      try {
+        let createdUser = await this.prisma.$transaction(async (tx) => {
+          let hashedPassword = await argon2.hash(password);
+          let user = await tx.User.create({
+            data: { email, password: hashedPassword, nickname, token, isVerified: true, currentMoney: 10000000, initialSeed: 10000000 },
+          });
+          const emailSent = await sendVerificationEmail(email, token);
+          if (!emailSent) {
+            throw new Error('이메일 전송에 실패했습니다 다시 시도해주세요');
+          }
+          return user; // 이메일 전송 성공
+        });
+        return createdUser;
+      } catch (error) {
+        if (error.message.includes('Unable to start a transaction')) {
+          retryCount++;
+          console.log(`트랜잭션 시작 실패. 재시도 (${retryCount}/${MAX_RETRIES})`);
+          await new Promise((resolve) => setTimeout(resolve, 1000)); // 1초 대기 후 재시도
+        } else {
+          throw error; // 다른 예외는 다시 던짐
+        }
       }
-      return user; // 이메일 전송 시도
-    });
-    return createdUser;
+    }
+    throw new Error('트랜잭션 시작 실패');
   };
 
   //===================================개인의 모든 정보를 요청 한다 ================
