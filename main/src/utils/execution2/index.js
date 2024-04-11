@@ -18,6 +18,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
   if (orderId) orderId = +orderId;
   if (quantity) quantity = +quantity;
   if (price) price = +price;
+  // console.log(orderType, userId, companyId, orderId, type, quantity, price);
 
   let notices = [];
   //기본적으로 주문이 완료되면 [userId:Int, companyId:Int, type:sell or buy, quantity:Int,price:Int ,executed:true] 형태로  notices에 추가
@@ -127,14 +128,14 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
               requireMoney = price * quantity;
               priceOrders[price] = quantity;
             } else {
-              const selerOrders = await tx.order.findMany({
+              const sellerOrders = await tx.order.findMany({
                 where: {
                   companyId,
                   type: 'sell',
                 },
                 orderBy: [{ price: 'asc' }, { updatedAt: 'asc' }],
               });
-              for (const order of selerOrders) {
+              for (const order of sellerOrders) {
                 if (order.quantity >= quantity) {
                   requireMoney += order.price * quantity;
                   if (priceOrders[order.price]) priceOrders[order.price] += quantity;
