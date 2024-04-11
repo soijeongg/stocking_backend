@@ -42,7 +42,13 @@ jobs:
             --build-arg DATABASE_NAME=${{ secrets.DATABASE_NAME }} \
             --build-arg DATABASE_USERNAME=${{ secrets.DATABASE_USERNAME }} \
             --build-arg DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }} \
-            --build-arg JWT_SECRET=${{ secrets.JWT_SECRET }} .
+            --build-arg JWT_SECRET=${{ secrets.JWT_SECRET }} \
+            --build-arg GOOGLE_ID=${{ secrets.GOOGLE_ID }} \
+            --build-arg GOOGLE_SECRET=${{ secrets.GOOGLE_SECRET }} \
+            --build-arg KAKAO_ID=${{ secrets.KAKAO_ID }} \
+            --build-arg NAVER_ID=${{ secrets.NAVER_ID }} \
+            --build-arg NAVER_SECRET=${{ secrets.NAVER_SECRET }} \
+            --build-arg BACKEND_URL=${{ secrets.BACKEND_URL }} .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
       # SSH로 EC2 인스턴스에 접속하여 Docker 컨테이너 재시작
