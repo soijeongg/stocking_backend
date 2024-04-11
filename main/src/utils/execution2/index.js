@@ -51,7 +51,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
           }
         }
         const orderQueue = [];
-        if ((orderType = 'update')) {
+        if (orderType === 'update') {
           const Deletedata = {
             orderType: 'delete',
             userId,

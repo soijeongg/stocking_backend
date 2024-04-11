@@ -6,7 +6,7 @@ export class ConcludedRepository {
   filterData = async (userId, name, type, order) => {
     // `orderBy` 설정
     const orderBy = order === '오름차순' ? 'asc' : order === '내림차순' ? 'desc' : undefined;
-  
+
     // Prisma 쿼리 옵션 설정
     let queryOptions = {
       include: { Company: true },
@@ -17,10 +17,10 @@ export class ConcludedRepository {
     if (orderBy) {
       queryOptions.orderBy = { createdAt: orderBy };
     }
-  
+
     // 데이터베이스로부터 데이터를 조회
     let stocks = await this.prisma.concluded.findMany(queryOptions);
-  
+
     // 추가적인 필터링
     const filteredStocks = stocks.filter((item) => {
       const companyName = item.Company.name;
@@ -28,7 +28,7 @@ export class ConcludedRepository {
       if (type && item.type !== type) return false;
       return true;
     });
-  
+
     return filteredStocks;
   };
 }

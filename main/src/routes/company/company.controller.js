@@ -15,6 +15,7 @@ export class CompanyController {
     try {
       let { companyId } = req.body;
       let companyName = await this.CompanyService.getName(companyId);
+      if (companyName.message === '존재하지 않는 회사 입니다') return res.status(404).json(companyName);
       return res.status(200).json(companyName);
     } catch (err) {
       next(err);
