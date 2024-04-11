@@ -132,10 +132,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
                   companyId,
                   type: 'sell',
                 },
-                orderBy: {
-                  price: 'asc',
-                  updatedAt: 'asc',
-                },
+                orderBy: [{ price: 'asc' }, { updatedAt: 'asc' }],
               });
               for (const order of selerOrders) {
                 if (order.quantity >= quantity) {
@@ -194,10 +191,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
                   companyId,
                   type: 'buy',
                 },
-                orderBy: {
-                  price: 'desc',
-                  updatedAt: 'asc',
-                },
+                orderBy: [{ price: 'desc' }, { updatedAt: 'asc' }],
               });
               for (const order of buyerOrders) {
                 if (order.quantity >= quantity) {
@@ -237,20 +231,14 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
             companyId,
             type: 'sell',
           },
-          orderBy: {
-            price: 'asc',
-            updatedAt: 'asc',
-          },
+          orderBy: [{ price: 'asc' }, { updatedAt: 'asc' }],
         });
         const buyerOrders = await tx.order.findMany({
           where: {
             companyId,
             type: 'buy',
           },
-          orderBy: {
-            price: 'desc',
-            updatedAt: 'asc',
-          },
+          orderBy: [{ price: 'desc' }, { updatedAt: 'asc' }],
         });
         if (type === 'buy') {
           // 매수 주문의 경우
@@ -363,6 +351,12 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
         }
         // 주문 체결 결과 전송
         // messageQueue 배열을 queue처럼 사용하여 순차적으로 처리
+        const company = await tx.company.findUnique({
+          where: {
+            companyId,
+          },
+        });
+        let companyCurrentPrice = company.currentPrice;
         while (messageQueue.length > 0) {
           const message = messageQueue.shift();
           if (message.orderType === 'tradableMoneyUpdate') {
@@ -384,6 +378,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
               },
             });
           } else if (message.orderType === 'execution') {
+            companyCurrentPrice = message.price;
             if (message.order.type === 'buy') {
               if (message.executionType === 'complete') {
                 await tx.order.delete({
@@ -527,6 +522,16 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
               }
             }
           }
+        }
+        if (company.currentPrice !== companyCurrentPrice) {
+          await tx.company.update({
+            where: {
+              companyId: companyId,
+            },
+            data: {
+              currentPrice: companyCurrentPrice,
+            },
+          });
         }
       },
       {
