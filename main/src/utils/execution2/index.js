@@ -109,6 +109,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
           // 주문 생성 파트
           if (type === 'buy') {
             // 매수 주문 생성
+            const initialQuantity = quantity;
             const totalQuantity = await tx.order.groupBy({
               where: {
                 companyId: companyId,
@@ -122,10 +123,9 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
             if (totalQuantity[0]._sum.quantity < quantity) {
               throw new Error(`최대 ${totalQuantity[0]._sum.quantity}주까지만 구매할 수 있습니다.`);
             }
-            let requireMoney = 0;
             let priceOrders = {};
             if (price) {
-              requireMoney = price * quantity;
+              user.tradableMoney -= BigInt(price) * BigInt(quantity);
               priceOrders[price] = quantity;
             } else {
               const sellerOrders = await tx.order.findMany({
@@ -137,34 +137,35 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
               });
               for (const order of sellerOrders) {
                 if (order.quantity >= quantity) {
-                  requireMoney += order.price * quantity;
+                  user.tradableMoney -= BigInt(order.price) * BigInt(quantity);
                   if (priceOrders[order.price]) priceOrders[order.price] += quantity;
                   else priceOrders[order.price] = quantity;
                   break;
                 } else {
-                  requireMoney += order.price * order.quantity;
+                  user.tradableMoney -= BigInt(order.price) * BigInt(order.quantity);
                   if (priceOrders[order.price]) priceOrders[order.price] += order.quantity;
                   else priceOrders[order.price] = order.quantity;
                   quantity -= order.quantity;
                 }
               }
             }
-            //priceOrder 객체를 순회
-            for (const [nowPrice, nowQuantity] of Object.entries(priceOrders)) {
-              await tx.order.create({
-                data: {
-                  userId,
-                  companyId,
-                  type,
-                  price: +nowPrice,
-                  quantity: nowQuantity,
-                },
-              });
-              user.tradableMoney -= BigInt(nowPrice) * BigInt(nowQuantity);
-            }
-            if (user.tradableMoney < requireMoney) {
+            if (user.tradableMoney < 0) {
               throw new Error('에약 가능한 금액이 부족합니다.');
             }
+            //priceOrder 객체를 순회
+            let finalPrice = 0;
+            for (const [nowPrice, nowQuantity] of Object.entries(priceOrders)) {
+              finalPrice = Math.max(finalPrice, nowPrice);
+            }
+            await tx.order.create({
+              data: {
+                userId,
+                companyId,
+                type,
+                price: finalPrice,
+                quantity: initialQuantity,
+              },
+            });
           } else {
             // 매도 주문 생성
             const totalQuantity = await tx.order.groupBy({
