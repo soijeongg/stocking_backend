@@ -4,6 +4,8 @@ class Queue {
   constructor() {
     this.items = [];
     this.isProcessing = false; // 처리 중인지 상태를 나타내는 플래그
+    this.totalProcessingTime = 0; // 총 처리 시간
+    this.processedMessageCount = 0; // 처리된 메시지 수
   }
 
   enqueue(item) {
@@ -39,6 +41,10 @@ class Queue {
 
       const duration = endTime - startTime; // 처리 시간 계산
       console.log(`Message processing time: ${duration}ms`); // 처리 시간 로깅
+      this.totalProcessingTime += duration; // 총 처리 시간 업데이트
+      this.processedMessageCount++; // 처리된 메시지 수 업데이트
+      const averageProcessingTime = this.totalProcessingTime / this.processedMessageCount;
+      console.log(`Average message processing time: ${averageProcessingTime}ms`);
     }
 
     this.isProcessing = false; // 모든 항목 처리 완료
