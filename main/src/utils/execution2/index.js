@@ -18,6 +18,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
   if (orderId) orderId = +orderId;
   if (quantity) quantity = +quantity;
   if (price) price = +price;
+  const initialQuantity = quantity;
   // console.log(orderType, userId, companyId, orderId, type, quantity, price);
 
   let notices = [];
@@ -109,7 +110,6 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
           // 주문 생성 파트
           if (type === 'buy') {
             // 매수 주문 생성
-            const initialQuantity = quantity;
             const totalQuantity = await tx.order.groupBy({
               where: {
                 companyId: companyId,
@@ -186,6 +186,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
             }
             let priceOrders = {};
             if (price) {
+              stock.tradableQuantity -= quantity;
               priceOrders[price] = quantity;
             } else {
               const buyerOrders = await tx.order.findMany({
@@ -197,10 +198,12 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
               });
               for (const order of buyerOrders) {
                 if (order.quantity >= quantity) {
+                  stock.tradableQuantity -= quantity;
                   if (priceOrders[order.price]) priceOrders[order.price] += quantity;
                   else priceOrders[order.price] = quantity;
                   break;
                 } else {
+                  stock.tradableQuantity -= order.quantity;
                   if (priceOrders[order.price]) priceOrders[order.price] += order.quantity;
                   else priceOrders[order.price] = order.quantity;
                   quantity -= order.quantity;
@@ -208,18 +211,19 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
               }
             }
             //priceOrder 객체를 순회
+            let finalPrice = 2000000000;
             for (const [nowPrice, nowQuantity] of Object.entries(priceOrders)) {
-              await tx.order.create({
-                data: {
-                  userId,
-                  companyId,
-                  type,
-                  price: +nowPrice,
-                  quantity: nowQuantity,
-                },
-              });
-              stock.tradableQuantity -= nowQuantity;
+              finalPrice = Math.min(finalPrice, nowPrice);
             }
+            await tx.order.create({
+              data: {
+                userId,
+                companyId,
+                type,
+                price: finalPrice,
+                quantity: initialQuantity,
+              },
+            });
           }
         }
         if (type === 'buy') {
@@ -513,9 +517,6 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
                   },
                   data: {
                     quantity: {
-                      decrement: message.quantity,
-                    },
-                    tradableQuantity: {
                       decrement: message.quantity,
                     },
                     averagePrice: (stock.averagePrice * stock.quantity - message.price * message.quantity) / (stock.quantity - message.quantity),
