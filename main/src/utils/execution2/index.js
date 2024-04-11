@@ -148,22 +148,22 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
                   quantity -= order.quantity;
                 }
               }
-              //priceOrder 객체를 순회
-              for (const [nowPrice, nowQuantity] of Object.entries(priceOrders)) {
-                await tx.order.create({
-                  data: {
-                    userId,
-                    companyId,
-                    type,
-                    price: +nowPrice,
-                    quantity: nowQuantity,
-                  },
-                });
-                user.tradableMoney -= BigInt(nowPrice) * BigInt(nowQuantity);
-              }
-              if (user.tradableMoney < requireMoney) {
-                throw new Error('에약 가능한 금액이 부족합니다.');
-              }
+            }
+            //priceOrder 객체를 순회
+            for (const [nowPrice, nowQuantity] of Object.entries(priceOrders)) {
+              await tx.order.create({
+                data: {
+                  userId,
+                  companyId,
+                  type,
+                  price: +nowPrice,
+                  quantity: nowQuantity,
+                },
+              });
+              user.tradableMoney -= BigInt(nowPrice) * BigInt(nowQuantity);
+            }
+            if (user.tradableMoney < requireMoney) {
+              throw new Error('에약 가능한 금액이 부족합니다.');
             }
           } else {
             // 매도 주문 생성
