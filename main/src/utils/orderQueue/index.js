@@ -1,5 +1,4 @@
-import { prisma } from '../prisma/index.js';
-import { execution } from '../execution/index.js';
+import { execution } from '../execution2/index.js';
 class Queue {
   constructor() {
     this.items = [];
@@ -54,15 +53,7 @@ class Queue {
   async processMessage(message) {
     const jsonOrderData = JSON.parse(message);
     const { orderType, userId, companyId, orderId, type, quantity, price } = jsonOrderData;
-    if (orderType === 'delete') {
-      await prisma.order.delete({
-        where: {
-          orderId: orderId,
-        },
-      });
-    } else {
-      await execution(userId, companyId, orderId, type, quantity, price);
-    }
+    await execution(orderType, userId, companyId, orderId, type, quantity, price);
   }
 }
 
