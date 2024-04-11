@@ -388,11 +388,6 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
         sendToAllClient(notices);
         // 주문 체결 결과 전송
         // messageQueue 배열을 queue처럼 사용하여 순차적으로 처리
-        const company = await tx.company.findUnique({
-          where: {
-            companyId,
-          },
-        });
         let companyCurrentPrice = company.currentPrice;
         while (messageQueue.length > 0) {
           const message = messageQueue.shift();
