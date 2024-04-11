@@ -32,6 +32,7 @@ async function resetUserMoney() {
         },
         data: {
           currentMoney: BigInt(10000000),
+          tradableMoney: BigInt(10000000),
           initialSeed: BigInt(10000000),
           totalAsset: BigInt(10000000),
         },
@@ -57,6 +58,7 @@ async function createDummyUser() {
         password: hashedPassword,
         token: crypto.randomBytes(20).toString('hex'),
         currentMoney: BigInt(10000000000),
+        tradableMoney: BigInt(10000000000),
         initialSeed: BigInt(10000000000),
         totalAsset: BigInt(10000000000),
         isVerified: true,
@@ -137,6 +139,7 @@ async function createDummyOrderAndStock() {
             userId: +dummyUser.userId,
             companyId: +company.companyId,
             quantity: 1000000,
+            tradableQuantity: 1000000,
             averagePrice: currentPrice * 10000,
           },
         });
