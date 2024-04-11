@@ -439,23 +439,23 @@ getMostCheapestOrders = async (selectedCompanyId, orderedQuantity) => {
   return selectedOrders; //[{},{},{},...]형태
 };
 
-  //주문 정정 요청---------------------------------------------------------------------------------------------------------------------------------
-  updateOrderByOrderId = async (userId, orderId, orderData) => {
-    console.log('rep.update에 접근했습니다.');
-    return await this.prisma.order.update({
-      where: {
-        userId,
-        orderId,
-      },
-      data: orderData,
-    });
-  };
-  //주문 삭제 요청---------------------------------------------------------------------------------------------------------------------------------
-  deleteOrderByOrderId = async (userId, orderId) => {
-    return await this.prisma.order.delete({
-      where: {
-        userId,
-        orderId,
-      },
-    });
-  };
+//주문 정정 요청---------------------------------------------------------------------------------------------------------------------------------
+updateOrderByOrderId = async (userId, orderId, orderData) => {
+  console.log('rep.update에 접근했습니다.');
+  return await this.prisma.order.update({
+    where: {
+      userId,
+      orderId,
+    },
+    data: orderData,
+  });
+};
+//주문 삭제 요청---------------------------------------------------------------------------------------------------------------------------------
+deleteOrderByOrderId = async (userId, orderId) => {
+  return await this.prisma.order.delete({
+    where: {
+      userId,
+      orderId,
+    },
+  });
+};

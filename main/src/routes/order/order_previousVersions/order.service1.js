@@ -20,7 +20,6 @@ export class OrderService {
 
   // 매수 주문 체결
   async orderConcludeBuyingProcess(orderData, poppedArray, remainingQuantity) {
-    
     let transactionPromises = [];
 
     // ___________1. 매도자의 기록 처리___________
@@ -32,32 +31,31 @@ export class OrderService {
 
     // 보유 주식 감소 - 매도자
     transactionPromises.push(
-      this.orderRepository.getUserStockInfo(poppedArray.userId, poppedArray.companyId)
-        .then(stockIdObject => this.orderRepository.decreaseUserStockInfo(stockIdObject.stockId, remainingQuantity))
+      this.orderRepository.getUserStockInfo(poppedArray.userId, poppedArray.companyId).then((stockIdObject) => this.orderRepository.decreaseUserStockInfo(stockIdObject.stockId, remainingQuantity))
     );
     // ___________2. 매수자(클라이언트)의 기록 처리___________
     // 체결 기록 생성 - 매수자
     transactionPromises.push(this.orderRepository.createConcludedOrder(orderData.userId, orderData.companyId, orderData.type, poppedArray.price, remainingQuantity));
-    
+
     // 계좌 잔액 감소 - 매수자
     transactionPromises.push(this.orderRepository.decreaseUserCurrentMoney(orderData.userId, poppedArray.price * remainingQuantity));
-    
-    // 보유 주식 증가 - 매수자
-    this.orderRepository.getUserStockInfo(orderData.userId, orderData.companyId)
-  .then(isStock => {
-    if (isStock) {
-      const newAveragePrice = (isStock.averagePrice * isStock.quantity + poppedArray.price * remainingQuantity) / (isStock.quantity + remainingQuantity);
-      return this.orderRepository.increaseUserStockInfo_shareholder(isStock.stockId, newAveragePrice, remainingQuantity);
-    } else {
-      return this.orderRepository.increaseUserStockInfo_firstBuying(orderData.userId, orderData.companyId, poppedArray.price, remainingQuantity);
-    }
-  })
-  .then(promise => transactionPromises.push(promise));
 
+    // 보유 주식 증가 - 매수자
+    this.orderRepository
+      .getUserStockInfo(orderData.userId, orderData.companyId)
+      .then((isStock) => {
+        if (isStock) {
+          const newAveragePrice = (isStock.averagePrice * isStock.quantity + poppedArray.price * remainingQuantity) / (isStock.quantity + remainingQuantity);
+          return this.orderRepository.increaseUserStockInfo_shareholder(isStock.stockId, newAveragePrice, remainingQuantity);
+        } else {
+          return this.orderRepository.increaseUserStockInfo_firstBuying(orderData.userId, orderData.companyId, poppedArray.price, remainingQuantity);
+        }
+      })
+      .then((promise) => transactionPromises.push(promise));
 
     // 현재가 변경
     transactionPromises.push(this.orderRepository.changeCurrentPrice(orderData.companyId, poppedArray.price));
-    console.log("잘 마무리 되었습니다.");
+    console.log('잘 마무리 되었습니다.');
     await this.orderRepository.transaction(transactionPromises);
   }
 
@@ -79,18 +77,18 @@ export class OrderService {
     // 계좌 변동 - 매수자
     transactionPromises.push(this.orderRepository.decreaseUserCurrentMoney(poppedArray.userId, poppedArray.price * remainingQuantity));
     // 보유 주식 증가 - 매수자
-    this.orderRepository.getUserStockInfo(orderData.userId, orderData.companyId)
-  .then(isStock => {
-    if (isStock) {
-      const newAveragePrice = (isStock.averagePrice * isStock.quantity + poppedArray.price * remainingQuantity) / (isStock.quantity + remainingQuantity);
-      return this.orderRepository.increaseUserStockInfo_shareholder(isStock.stockId, newAveragePrice, remainingQuantity);
-    } else {
-      return this.orderRepository.increaseUserStockInfo_firstBuying(orderData.userId, orderData.companyId, poppedArray.price, remainingQuantity);
-    }
-  })
-  .then(promise => transactionPromises.push(promise));
+    this.orderRepository
+      .getUserStockInfo(orderData.userId, orderData.companyId)
+      .then((isStock) => {
+        if (isStock) {
+          const newAveragePrice = (isStock.averagePrice * isStock.quantity + poppedArray.price * remainingQuantity) / (isStock.quantity + remainingQuantity);
+          return this.orderRepository.increaseUserStockInfo_shareholder(isStock.stockId, newAveragePrice, remainingQuantity);
+        } else {
+          return this.orderRepository.increaseUserStockInfo_firstBuying(orderData.userId, orderData.companyId, poppedArray.price, remainingQuantity);
+        }
+      })
+      .then((promise) => transactionPromises.push(promise));
 
-    
     // 현재가 변경
     transactionPromises.push(this.orderRepository.changeCurrentPrice(orderData.companyId, poppedArray.price));
 

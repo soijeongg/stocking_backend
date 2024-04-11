@@ -23,8 +23,8 @@ export class CompanyService {
 
   getName = async (companyId) => {
     let getCompaniesName = await this.CompanyRepository.getCompanyName(companyId);
-    if(!getCompaniesName){
-      return resizeBy.status(404).json({message:"존재하지 않는 회사 입니다"})
+    if (!getCompaniesName) {
+      return resizeBy.status(404).json({ message: '존재하지 않는 회사 입니다' });
     }
     return getCompaniesName;
   };
