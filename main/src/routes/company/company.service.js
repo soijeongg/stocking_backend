@@ -1,5 +1,3 @@
-import { cur } from '../../utils/companyInfo/index.js';
-
 export class CompanyService {
   constructor(CompanyRepository) {
     this.CompanyRepository = CompanyRepository;
@@ -23,8 +21,8 @@ export class CompanyService {
 
   getName = async (companyId) => {
     let getCompaniesName = await this.CompanyRepository.getCompanyName(companyId);
-    if (!getCompaniesName) {
-      return resizeBy.status(404).json({ message: '존재하지 않는 회사 입니다' });
+    if (getCompaniesName.length === 0) {
+      return { message: '존재하지 않는 회사 입니다' };
     }
     return getCompaniesName;
   };
