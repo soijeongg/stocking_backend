@@ -58,6 +58,9 @@ jobs:
         run: |
           docker-compose build
           docker-compose push
+        
+      - name: Change to the directory with Docker Compose
+        run: cd ..
 
       # SSH로 EC2 인스턴스에 접속하여 Docker 컨테이너 재시작!
       - name: SSH into EC2 instance and restart Docker container
@@ -69,11 +72,12 @@ jobs:
           port: 22
           script: |
             docker login -u AWS -p $(aws ecr get-login-password --region ${{ secrets.AWS_REGION }}) ${{ steps.login-ecr.outputs.registry }}
+            find / -name "docker-compose.yml"
             sudo docker-compose pull
             sudo docker ps -a
             sudo docker-compose down
             sudo docker ps -a
-            sudo docker rm $(docker ps -a -q)
+            sudo docker rm $(docker ps -aq)
             sudo docker ps -a
             sudo docker images
             docker-compose up -d
