@@ -26,7 +26,7 @@ services:
         KAKAO_ID: $KAKAO_ID
         BACKEND_URL: $BACKEND_URL
         FRONTEND_URL: $FRONTEND_URL
-    image: ${ECR_REGISTRY}/stocking
+    image: ${ECR_REGISTRY}/stocking:latest
     environment:
       PORT: $PORT
       DATABASE_URL: $DATABASE_URL
