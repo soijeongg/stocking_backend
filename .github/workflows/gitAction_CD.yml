@@ -3,7 +3,7 @@ name: Deploy to EC2 with ECR
 on:
   push:
     branches:
-      - main
+      - separate
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -19,13 +19,12 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-
       # ECR에 로그인
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
         with:
-          mask-password: 'true'
+          mask-password: "true"
 
       # Docker 이미지 빌드 및 푸시
       - name: Build, tag, and push image to Amazon ECR
@@ -33,23 +32,32 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: stocking
           IMAGE_TAG: latest
+          PORT: 3000
+          DATABASE_URL: ${{ secrets.DATABASE_URL}}
+          DATABASE_HOST: ${{ secrets.DATABASE_HOST}}
+          DATABASE_PORT: ${{ secrets.DATABASE_PORT}}
+          DATABASE_NAME: ${{ secrets.DATABASE_NAME}}
+          DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME}}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD}}
+          JWT_SECRET: ${{ secrets.JWT_SECRET}}
+          GOOGLE_ID: ${{ secrets.GOOGLE_ID}}
+          GOOGLE_SECRET: ${{ secrets.GOOGLE_SECRET}}
+          USER: ${{ secrets.USER}}
+          PASS: ${{ secrets.PASS}}
+          FRONTEND_URL: ${{secrets.FRONTEND_URL}}
+          BACKEND_URL: ${{secrets.BACKEND_URL}}
+          NAVER_ID: ${{secrets.NAVER_ID}}
+          NAVER_SECRET: ${{secrets.NAVER_SECRET}}
+          KAKAO_ID: ${{secrets.KAKAO_ID}}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID}}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
+          AWS_REGION: ${{ secrets.AWS_REGION}}
+          REMOTE_PRIVATE_KEY: ${{ secrets.REMOTE_PRIVATE_KEY}}
+          EC2_HOST: ${{ secrets.EC2_HOST}}
+          EC2_USERNAME: ${{ secrets.EC2_USERNAME}}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
-            --build-arg DATABASE_URL=${{ secrets.DATABASE_URL }} \
-            --build-arg PORT=${{ secrets.PORT }} \
-            --build-arg DATABASE_HOST=${{ secrets.DATABASE_HOST }} \
-            --build-arg DATABASE_PORT=${{ secrets.DATABASE_PORT }} \
-            --build-arg DATABASE_NAME=${{ secrets.DATABASE_NAME }} \
-            --build-arg DATABASE_USERNAME=${{ secrets.DATABASE_USERNAME }} \
-            --build-arg DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }} \
-            --build-arg JWT_SECRET=${{ secrets.JWT_SECRET }} \
-            --build-arg GOOGLE_ID=${{ secrets.GOOGLE_ID }} \
-            --build-arg GOOGLE_SECRET=${{ secrets.GOOGLE_SECRET }} \
-            --build-arg KAKAO_ID=${{ secrets.KAKAO_ID }} \
-            --build-arg NAVER_ID=${{ secrets.NAVER_ID }} \
-            --build-arg NAVER_SECRET=${{ secrets.NAVER_SECRET }} \
-            --build-arg BACKEND_URL=${{ secrets.BACKEND_URL }} .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker-compose build
+          docker-compose push
 
       # SSH로 EC2 인스턴스에 접속하여 Docker 컨테이너 재시작
       - name: SSH into EC2 instance and restart Docker container
@@ -61,14 +69,14 @@ jobs:
           port: 22
           script: |
             docker login -u AWS -p $(aws ecr get-login-password --region ${{ secrets.AWS_REGION }}) ${{ steps.login-ecr.outputs.registry }}
-            docker pull ${{ steps.login-ecr.outputs.registry }}/stocking:latest
+            sudo docker-compose pull
             sudo docker ps -a
-            sudo docker stop $(docker ps -a -q)
+            sudo docker-compose down
             sudo docker ps -a
             sudo docker rm $(docker ps -a -q)
             sudo docker ps -a
             sudo docker images
-            sudo docker run -d --name stocking -p 3000:3000 ${{ steps.login-ecr.outputs.registry }}/stocking:latest
+            docker-compose up -d
             sudo docker ps -a
             sudo docker system prune -a -f
             sudo docker images
