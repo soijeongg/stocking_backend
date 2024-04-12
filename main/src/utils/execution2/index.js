@@ -120,8 +120,8 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
                 quantity: true,
               },
             });
-            if (totalQuantity[0]._sum.quantity < quantity) {
-              throw new Error(`최대 ${totalQuantity[0]._sum.quantity}주까지만 구매할 수 있습니다.`);
+            if (totalQuantity[0]._sum.quantity <= quantity) {
+              throw new Error(`최대 ${totalQuantity[0]._sum.quantity - 1}주까지만 구매할 수 있습니다.`);
             }
             let priceOrders = {};
             if (price) {
@@ -178,8 +178,8 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
                 quantity: true,
               },
             });
-            if (totalQuantity[0]._sum.quantity < quantity) {
-              throw new Error(`최대 ${totalQuantity[0]._sum.quantity}주까지만 판매할 수 있습니다.`);
+            if (totalQuantity[0]._sum.quantity <= quantity) {
+              throw new Error(`최대 ${totalQuantity[0]._sum.quantity - 1}주까지만 판매할 수 있습니다.`);
             }
             if (!stock || stock.tradableQuantity < quantity) {
               throw new Error(`보유 주식이 부족합니다.`);
