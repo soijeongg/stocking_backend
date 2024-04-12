@@ -4,6 +4,7 @@ FROM node:alpine
 WORKDIR /app
 
 # 외부 패키지 설치를 위해 package.json과 yarn.lock 파일 복사
+COPY ./docker-compose.yml .
 COPY main/package.json .
 COPY main/yarn.lock .
 
