@@ -1,7 +1,7 @@
 version: "3.8"
 services:
   stocking:
-    build: 
+    build:
       context: .
       args:
         PORT: $PORT
@@ -50,8 +50,6 @@ services:
       AWS_REGION: $AWS_REGION
       REMOTE_PRIVATE_KEY: $REMOTE_PRIVATE_KEY
       EC2_HOST: $EC2_HOST
-    ports:
-      - "3000:3000"
   node-exporter:
     image: prom/node-exporter
     ports:
