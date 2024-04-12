@@ -59,7 +59,7 @@ jobs:
           docker-compose build
           docker-compose push
 
-      # SSH로 EC2 인스턴스에 접속하여 Docker 컨테이너 재시작
+      # SSH로 EC2 인스턴스에 접속하여 Docker 컨테이너 재시작!
       - name: SSH into EC2 instance and restart Docker container
         uses: appleboy/ssh-action@master
         with:
