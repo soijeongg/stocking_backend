@@ -1,10 +1,12 @@
 import { prisma } from '../prisma/index.js';
 import { insertOrderMessageQueue } from '../orderQueue/index.js';
-import { sendNoticesToAllClients } from '../chartData/chartData.js';
+import { sendNoticeToSocketServer } from '../socketClient/socketClient.js';
 
-// 전체 유저에게 전송
+// 메세지를 전체 유저에게 전송할것이기 때문에 userId를 설정하지 않는다
 function sendToAllClient(notices) {
-  sendNoticesToAllClients(notices);
+  sendNoticeToSocketServer({
+    notices: [notices], // execution이랑 소켓서버도 엮여있어서 이거 수정하면 안됨.
+  });
 }
 
 function getRandomNumber(effectNum, effectProb) {
@@ -67,8 +69,9 @@ async function createDummyEvent() {
     };
     if (random < 0.2) {
       // 시장가 주문 생성
-      // console.log(event[0]);
-      sendToAllClient(`${company.name}, ${event[0]}`); // 아마 이부분은 수정이 필요할듯..?
+      console.log(event[0]);
+      console.log('시장가 주문 생성');
+      sendToAllClient(`${company.name}, ${event[0]}`);
       //15초 대기
       await new Promise((resolve) => setTimeout(resolve, 15000));
       if (quantity == 0) return;
@@ -87,7 +90,8 @@ async function createDummyEvent() {
       }
     } else if (random < 0.4) {
       // 지정가 주문 생성
-      // console.log(event[0]);
+      console.log(event[0]);
+      console.log('지정가 주문 생성');
       sendToAllClient(`${company.name}, ${event[0]}`);
       //15초 대기
       await new Promise((resolve) => setTimeout(resolve, 15000));
