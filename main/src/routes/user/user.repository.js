@@ -25,10 +25,12 @@ export class userRepository {
           let user = await tx.User.create({
             data: { email, password: hashedPassword, nickname, token, isVerified: true, currentMoney: 10000000, initialSeed: 10000000 },
           });
+          /*
           const emailSent = await sendVerificationEmail(email, token);
           if (!emailSent) {
             throw new Error('이메일 전송에 실패했습니다 다시 시도해주세요');
           }
+          */
           return user; // 이메일 전송 성공
         });
         return createdUser;

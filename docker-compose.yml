@@ -1,0 +1,24 @@
+version: "3"
+services:
+  stocking:
+    build: .
+    ports:
+      - "3000:3000"
+  node-exporter:
+    image: prom/node-exporter
+    ports:
+      - "9101:9100"
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - node-exporter
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3002:3001"
+    volumes:
+      - ./grafana.ini:/etc/grafana/grafana.ini

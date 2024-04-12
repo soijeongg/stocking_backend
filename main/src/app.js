@@ -12,6 +12,7 @@ import passportConfig from './utils/passportConfig/index.js';
 //import { createClient } from 'redis';
 import expressSession from 'express-session';
 import expressMySQLSession from 'express-mysql-session';
+import { register, Counter, Histogram } from 'prom-client';
 import mysql from 'mysql';
 import setupWebSocketServer from './utils/chartData/chartData.js';
 import { createServer } from 'http';
@@ -26,7 +27,7 @@ const app = express();
 const server = createServer(app);
 const PORT = process.env.PORT || 3000;
 
-app.use(LogMiddleware);
+//app.use(LogMiddleware);
 app.use(
   cors({
     origin: ['http://localhost:5000', 'https://www.stockingchallenge.site'], // 허용할 도메인 목록
@@ -47,6 +48,16 @@ const redisClient = createClient({
 await redisClient.connect();
 console.log('Redis 서버에 연결되었습니다.');
 */
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', register.contentType);
+    const metrics = await register.metrics();
+    res.send(metrics);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
 const MySQLStore = expressMySQLSession(expressSession); // express-session 미들웨어가 세션 정보를 메모리에 저장하는 대신, express-mysql-session을 사용해 MySQL 데이터베이스에 세션 정보를 저장
 const sessionStore = new MySQLStore({
   user: process.env.DATABASE_USERNAME,
@@ -87,7 +98,7 @@ app.use('/api', router);
 
 // 테스트 시에는 아래 코드를 사용합니다.
 await gameSetting();
-setInterval(createDummyEvent, 5000);
+//setInterval(createDummyEvent, 5000);
 
 app.use(notFoundErrorHandler);
 app.use(generalErrorHandler);
