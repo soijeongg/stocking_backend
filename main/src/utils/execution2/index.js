@@ -68,6 +68,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
             orderType: 'create',
             userId,
             companyId,
+            orderId,
             type,
             quantity,
             price,
@@ -78,6 +79,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
             orderType,
             userId,
             companyId,
+            orderId,
             type,
             quantity,
             price,
@@ -101,7 +103,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
               },
             });
             if (type === 'buy') {
-              user.tradableMoney += deleteOrder.price * deleteOrder.quantity;
+              user.tradableMoney += BigInt(deleteOrder.price) * BigInt(deleteOrder.quantity);
             } else {
               stock.tradableQuantity += deleteOrder.quantity;
             }

@@ -19,8 +19,8 @@ export class OrderRepository {
     const prismaContext = this.prisma;
     // 주문을 가져올 변수
     let stocks;
-    console.log('Repo 도착!');
-    console.log(userId, name, type, order, isSold);
+    // console.log('Repo 도착!');
+    // console.log(userId, name, type, order, isSold);
     if (order === '오름차순') {
       //1차필터링
       stocks = await prismaContext.order.findMany({
@@ -57,7 +57,7 @@ export class OrderRepository {
       });
     }
 
-    console.log('필터링 전 stock', stocks);
+    // console.log('필터링 전 stock', stocks);
     // 2차 필터링
     const filteredStocks = stocks.filter((item) => {
       const companyName = item.Company.name;
@@ -74,7 +74,7 @@ export class OrderRepository {
       return true;
     });
 
-    console.log('필터링 후 stocks', filteredStocks);
+    // console.log('필터링 후 stocks', filteredStocks);
     return filteredStocks;
   };
 
