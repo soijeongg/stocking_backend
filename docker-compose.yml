@@ -51,11 +51,17 @@ services:
       REMOTE_PRIVATE_KEY: $REMOTE_PRIVATE_KEY
       EC2_HOST: $EC2_HOST
   node-exporter:
-    image: prom/node-exporter
+    build:
+      context: .
+      dockerfile: Dockerfile.node-exporter
+    image: ${ECR_REGISTRY}/node-exporter:latest
     ports:
       - "9101:9100"
   prometheus:
-    image: prom/prometheus
+    build:
+      context: .
+      dockerfile: Dockerfile.prometheus
+    image: ${ECR_REGISTRY}/prometheus:latest
     ports:
       - "9091:9090"
     volumes:
@@ -63,7 +69,10 @@ services:
     depends_on:
       - node-exporter
   grafana:
-    image: grafana/grafana
+    build:
+      context: .
+      dockerfile: Dockerfile.grafana
+    image: ${ECR_REGISTRY}/grafana:latest
     ports:
       - "3001:3001"
     volumes:

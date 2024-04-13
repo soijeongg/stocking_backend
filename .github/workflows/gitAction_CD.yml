@@ -56,15 +56,6 @@ jobs:
           EC2_HOST: ${{ secrets.EC2_HOST}}
           EC2_USERNAME: ${{ secrets.EC2_USERNAME}}
         run: |
-          docker pull prom/node-exporter
-          docker tag prom/node-exporter ${{ steps.login-ecr.outputs.registry }}/node-exporter:latest
-          docker push ${{ steps.login-ecr.outputs.registry }}/node-exporter:latest
-          docker pull prom/prometheus
-          docker tag prom/prometheus  ${{ steps.login-ecr.outputs.registry }}/prometheus:latest
-          docker push ${{ steps.login-ecr.outputs.registry }}/prometheus:latest
-          docker pull grafana/grafana
-          docker tag grafana/grafana  ${{ steps.login-ecr.outputs.registry }}/grafana:latest
-          docker push ${{ steps.login-ecr.outputs.registry }}/grafana:latest
           docker-compose build
           docker-compose push
 
