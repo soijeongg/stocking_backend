@@ -28,7 +28,8 @@ jobs:
 
       # Docker 이미지 빌드 및 푸시
       - name: Build, tag, and push image to Amazon ECR
-
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           docker-compose build
           docker-compose push
