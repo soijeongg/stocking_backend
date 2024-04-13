@@ -80,6 +80,5 @@ setInterval(createDummyEvent, 5000);
 app.use(notFoundErrorHandler);
 app.use(generalErrorHandler);
 server.listen(PORT, () => {
-  console.log('서버가 열렸어요!');
   console.log(PORT, '포트로 서버가 열렸어요!');
 });
