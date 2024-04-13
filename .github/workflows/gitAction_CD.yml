@@ -56,6 +56,15 @@ jobs:
           EC2_HOST: ${{ secrets.EC2_HOST}}
           EC2_USERNAME: ${{ secrets.EC2_USERNAME}}
         run: |
+          docer pull prom/node-exporter
+          docker tag prom/node-exporter ${{ steps.login-ecr.outputs.registry }}/node-exporter:latest
+          docker push ${{ steps.login-ecr.outputs.registry }}/node-exporter:latest
+          docker pull prom/prometheus
+          docker tag prom/prometheus  ${{ steps.login-ecr.outputs.registry }}/prometheus:latest
+          docker push ${{ steps.login-ecr.outputs.registry }}/prometheus:latest
+          docker pull grafana/grafana'
+          docker tag grafana/grafana  ${{ steps.login-ecr.outputs.registry }}/grafana:latest
+          docker push ${{ steps.login-ecr.outputs.registry }}/grafana:latest
           docker-compose build
           docker-compose push
 
@@ -70,11 +79,17 @@ jobs:
           script: |
             docker login -u AWS -p $(aws ecr get-login-password --region ${{ secrets.AWS_REGION }}) ${{ steps.login-ecr.outputs.registry }}
             docker pull ${{ steps.login-ecr.outputs.registry }}/stocking:latest
+            docker pull ${{ steps.login-ecr.outputs.registry }}/prometheus:latest
+            docker pull ${{ steps.login-ecr.outputs.registry }}/grafana:latest
+            docker pull ${{ steps.login-ecr.outputs.registry }}/node-exporter:latest
             sudo docker ps -a
             sudo docker stop $(docker ps -a -q)
             sudo docker ps -a
             sudo docker rm $(docker ps -aq)
             sudo docker ps -a
-            sudo docker run -d  ${{ steps.login-ecr.outputs.registry }}/stocking:latest
+            sudo docker run -d -p 3000:3000 ${{ steps.login-ecr.outputs.registry }}/stocking:latest
+            sudo docker run -d -p 9101:9100 ${{ steps.login-ecr.outputs.registry }}/node-exporter:latest
+            sudo docker run -d -p 9091:9090 ${{ steps.login-ecr.outputs.registry }}/prometheus:latest
+            sudo docker run -d -p 3002:3001 ${{ steps.login-ecr.outputs.registry }}/grafana:latest
             sudo docker ps -a
             sudo docker system prune -a -f
