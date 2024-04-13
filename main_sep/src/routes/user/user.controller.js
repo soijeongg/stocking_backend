@@ -106,6 +106,7 @@ export class userController {
     let { userId } = res.locals.user;
     let getOne = await this.userService.selectUserInfo(userId);
     const processedUsers = getOne.map((user) => ({
+      userId: user.userId,
       nickname: user.nickname,
       currentMoney: user.currentMoney.toString(),
       totalAsset: user.totalAsset.toString(),
