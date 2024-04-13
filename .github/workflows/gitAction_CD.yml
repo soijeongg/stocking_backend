@@ -56,7 +56,7 @@ jobs:
           EC2_HOST: ${{ secrets.EC2_HOST}}
           EC2_USERNAME: ${{ secrets.EC2_USERNAME}}
         run: |
-          docer pull prom/node-exporter
+          docker pull prom/node-exporter
           docker tag prom/node-exporter ${{ steps.login-ecr.outputs.registry }}/node-exporter:latest
           docker push ${{ steps.login-ecr.outputs.registry }}/node-exporter:latest
           docker pull prom/prometheus
