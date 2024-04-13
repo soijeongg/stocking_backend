@@ -48,7 +48,10 @@ jobs:
             --build-arg KAKAO_ID=${{ secrets.KAKAO_ID }} \
             --build-arg NAVER_ID=${{ secrets.NAVER_ID }} \
             --build-arg NAVER_SECRET=${{ secrets.NAVER_SECRET }} \
-            --build-arg BACKEND_URL=${{ secrets.BACKEND_URL }} .
+            --build-arg BACKEND_URL=${{ secrets.BACKEND_URL }} \
+            --build-arg REDIS_HOST=${{ secrets.REDIS_HOST }} \
+            --build-arg REDIS_PORT=${{ secrets.REDIS_PORT }} \
+            --build-arg REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }} .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
       # SSH로 EC2 인스턴스에 접속하여 Docker 컨테이너 재시작
