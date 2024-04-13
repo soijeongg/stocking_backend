@@ -65,6 +65,6 @@ services:
   grafana:
     image: grafana/grafana
     ports:
-      - "3002:3001"
+      - "3001:3001"
     volumes:
       - ./grafana.ini:/etc/grafana/grafana.ini
