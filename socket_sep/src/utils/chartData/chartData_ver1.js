@@ -9,14 +9,26 @@ function setupWebSocketServer(server) {
   wss = new WebSocketServer({ server });
 
   wss.on('connection', (ws, req) => {
-    // 1. 메인서버로부터 체결 데이터 수신
     // 프론트엔드 클라이언트 식별을 위해 userId와 WebSocket 인스턴스를 맵핑
     const requestUrl = new url.URL(req.url, `ws://${req.headers.host}`);
     const userId = parseInt(requestUrl.pathname.split('/')[3]);
-
     console.log('requestUrl:', requestUrl.pathname);
     console.log('userId타입:', typeof userId);
     console.log('Client connected. Connected URL:', req.url, 'UserId:', userId);
+
+    if (userId) {
+      clients.set(userId, ws); // userId와 WebSocket 연결 객체 맵핑
+    }
+    // URL에서 경로와 companyId 분석
+    const path = req.url.split('/')[2];
+    const companyId = parseInt(req.url.split('/')[3], 10);
+    // 프론트엔드 클라이언트로부터의 요청 처리
+    if (path === 'chartData') {
+      console.log('차트데이터를 보내야합니다.윗부분');
+      fetchAndSendChartData(companyId, ws);
+    } else if (path === 'orderData') {
+      fetchAndSendOrderData(companyId, ws);
+    }
 
     // 메시지 수신 시 처리
     ws.on('message', async function incoming(message) {
@@ -32,9 +44,10 @@ function setupWebSocketServer(server) {
           targetWs.send(JSON.stringify({ type: 'notices', notices: data.notices }));
 
           // 해당 userId에 연결된 companyId를 찾아 호가창 데이터를 갱신하고 전송
-          console.log(data);
           const companyId = parseInt(data.companyId);
           console.log('체결된 주문의 companyId:', companyId);
+          await fetchAndSendOrderData(companyId, targetWs);
+          await fetchAndSendChartData(companyId, targetWs);
         } else {
           console.log(`클라이언트에 연결된 유저가 아닙니다.`);
         }
@@ -48,59 +61,28 @@ function setupWebSocketServer(server) {
         });
       }
     });
-    //---------------------------------------------------------------------------------
 
-    // 2. 클라이언트에 차트데이터와 호가 데이터 전송
-    // URL에서 경로와 companyId 분석
-    const path = req.url.split('/')[2];
-    const companyId = parseInt(req.url.split('/')[3], 10);
-
-    if (userId) {
-      clients.set(userId, ws); // userId와 WebSocket 연결 객체 맵핑
-    }
-    // 프론트엔드 클라이언트로부터의 요청 처리
-    if (path === 'chartData') {
-      // 1초마다 차트 데이터 전송
-      const chartDataInterval = setInterval(async () => {
-        const chartData = await fetchAndSendChartData(companyId);
-        console.log('차트 데이터를 보냅니다:', chartData.currentPrice, chartData.initialPrice);
-        ws.send(JSON.stringify({ type: 'chartData', data: chartData }));
-      }, 1000);
-
-      ws.on('close', () => {
-        clearInterval(chartDataInterval);
-        console.log('차트 데이터 연결 종료:', companyId);
-      });
-    } else if (path === 'orderData') {
-      console.log('호가 데이터를 보내야합니다:', companyId);
-
-      // 1초마다 호가 데이터 전송
-      const orderDataInterval = setInterval(async () => {
-        const orderData = await fetchAndSendOrderData(companyId);
-
-        console.log('호가 데이터를 보냅니다:', orderData.groupedOrders, '\n현재가:', orderData.currentPrice);
-        ws.send(JSON.stringify({ type: 'orderData', data: orderData }));
-      }, 1000);
-
-      ws.on('close', () => {
-        clearInterval(orderDataInterval);
-        console.log('호가 데이터 연결 종료:', companyId);
-      });
-    }
+    ws.on('close', () => {
+      console.log('Client disconnected');
+      if (userId) {
+        clients.delete(userId);
+      }
+    });
   });
 }
 
-// 차트 데이터 조회 로직
-async function fetchAndSendChartData(companyId) {
+// 차트 데이터 조회
+async function fetchAndSendChartData(companyId, ws) {
   const price = await prisma.company.findFirst({
     select: { currentPrice: true, initialPrice: true },
-    where: { companyId: companyId },
+    where: { companyId: +companyId },
   });
-  return price;
+  console.log('차트데이터를 보냅니다:', price);
+  ws.send(JSON.stringify({ type: 'chartData', data: price }));
 }
 
 // 호가 데이터 조회
-async function fetchAndSendOrderData(companyId) {
+async function fetchAndSendOrderData(companyId, ws) {
   let priceResult = await prisma.company.findFirst({
     select: { currentPrice: true },
     where: { companyId: +companyId },
@@ -138,10 +120,11 @@ async function fetchAndSendOrderData(companyId) {
     });
 
     // 결과 전송
-    return { groupedOrders, currentPrice };
+    console.log('호가 데이터를 보냅니다:', groupedOrders, currentPrice);
+    ws.send(JSON.stringify({ type: 'orderData', data: { groupedOrders, currentPrice } }));
   } else {
-    console.log('에러가 발생해 호가 데이터를 보내지 못했습니다.');
-    return { groupedOrders: [], currentPrice: null };
+    console.log('Company not found or currentPrice is undefined');
+    ws.send(JSON.stringify({ type: 'orderData', data: { groupedOrders: [], currentPrice: null } })); // 오류 메시지 또는 빈 데이터 전송
   }
 }
 
