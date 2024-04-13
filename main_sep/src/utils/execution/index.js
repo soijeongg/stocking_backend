@@ -1,16 +1,14 @@
 import { prisma } from '../prisma/index.js';
 import { Prisma } from '@prisma/client';
-import { sendNoticeToSocketServer } from '../socketClient/socketClient.js';
+import { sendNoticesToClient, sendNoticesToAllClients } from '../chartData/chartData.js';
 
-// 주문 체결 관련 메시지를 개별 유저에게 전송하기 때문에 userId를 설정
-async function sendOrderNoticesToSocketServer(notices) {
-  for (const notice of notices) {
-    sendNoticeToSocketServer({
-      userId: notice.userId,
-      companyId: notice.companyId,
-      notices: [notice.message],
-    });
-  }
+// 전체 유저에게 전송
+function sendToAllClient(notices) {
+  sendNoticesToAllClients(notices);
+}
+// 개별 유저에게 전송
+function sendToClient(userId, notices) {
+  sendNoticesToClient(userId, notices);
 }
 
 async function execution(userId, companyId, orderId, type, quantity, price) {
@@ -123,12 +121,6 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                   orderId: sellerOrder.orderId,
                 },
               });
-              notices.push({
-                userId: seller.userId,
-                companyId: companyId,
-                message: `${seller.nickname}님의 ${company.name} 종목에 대한 ${sellerOrder.quantity}주, ${sellerOrder.price}원 판매주문이 체결되지 않았습니다.`,
-              });
-
               continue;
             }
             const buyerStock = await tx.stock.findFirst({
@@ -185,11 +177,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                   },
                 });
               }
-              notices.push({
-                userId: seller.userId,
-                companyId: companyId,
-                message: `${seller.nickname}님의 ${company.name} 종목에 대한 ${sellerOrder.quantity}주, ${sellerOrder.price}원 판매주문이 체결되었습니다.`,
-              });
+              notices.push(`${seller.nickname}님의 ${company.name} 종목에 대한 ${sellerOrder.quantity}주, ${sellerOrder.price}원 판매주문이 체결되었습니다.`);
               //주식 구매 처리
               await tx.order.update({
                 where: {
@@ -238,11 +226,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                 });
               }
               quantity -= sellerOrder.quantity;
-              notices.push({
-                userId: buyer.userId,
-                companyId: companyId,
-                message: `${buyer.nickname}님의 ${company.name} 종목에 대한 ${sellerOrder.quantity}주, ${sellerOrder.price}원 구매주문이 체결되었습니다.`,
-              });
+              notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${sellerOrder.quantity}주, ${sellerOrder.price}원 구매주문이 체결되었습니다.`);
               continue;
             }
             //판매주문량이 구매주문량보다 많거나 같을 때
@@ -289,11 +273,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                 },
               });
             }
-            notices.push({
-              userId: buyer.userId,
-              companyId: companyId,
-              message: `${buyer.nickname}님의 ${company.name} 종목에 대한 ${quantity}주, ${sellerOrder.price}원 구매주문이 체결되었습니다.`,
-            });
+            notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${quantity}주, ${sellerOrder.price}원 구매주문이 체결되었습니다.`);
             // 주식 판매 처리
             if (sellerOrder.quantity === quantity) {
               await tx.order.delete({
@@ -352,12 +332,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                 },
               });
             }
-            notices.push({
-              userId: seller.userId,
-              companyId: companyId,
-              message: `${seller.nickname}님의 ${company.name} 종목에 대한 ${quantity}주, ${sellerOrder.price}원 판매주문이 체결되었습니다.`,
-            });
-            console.log(`${seller.nickname}님의 ${company.name} 종목에 대한 ${quantity}주, ${sellerOrder.price}원 판매주문이 체결되었습니다.`);
+            notices.push(`${seller.nickname}님의 ${company.name} 종목에 대한 ${quantity}주, ${sellerOrder.price}원 판매주문이 체결되었습니다.`);
             const currentPrice = sellerOrder.price;
             await tx.company.update({
               where: {
@@ -380,8 +355,10 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
           // let endTime = performance.now();
           // console.log(`Execution time: ${endTime - startTime} ms`);
           // console.log('notices', notices);
-          // sendToClient(userId, notices);)
-          sendOrderNoticesToSocketServer(notices);
+          // sendToClient(userId, notices);
+          if (notices.length > 0) {
+            sendToAllClient(notices);
+          }
           return '요청한 주문이 완료되었습니다.';
           //종결
         } else {
@@ -473,11 +450,6 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                   orderId: buyerOrder.orderId,
                 },
               });
-              notices.push({
-                userId: buyer.userId,
-                companyId: companyId,
-                message: `${buyer.nickname}님의 ${company.name} 종목에 대한 ${buyerOrder.quantity}주, ${buyerOrder.price}원 구매주문이 체결되지 않았습니다.`,
-              });
               continue;
             }
             const buyerStock = await tx.stock.findFirst({
@@ -543,11 +515,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                   },
                 });
               }
-              notices.push({
-                userId: seller.userId,
-                companyId: companyId,
-                message: `${seller.nickname}님의 ${company.name} 종목에 대한 ${buyerOrder.quantity}주, ${buyerOrder.price}원 구매주문이 체결되었습니다.`,
-              });
+              notices.push(`${seller.nickname}님의 ${company.name} 종목에 대한 ${buyerOrder.quantity}주, ${buyerOrder.price}원 구매주문이 체결되었습니다.`);
               //주식 판매 처리
               await tx.order.update({
                 where: {
@@ -590,11 +558,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                   averagePrice: (sellerStock.averagePrice * sellerStock.quantity - buyerOrder.price * buyerOrder.quantity) / (sellerStock.quantity - buyerOrder.quantity),
                 },
               });
-              notices.push({
-                userId: buyer.userId,
-                companyId: companyId,
-                message: `${buyer.nickname}님의 ${company.name} 종목에 대한 ${buyerOrder.quantity}주, ${buyerOrder.price}원 판매주문이 체결되었습니다.`,
-              });
+              notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${buyerOrder.quantity}주, ${buyerOrder.price}원 판매주문이 체결되었습니다.`);
               quantity -= buyerOrder.quantity;
               continue;
             }
@@ -645,11 +609,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                 },
               });
             }
-            notices.push({
-              userId: seller.userId,
-              companyId: companyId,
-              message: `${seller.nickname}님의 ${company.name} 종목에 대한 ${quantity}주, ${buyerOrder.price}원 판매주문이 체결되었습니다.`,
-            });
+            notices.push(`${seller.nickname}님의 ${company.name} 종목에 대한 ${quantity}주, ${buyerOrder.price}원 판매주문이 체결되었습니다.`);
             // 주식 구매 처리
             if (buyerOrder.quantity === quantity) {
               await tx.order.delete({
@@ -711,12 +671,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                 },
               });
             }
-            notices.push({
-              userId: buyer.userId,
-              companyId: companyId,
-              message: `${buyer.nickname}님의 ${company.name} 종목에 대한 ${quantity}주, ${buyerOrder.price}원 구매주문이 체결되었습니다.`,
-            });
-
+            notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${quantity}주, ${buyerOrder.price}원 구매주문이 체결되었습니다.`);
             const currentPrice = buyerOrder.price;
             await tx.company.update({
               where: {
@@ -726,13 +681,15 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                 currentPrice,
               },
             });
-            sendOrderNoticesToSocketServer(notices);
 
             break;
           }
           // let endTime = performance.now();
           // console.log(`Execution time: ${endTime - startTime} ms`);
           // sendToClient(userId, notices);
+          if (notices.length > 0) {
+            sendToAllClient(notices);
+          }
           return '주문이 완료되었습니다.';
           //종결
         }
@@ -746,6 +703,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
     //여기서 notices 배열을 이용하여 채팅창으로 사용자들에게 체결 내역 전달
   } catch (err) {
     console.log(err.stack);
+    sendToClient(userId, [`요청 실패: ${err.message}`]);
   }
 }
 
