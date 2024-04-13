@@ -62,7 +62,7 @@ jobs:
           docker pull prom/prometheus
           docker tag prom/prometheus  ${{ steps.login-ecr.outputs.registry }}/prometheus:latest
           docker push ${{ steps.login-ecr.outputs.registry }}/prometheus:latest
-          docker pull grafana/grafana'
+          docker pull grafana/grafana
           docker tag grafana/grafana  ${{ steps.login-ecr.outputs.registry }}/grafana:latest
           docker push ${{ steps.login-ecr.outputs.registry }}/grafana:latest
           docker-compose build
