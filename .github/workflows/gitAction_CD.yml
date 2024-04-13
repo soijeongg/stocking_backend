@@ -11,33 +11,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Verify Secrets
-        run: |
-          echo "AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}"
-          echo "AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}"
-          echo "AWS_REGION: ${{ secrets.AWS_REGION }}"
-          echo "DATABASE_URL: ${{ secrets.DATABASE_URL }}"
-          echo "PORT: ${{ secrets.PORT }}"
-          echo "DATABASE_HOST: ${{ secrets.DATABASE_HOST }}"
-          echo "DATABASE_PORT: ${{ secrets.DATABASE_PORT }}"
-          echo "DATABASE_NAME: ${{ secrets.DATABASE_NAME }}"
-          echo "DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}"
-          echo "DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}"
-          echo "JWT_SECRET: ${{ secrets.JWT_SECRET }}"
-          echo "GOOGLE_ID: ${{ secrets.GOOGLE_ID }}"
-          echo "GOOGLE_SECRET: ${{ secrets.GOOGLE_SECRET }}"
-          echo "KAKAO_ID: ${{ secrets.KAKAO_ID }}"
-          echo "NAVER_ID: ${{ secrets.NAVER_ID }}"
-          echo "NAVER_SECRET: ${{ secrets.NAVER_SECRET }}"
-          echo "BACKEND_URL: ${{ secrets.BACKEND_URL }}"
-          echo "REDIS_HOST: ${{ secrets.REDIS_HOST }}"
-          echo "REDIS_PORT: ${{ secrets.REDIS_PORT }}"
-          echo "REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}"
-          echo "REMOTE_PRIVATE_KEY: ${{ secrets.REMOTE_PRIVATE_KEY }}"
-          echo "EC2_HOST: ${{ secrets.EC2_HOST }}"
-          echo "EC2_USERNAME: ${{ secrets.EC2_USERNAME }}"
-       
-
       # AWS에 로그인
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -76,6 +49,9 @@ jobs:
             --build-arg NAVER_ID=${{ secrets.NAVER_ID }} \
             --build-arg NAVER_SECRET=${{ secrets.NAVER_SECRET }} \
             --build-arg BACKEND_URL=${{ secrets.BACKEND_URL }} \
+            --build-arg FRONTEND_URL=${{ secrets.FRONTEND_URL }} \
+            --build-arg USER=${{ secrets.USER }} \
+            --build-arg PASS=${{ secrets.PASS }} \
             --build-arg REDIS_HOST=${{ secrets.REDIS_HOST }} \
             --build-arg REDIS_PORT=${{ secrets.REDIS_PORT }} \
             --build-arg REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }} .
