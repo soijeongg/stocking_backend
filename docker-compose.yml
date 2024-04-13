@@ -55,6 +55,7 @@ services:
       context: .
       dockerfile: Dockerfile.node-exporter
     image: ${ECR_REGISTRY}/node-exporter:latest
+    container_name: node-exporter
     ports:
       - "9101:9100"
   prometheus:
