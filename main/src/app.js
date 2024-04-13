@@ -16,7 +16,7 @@ import generalErrorHandler from './middlewares/generalError.middleware.js';
 import router from './routes/index.js';
 import { gameTotal } from './utils/schedule/gameTotal.js';
 import { gameSetting } from './utils/schedule/gameSetting.js';
-import { createDummyEvent } from './utils/schedule/gameMiddle.js'
+import { createDummyEvent } from './utils/schedule/gameMiddle.js';
 
 dotenv.config();
 
@@ -35,7 +35,7 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
-
+console.log(process.env.REDIS_HOST, process.env.REDIS_PORT, process.env.REDIS_PASSWORD);
 const redisClient = createClient({
   url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
   password: `${process.env.REDIS_PASSWORD}`,
@@ -59,7 +59,7 @@ const sessionMiddleware = session({
 
 app.use(sessionMiddleware);
 // Passport 초기화 및 세션 사용
-setupWebSocketServer(server, sessionStore); 
+setupWebSocketServer(server, sessionStore);
 
 app.get('/', (req, res) => {
   res.send('<h1>Stocking</h1>');
