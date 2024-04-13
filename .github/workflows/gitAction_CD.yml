@@ -13,29 +13,30 @@ jobs:
 
       - name: Verify Secrets
         run: |
-          echo ${{ secrets.AWS_ACCESS_KEY_ID }}
-          echo ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          echo ${{ secrets.AWS_REGION }}
-          echo ${{ secrets.DATABASE_URL }}
-          echo ${{ secrets.PORT }}
-          echo ${{ secrets.DATABASE_HOST }}
-          echo ${{ secrets.DATABASE_PORT }}
-          echo ${{ secrets.DATABASE_NAME }}
-          echo ${{ secrets.DATABASE_USERNAME }}
-          echo ${{ secrets.DATABASE_PASSWORD }}
-          echo ${{ secrets.JWT_SECRET }}
-          echo ${{ secrets.GOOGLE_ID }}
-          echo ${{ secrets.GOOGLE_SECRET }}
-          echo ${{ secrets.KAKAO_ID }}
-          echo ${{ secrets.NAVER_ID }}
-          echo ${{ secrets.NAVER_SECRET }}
-          echo ${{ secrets.BACKEND_URL }}
-          echo ${{ secrets.REDIS_HOST }}
-          echo ${{ secrets.REDIS_PORT }}
-          echo ${{ secrets.REDIS_PASSWORD }}
-          echo ${{ secrets.REMOTE_PRIVATE_KEY }}
-          echo ${{ secrets.EC2_HOST }}
-          echo ${{ secrets.EC2_USERNAME }}  
+          echo "AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}"
+          echo "AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+          echo "AWS_REGION: ${{ secrets.AWS_REGION }}"
+          echo "DATABASE_URL: ${{ secrets.DATABASE_URL }}"
+          echo "PORT: ${{ secrets.PORT }}"
+          echo "DATABASE_HOST: ${{ secrets.DATABASE_HOST }}"
+          echo "DATABASE_PORT: ${{ secrets.DATABASE_PORT }}"
+          echo "DATABASE_NAME: ${{ secrets.DATABASE_NAME }}"
+          echo "DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}"
+          echo "DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}"
+          echo "JWT_SECRET: ${{ secrets.JWT_SECRET }}"
+          echo "GOOGLE_ID: ${{ secrets.GOOGLE_ID }}"
+          echo "GOOGLE_SECRET: ${{ secrets.GOOGLE_SECRET }}"
+          echo "KAKAO_ID: ${{ secrets.KAKAO_ID }}"
+          echo "NAVER_ID: ${{ secrets.NAVER_ID }}"
+          echo "NAVER_SECRET: ${{ secrets.NAVER_SECRET }}"
+          echo "BACKEND_URL: ${{ secrets.BACKEND_URL }}"
+          echo "REDIS_HOST: ${{ secrets.REDIS_HOST }}"
+          echo "REDIS_PORT: ${{ secrets.REDIS_PORT }}"
+          echo "REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}"
+          echo "REMOTE_PRIVATE_KEY: ${{ secrets.REMOTE_PRIVATE_KEY }}"
+          echo "EC2_HOST: ${{ secrets.EC2_HOST }}"
+          echo "EC2_USERNAME: ${{ secrets.EC2_USERNAME }}"
+       
 
       # AWS에 로그인
       - name: Configure AWS credentials
