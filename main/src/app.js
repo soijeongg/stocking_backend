@@ -36,30 +36,30 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
 console.log(process.env.REDIS_HOST, process.env.REDIS_PORT, process.env.REDIS_PASSWORD);
-const redisClient = createClient({
-  url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
-  password: `${process.env.REDIS_PASSWORD}`,
-});
+// const redisClient = createClient({
+//   url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
+//   password: `${process.env.REDIS_PASSWORD}`,
+// });
 
-await redisClient.connect();
-console.log('Redis 서버에 연결되었습니다.');
+// await redisClient.connect();
+// console.log('Redis 서버에 연결되었습니다.');
 
 // RedisStore 인스턴스 생성 및 sessionStore 변수에 할당
-const sessionStore = new RedisStore({ client: redisClient });
+// const sessionStore = new RedisStore({ client: redisClient });
 
-const sessionMiddleware = session({
-  store: sessionStore, // 이전에 생성한 sessionStore 인스턴스 사용
-  secret: process.env.JWT_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    maxAge: 1000 * 60 * 60 * 24,
-  },
-});
+// const sessionMiddleware = session({
+//   store: sessionStore, // 이전에 생성한 sessionStore 인스턴스 사용
+//   secret: process.env.JWT_SECRET,
+//   resave: false,
+//   saveUninitialized: false,
+//   cookie: {
+//     maxAge: 1000 * 60 * 60 * 24,
+//   },
+// });
 
-app.use(sessionMiddleware);
+// app.use(sessionMiddleware);
 // Passport 초기화 및 세션 사용
-setupWebSocketServer(server, sessionStore);
+// setupWebSocketServer(server, sessionStore);
 
 app.get('/', (req, res) => {
   res.send('<h1>Stocking</h1>');
