@@ -4,4 +4,4 @@ global:
 scrape_configs:
   - job_name: "node-exporter"
     static_configs:
-      - targets: ["node-exporter:9100"]
+      - targets: ["3.37.55.136:9100"]
