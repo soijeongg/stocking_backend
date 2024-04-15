@@ -23,6 +23,7 @@ async function main() {
   await client.sendCommand(["ZADD", sortedSetKey, "15", "Bob"]);
 
   // 정렬된 셋 전체 조회 (점수 오름차순)
+  const memgerAsc = await client.zRange(sortedSetKey, 0, -1, { withScores: true });
   const membersAscRaw = await client.sendCommand(["ZRANGE", sortedSetKey, "0", "-1", "WITHSCORES"]);
   console.log("Ascending (Raw):", membersAscRaw);
 
