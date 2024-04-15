@@ -4,4 +4,4 @@ global:
 scrape_configs:
   - job_name: "node-exporter"
     static_configs:
-      - targets: ["3.37.55.136:9100"] # Docker 컴포즈 네트워크 내에서 사용하는 서비스 이름과 내부 포트
+      - targets: ["3.35.168.246:9100"] # Docker 컴포즈 네트워크 내에서 사용하는 서비스 이름과 내부 포트
