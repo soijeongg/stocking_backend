@@ -112,6 +112,7 @@ export class userController {
       currentMoney: user.currentMoney.toString(),
       totalAsset: user.totalAsset.toString(),
       initialSeed: user.initialSeed.toString(),
+      tradableMoney: user.tradableMoney.toString(),
       tier: user.tier,
     }));
     return res.status(200).json({ data: processedUsers });
