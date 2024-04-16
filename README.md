@@ -1,4 +1,4 @@
-# stock_backend
+# stock_backend 프로젝트
 
 ## 프로젝트 내용
 
