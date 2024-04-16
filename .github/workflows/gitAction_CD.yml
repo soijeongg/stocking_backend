@@ -55,6 +55,9 @@ jobs:
           REMOTE_PRIVATE_KEY: ${{ secrets.REMOTE_PRIVATE_KEY}}
           EC2_HOST: ${{ secrets.EC2_HOST}}
           EC2_USERNAME: ${{ secrets.EC2_USERNAME}}
+          REDIS_HOST: ${{ secrets.REDIS_HOST}}
+          REDIS_PORT: ${{ secrets.REDIS_PORT}}
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD}}
         run: |
           docker-compose build
           docker-compose push
