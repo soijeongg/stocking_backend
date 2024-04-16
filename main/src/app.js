@@ -9,6 +9,7 @@ import session from 'express-session';
 import { createClient } from 'redis';
 import RedisStore from 'connect-redis';
 import passportConfig from './utils/passportConfig/index.js';
+import { register, Counter, Histogram } from 'prom-client';
 import setupWebSocketServer from './utils/chartData/chartData.js';
 import LogMiddleware from './middlewares/log.middleware.js';
 import notFoundErrorHandler from './middlewares/notFoundError.middleware.js';
