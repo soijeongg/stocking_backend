@@ -24,7 +24,7 @@ const app = express();
 const server = createServer(app);
 const PORT = process.env.PORT;
 
-app.use(LogMiddleware);
+//app.use(LogMiddleware);
 app.use(
   cors({
     origin: ['http://localhost:5000', 'https://www.stockingchallenge.site'], // 허용할 도메인 목록
@@ -42,6 +42,17 @@ const redisClient = createClient({
 
 await redisClient.connect();
 console.log('Redis 서버에 연결되었습니다.');
+
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', register.contentType);
+    const metrics = await register.metrics();
+    res.send(metrics);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
 
 // RedisStore 인스턴스 생성 및 sessionStore 변수에 할당
 const sessionStore = new RedisStore({ client: redisClient });
@@ -75,7 +86,7 @@ app.use('/api', router);
 
 // 테스트 시에는 아래 코드를 사용합니다.
 await gameSetting();
-setInterval(createDummyEvent, 5000);
+//setInterval(createDummyEvent, 5000);
 
 app.use(notFoundErrorHandler);
 app.use(generalErrorHandler);
