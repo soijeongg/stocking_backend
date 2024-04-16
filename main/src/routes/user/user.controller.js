@@ -82,9 +82,9 @@ export class userController {
         return res.status(200).json({ message: '성공적으로 수정했습니다' });
       }
       if (!nickname && password) {
-        console.log('1');
+        // console.log('1');
         await this.userService.changeUserPassword(password, userId);
-        console.log('4');
+        // console.log('4');
         return res.status(200).json({ message: '성공적으로 수정했습니다' });
       }
       if (nickname && !password) {

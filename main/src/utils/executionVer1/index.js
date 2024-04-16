@@ -537,7 +537,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
     );
     //여기서 notices 배열을 이용하여 채팅창으로 사용자들에게 체결 내역 전달
   } catch (err) {
-    console.log(err.stack);
+    console.log(err.message);
     sendToClient(userId, [`요청 실패: ${err.message}`]);
   }
 }

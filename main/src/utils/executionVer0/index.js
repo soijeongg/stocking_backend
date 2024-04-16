@@ -28,7 +28,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
     await prisma.$transaction(
       async (tx) => {
         if (!company) {
-          console.log('존재하지 않는 종목입니다.');
+          // console.log('존재하지 않는 종목입니다.');
           throw new Error('존재하지 않는 종목입니다.');
         }
         // let startTime = performance.now();
@@ -53,7 +53,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
               quantity: true,
             },
           });
-          console.log(totalQuantity[0]._sum.quantity, quantity);
+          // console.log(totalQuantity[0]._sum.quantity, quantity);
           if (totalQuantity[0]._sum.quantity <= quantity) {
             throw new Error(`최대 ${totalQuantity[0]._sum.quantity - 1}주까지만 구매할 수 있습니다.`);
           }
@@ -387,7 +387,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
               quantity: true,
             },
           });
-          console.log(totalQuantity[0]._sum.quantity, quantity);
+          // console.log(totalQuantity[0]._sum.quantity, quantity);
           if (totalQuantity[0]._sum.quantity <= quantity) {
             throw new Error(`최대 ${totalQuantity[0]._sum.quantity - 1}주까지만 판매할 수 있습니다.`);
           }
@@ -702,7 +702,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
     );
     //여기서 notices 배열을 이용하여 채팅창으로 사용자들에게 체결 내역 전달
   } catch (err) {
-    console.log(err.stack);
+    console.log(err.message);
     sendToClient(userId, [`요청 실패: ${err.message}`]);
   }
 }

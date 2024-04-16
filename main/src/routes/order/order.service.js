@@ -34,7 +34,7 @@ export class OrderService {
       if (targetData == null) {
         return { message: '존재하지 않는 주문입니다.' };
       }
-      console.log(targetData);
+      // console.log(targetData);
       if (targetData.isSold == true) {
         return { message: '이미 체결된 주문입니다.' };
       } else {
