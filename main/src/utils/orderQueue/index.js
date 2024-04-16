@@ -1,5 +1,5 @@
 import { prisma } from '../prisma/index.js';
-import { execution } from '../executionVer0/index.js';
+import { execution } from '../executionVer1/index.js';
 class Queue {
   constructor() {
     this.items = [];
@@ -54,17 +54,7 @@ class Queue {
   async processMessage(message) {
     const jsonOrderData = JSON.parse(message);
     const { orderType, userId, companyId, orderId, type, quantity, price } = jsonOrderData;
-    if (orderType === 'delete') {
-      await prisma.order.delete({
-        where: {
-          orderId: orderId,
-        },
-      });
-    } else {
-      // console.log('execution 시작');
-      await execution(userId, companyId, orderId, type, quantity, price);
-      // console.log('execution 종료');
-    }
+    await execution(orderType, userId, companyId, orderId, type, quantity, price);
   }
 }
 

@@ -163,14 +163,21 @@ export class OrderController {
     try {
       const { userId } = res.locals.user;
       const orderId = parseInt(req.query.orderId);
+      if (!orderId) {
+        throw new Error('주문번호가 없습니다.');
+      }
+      const originalOrder = await this.orderService.getOrderForUpdate(userId, orderId);
+      if (originalOrder == null) {
+        return res.status(400).json({ message: '존재하지 않는 주문입니다.' });
+      }
       const jsonOrderData = {
         orderType: 'delete',
         userId: userId,
-        companyId: null,
+        companyId: originalOrder.companyId,
         orderId: orderId,
-        type: null,
-        quantity: null,
-        price: null,
+        type: originalOrder.type,
+        quantity: originalOrder.quantity,
+        price: originalOrder.price,
       };
       const jsonOrderDataString = JSON.stringify(jsonOrderData);
       insertOrderMessageQueue(jsonOrderDataString);

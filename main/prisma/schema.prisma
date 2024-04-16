@@ -26,24 +26,25 @@ model Rank {
 }
 
 model User {
-  userId       Int       @id @default(autoincrement()) @unique @map("userId")
-  email        String    @unique @map("email")
-  password     String    @map("password")
-  provider     String?   @map("provider")
-  isVerified   Boolean   @default(false)
-  token        String    @unique @map("token")
-  nickname     String    @map("nickname")
-  currentMoney BigInt    @default(0) @map("currentMoney")
-  totalAsset   BigInt    @default(0) @map("totalAsset")
-  initialSeed  BigInt    @default(0) @map("initialSeed")
-  mmr          Int       @default(0) @map("mmr")
-  tier         Tier      @default(bronze) @map("tier")
-  dummy        Boolean   @default(false) @map("dummy")
-  Stocks       Stock[]
-  Orders       Order[]
-  Concludeds   Concluded[]
-  rank         Rank?
-  
+  userId        Int      @id @default(autoincrement()) @unique @map("userId")
+  email         String   @unique @map("email")
+  password      String   @map("password")
+  provider      String?  @map("provider")
+  isVerified    Boolean  @default(false)
+  token         String   @unique @map("token")
+  nickname      String   @map("nickname")
+  currentMoney  BigInt   @default(0) @map("currentMoney")
+  tradableMoney BigInt   @default(0) @map("tradableMoney")
+  totalAsset    BigInt   @default(0) @map("totalAsset")
+  initialSeed   BigInt   @default(0) @map("initialSeed")
+  mmr           Int      @default(0) @map("mmr")
+  tier          Tier     @default(bronze) @map("tier")
+  dummy         Boolean  @default(false) @map("dummy")
+  Stocks        Stock[]
+  Orders        Order[]
+  Concludeds    Concluded[]
+  rank          Rank?
+
   @@map("User")
 }
 
@@ -59,16 +60,16 @@ model Company {
   @@map("Company")
 }
 
-
 model Stock {
-  stockId      Int     @id @default(autoincrement()) @unique
-  userId       Int     @map("userId")
-  companyId    Int     @map("companyId")
-  quantity     Int     @map("quantity")
-  averagePrice Float   @map("averagePrice")
-  User         User    @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  Company      Company @relation(fields: [companyId], references: [companyId], onDelete: Cascade)
-  
+  stockId          Int      @id @default(autoincrement()) @unique
+  userId           Int      @map("userId")
+  companyId        Int      @map("companyId")
+  quantity         Int      @map("quantity")
+  tradableQuantity Int      @map("tradableQuantity")
+  averagePrice     Float    @map("averagePrice")
+  User             User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  Company          Company  @relation(fields: [companyId], references: [companyId], onDelete: Cascade)
+
   @@map("Stock")
 }
 
