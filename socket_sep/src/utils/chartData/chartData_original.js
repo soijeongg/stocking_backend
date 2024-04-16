@@ -1,5 +1,4 @@
 import { WebSocketServer, WebSocket } from 'ws';
-import url from 'url';
 import { parse } from 'cookie';
 import { prisma } from '../prisma/index.js';
 let wss;
@@ -167,11 +166,6 @@ async function getUserNickname(userId) {
 
 // 모든 사용자에게 메시지 전달
 export function sendNoticesToAllClients(notices) {
-  /*
-  if (!wss.clients)
-    return console.log('wss', wss); // 추가된 파트
-  else console.log('wss.clients.size', wss.clients.size); //추가된 파트
-  */
   wss.clients.forEach(function each(client) {
     if (client.readyState === WebSocket.OPEN) {
       client.send(JSON.stringify({ type: 'notices', notices }));

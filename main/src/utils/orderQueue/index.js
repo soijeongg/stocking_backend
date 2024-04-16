@@ -1,4 +1,5 @@
-import { execution } from '../execution2/index.js';
+import { prisma } from '../prisma/index.js';
+import { execution } from '../executionVer1/index.js';
 class Queue {
   constructor() {
     this.items = [];
@@ -31,7 +32,7 @@ class Queue {
     this.isProcessing = true; // 처리 시작
 
     while (!this.isEmpty()) {
-      console.log(this.items.length);
+      // console.log(this.items.length);
       const message = this.dequeue();
 
       const startTime = Date.now(); // 처리 시작 시간
@@ -39,7 +40,7 @@ class Queue {
       const endTime = Date.now(); // 처리 완료 시간
 
       const duration = endTime - startTime; // 처리 시간 계산
-      console.log(`Message processing time: ${duration}ms`); // 처리 시간 로깅
+      // console.log(`Message processing time: ${duration}ms`); // 처리 시간 로깅
       this.totalProcessingTime += duration; // 총 처리 시간 업데이트
       this.processedMessageCount++; // 처리된 메시지 수 업데이트
       const averageProcessingTime = this.totalProcessingTime / this.processedMessageCount;

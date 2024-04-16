@@ -14,6 +14,7 @@ function sendToClient(userId, notices) {
 async function execution(userId, companyId, orderId, type, quantity, price) {
   if (quantity <= 0) return;
   // console.log(userId, companyId, orderId, type, quantity, price);
+  // console.log('excution 함수 실행', userId, companyId, orderId, type, quantity, price);
   let notices = [];
   //기본적으로 주문이 완료되면 [userId:Int, companyId:Int, type:sell or buy, quantity:Int,price:Int ,executed:true] 형태로  notices에 추가
   //주문이 완료되지 않으면 [userId:Int, companyId:Int, type:sell or buy, quantity:Int, price:Int, executed:false] 형태로 notices에 추가
@@ -28,7 +29,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
     await prisma.$transaction(
       async (tx) => {
         if (!company) {
-          console.log('존재하지 않는 종목입니다.');
+          // console.log('존재하지 않는 종목입니다.');
           throw new Error('존재하지 않는 종목입니다.');
         }
         // let startTime = performance.now();
@@ -42,6 +43,13 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
           if (price && buyer.currentMoney < price * quantity) {
             throw new Error('가지고 있는 돈이 부족합니다.');
           }
+          const sellingOrders = await tx.order.findMany({
+            where: {
+              companyId,
+              type: 'sell',
+            },
+          });
+          // console.log('판매주문 수', sellingOrders.length);
           // 판매주문들을 모두 조회
           const totalQuantity = await tx.order.groupBy({
             where: {
@@ -53,13 +61,15 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
               quantity: true,
             },
           });
-          console.log(totalQuantity[0]._sum.quantity, quantity);
-          if (totalQuantity[0]._sum.quantity < quantity) {
-            throw new Error(`최대 ${totalQuantity[0]._sum.quantity}주까지만 구매할 수 있습니다.`);
+          // console.log('에러 체크 전: 전체 매도 주문 주식수', totalQuantity[0]._sum.quantity, '사용자 주문 주식수', quantity);
+          if (totalQuantity[0]._sum.quantity <= quantity) {
+            throw new Error(`최대 ${totalQuantity[0]._sum.quantity - 1}주까지만 구매할 수 있습니다.`);
           }
+          // console.log('에러 체크 이후: 전체 매도 주문 주식수', totalQuantity[0]._sum.quantity, '사용자 주문 주식수', quantity);
           if (!price) price = 1000000000; //시장가 주문
           let buyerOrder; //사용자 주문
           if (!orderId) {
+            // console.log(`${userId}님의 ${companyId}에 대한 ${type} 주문, ${quantity}개, ${price}가 생성됨`);
             buyerOrder = await tx.order.create({
               data: {
                 userId,
@@ -121,6 +131,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                   orderId: sellerOrder.orderId,
                 },
               });
+              sendToClient(sellerOrder.userId, [`${seller.nickname}님의 ${company.name} 종목에 대한 ${sellerOrder.quantity}주, ${sellerOrder.price}원 판매주문이 체결되지 않았습니다.`]);
               continue;
             }
             const buyerStock = await tx.stock.findFirst({
@@ -356,9 +367,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
           // console.log(`Execution time: ${endTime - startTime} ms`);
           // console.log('notices', notices);
           // sendToClient(userId, notices);
-          if (notices.length > 0) {
-            sendToAllClient(notices);
-          }
+          sendToAllClient(notices);
           return '요청한 주문이 완료되었습니다.';
           //종결
         } else {
@@ -377,6 +386,13 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
           if (!sellerStock || sellerStock.quantity < quantity) {
             throw new Error('가지고 있는 주식이 부족합니다.');
           }
+          const buyingOrders = await tx.order.findMany({
+            where: {
+              companyId,
+              type: 'buy',
+            },
+          });
+          // console.log('구매주문 수', buyingOrders.length);
           // 구매주문들을 모두 조회
           const totalQuantity = await tx.order.groupBy({
             where: {
@@ -388,13 +404,15 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
               quantity: true,
             },
           });
-          console.log(totalQuantity[0]._sum.quantity, quantity);
-          if (totalQuantity[0]._sum.quantity < quantity) {
-            throw new Error(`최대 ${totalQuantity[0]._sum.quantity}주까지만 판매할 수 있습니다.`);
+          // console.log('에러 체크 전: 전체 매수 주문 주식수', totalQuantity[0]._sum.quantity, '사용자 주문 주식수', quantity);
+          if (totalQuantity[0]._sum.quantity <= quantity) {
+            throw new Error(`최대 ${totalQuantity[0]._sum.quantity - 1}주까지만 판매할 수 있습니다.`);
           }
+          // console.log('에러 체크 이후: 전체 매수 주문 주식수', totalQuantity[0]._sum.quantity, '사용자 주문 주식수', quantity);
           if (!price) price = 0; //시장가 주문
           let sellerOrder; //사용자 주문
           if (!orderId) {
+            // console.log(`${userId}님의 ${companyId}에 대한 ${type} 주문, ${quantity}개, ${price}가 생성됨`);
             sellerOrder = await tx.order.create({
               data: {
                 userId,
@@ -450,6 +468,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                   orderId: buyerOrder.orderId,
                 },
               });
+              sendToClient(buyerOrder.userId, [`${buyer.nickname}님의 ${company.name} 종목에 대한 ${buyerOrder.quantity}주, ${buyerOrder.price}원 구매주문이 체결되지 않았습니다.`]);
               continue;
             }
             const buyerStock = await tx.stock.findFirst({
@@ -702,7 +721,7 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
     );
     //여기서 notices 배열을 이용하여 채팅창으로 사용자들에게 체결 내역 전달
   } catch (err) {
-    console.log(err.stack);
+    console.log(err.message);
     sendToClient(userId, [`요청 실패: ${err.message}`]);
   }
 }
