@@ -1,0 +1,61 @@
+#메인 서버를 만들자 (메안과 node expoter를 사용하자)
+version: "3.8"
+services:
+  stocking:
+    build:
+      context: .
+      args:
+        PORT: $PORT
+        DATABASE_URL: $DATABASE_URL
+        DATABASE_HOST: $DATABASE_HOST
+        DATABASE_PORT: $DATABASE_PORT
+        DATABASE_NAME: $DATABASE_NAME
+        DATABASE_USERNAME: $DATABASE_USERNAME
+        DATABASE_PASSWORD: $DATABASE_PASSWORD
+        JWT_SECRET: $JWT_SECRET
+        GOOGLE_ID: $GOOGLE_ID
+        GOOGLE_SECRET: $GOOGLE_SECRET
+        USER: $USER
+        PASS: $PASS
+        AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+        AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+        AWS_REGION: $AWS_REGION
+        REMOTE_PRIVATE_KEY: $REMOTE_PRIVATE_KEY
+        EC2_HOST: $EC2_HOST
+        NAVER_ID: $NAVER_ID
+        NAVER_SECRET: $NAVER_SECRET
+        KAKAO_ID: $KAKAO_ID
+        BACKEND_URL: $BACKEND_URL
+        FRONTEND_URL: $FRONTEND_URL
+    image: ${ECR_REGISTRY}/stocking:latest
+    environment:
+      PORT: $PORT
+      DATABASE_URL: $DATABASE_URL
+      DATABASE_HOST: $DATABASE_HOST
+      DATABASE_PORT: $DATABASE_PORT
+      DATABASE_NAME: $DATABASE_NAME
+      DATABASE_USERNAME: $DATABASE_USERNAME
+      DATABASE_PASSWORD: $DATABASE_PASSWORD
+      JWT_SECRET: $JWT_SECRET
+      NAVER_ID: $NAVER_ID
+      NAVER_SECRET: $NAVER_SECRET
+      KAKAO_ID: $KAKAO_ID
+      BACKEND_URL: $BACKEND_URL
+      FRONTEND_URL: $FRONTEND_URL
+      GOOGLE_ID: $GOOGLE_ID
+      GOOGLE_SECRET: $GOOGLE_SECRET
+      USER: $USER
+      PASS: $PASS
+      AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+      AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+      AWS_REGION: $AWS_REGION
+      REMOTE_PRIVATE_KEY: $REMOTE_PRIVATE_KEY
+      EC2_HOST: $EC2_HOST
+  node-exporter:
+    build:
+      context: .
+      dockerfile: Dockerfile.node-exporter
+    image: ${ECR_REGISTRY}/node-exporter:latest
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
