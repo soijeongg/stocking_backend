@@ -3,7 +3,7 @@ name: Deploy to EC2 with ECR
 on:
   push:
     branches:
-      - main_test
+      - main
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -64,7 +64,7 @@ jobs:
         uses: appleboy/ssh-action@master
         with:
           key: ${{ secrets.REMOTE_PRIVATE_KEY }}
-          host: ${{ secrets.EC2_HOST_TEST }}
+          host: ${{ secrets.EC2_HOST}}
           username: ${{ secrets.EC2_USERNAME }}
           port: 22
           script: |
