@@ -9,7 +9,7 @@ export class userController {
     try {
       let { email, password, nickname } = req.body;
       let emailvalidation = emailSchema.validate({ email });
-      console.log(req.body);
+      // console.log(req.body);
       if (emailvalidation.error) {
         const error = new Error('이메일에는 이메일 형식만 입력해주세요');
         error.status = 404;
@@ -84,9 +84,9 @@ export class userController {
         return res.status(200).json({ message: '성공적으로 수정했습니다' });
       }
       if (!nickname && password) {
-        console.log('1');
+        // console.log('1');
         await this.userService.changeUserPassword(password, userId);
-        console.log('4');
+        // console.log('4');
         return res.status(200).json({ message: '성공적으로 수정했습니다' });
       }
       if (nickname && !password) {

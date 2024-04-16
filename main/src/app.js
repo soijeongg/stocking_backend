@@ -86,7 +86,7 @@ app.use('/api', router);
 
 // 테스트 시에는 아래 코드를 사용합니다.
 await gameSetting();
-//setInterval(createDummyEvent, 5000);
+// setInterval(createDummyEvent, 5000);
 
 app.use(notFoundErrorHandler);
 app.use(generalErrorHandler);

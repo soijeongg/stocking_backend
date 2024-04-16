@@ -32,7 +32,7 @@ class Queue {
     this.isProcessing = true; // 처리 시작
 
     while (!this.isEmpty()) {
-      console.log(this.items.length);
+      // console.log(this.items.length);
       const message = this.dequeue();
 
       const startTime = Date.now(); // 처리 시작 시간
@@ -44,7 +44,7 @@ class Queue {
       this.totalProcessingTime += duration; // 총 처리 시간 업데이트
       this.processedMessageCount++; // 처리된 메시지 수 업데이트
       const averageProcessingTime = this.totalProcessingTime / this.processedMessageCount;
-      // console.log(`Average message processing time: ${averageProcessingTime}ms`);
+      console.log(`Average message processing time: ${averageProcessingTime}ms`);
     }
 
     this.isProcessing = false; // 모든 항목 처리 완료
@@ -61,9 +61,9 @@ class Queue {
         },
       });
     } else {
-      console.log('execution 시작');
+      // console.log('execution 시작');
       await execution(userId, companyId, orderId, type, quantity, price);
-      console.log('execution 종료');
+      // console.log('execution 종료');
     }
   }
 }

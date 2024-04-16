@@ -47,9 +47,9 @@ export class userService {
     return changeNickname;
   };
   changeUserPassword = async (password, userId) => {
-    console.log('2');
+    // console.log('2');
     let changePassword = await this.userRepository.updatePassword(password, userId);
-    console.log('3');
+    // console.log('3');
     if (!changePassword) {
       const error = new Error('수정에 실패했습니다');
       throw error;
