@@ -32,7 +32,7 @@ class Queue {
     this.isProcessing = true; // 처리 시작
 
     while (!this.isEmpty()) {
-      console.log(this.items.length);
+      // console.log(this.items.length);
       const message = this.dequeue();
 
       const startTime = Date.now(); // 처리 시작 시간
@@ -61,7 +61,9 @@ class Queue {
         },
       });
     } else {
+      // console.log('execution 시작');
       await execution(userId, companyId, orderId, type, quantity, price);
+      // console.log('execution 종료');
     }
   }
 }

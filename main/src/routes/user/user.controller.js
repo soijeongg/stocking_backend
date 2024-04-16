@@ -9,6 +9,7 @@ export class userController {
     try {
       let { email, password, nickname } = req.body;
       let emailvalidation = emailSchema.validate({ email });
+      // console.log(req.body);
       if (emailvalidation.error) {
         const error = new Error('이메일에는 이메일 형식만 입력해주세요');
         error.status = 404;
@@ -42,6 +43,7 @@ export class userController {
     try {
       let { email } = req.body;
       let emailvalidation = emailSchema.validate({ email });
+
       if (emailvalidation.error) {
         const error = new Error('이메일에는 이메일 형식만 입력해주세요');
         error.status = 404;

@@ -14,6 +14,7 @@ function sendToClient(userId, notices) {
 async function execution(userId, companyId, orderId, type, quantity, price) {
   if (quantity <= 0) return;
   // console.log(userId, companyId, orderId, type, quantity, price);
+  // console.log('excution 함수 실행', userId, companyId, orderId, type, quantity, price);
   let notices = [];
   //기본적으로 주문이 완료되면 [userId:Int, companyId:Int, type:sell or buy, quantity:Int,price:Int ,executed:true] 형태로  notices에 추가
   //주문이 완료되지 않으면 [userId:Int, companyId:Int, type:sell or buy, quantity:Int, price:Int, executed:false] 형태로 notices에 추가
@@ -42,6 +43,13 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
           if (price && buyer.currentMoney < price * quantity) {
             throw new Error('가지고 있는 돈이 부족합니다.');
           }
+          const sellingOrders = await tx.order.findMany({
+            where: {
+              companyId,
+              type: 'sell',
+            },
+          });
+          // console.log('판매주문 수', sellingOrders.length);
           // 판매주문들을 모두 조회
           const totalQuantity = await tx.order.groupBy({
             where: {
@@ -53,13 +61,15 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
               quantity: true,
             },
           });
-          // console.log(totalQuantity[0]._sum.quantity, quantity);
+          // console.log('에러 체크 전: 전체 매도 주문 주식수', totalQuantity[0]._sum.quantity, '사용자 주문 주식수', quantity);
           if (totalQuantity[0]._sum.quantity <= quantity) {
             throw new Error(`최대 ${totalQuantity[0]._sum.quantity - 1}주까지만 구매할 수 있습니다.`);
           }
+          // console.log('에러 체크 이후: 전체 매도 주문 주식수', totalQuantity[0]._sum.quantity, '사용자 주문 주식수', quantity);
           if (!price) price = 1000000000; //시장가 주문
           let buyerOrder; //사용자 주문
           if (!orderId) {
+            // console.log(`${userId}님의 ${companyId}에 대한 ${type} 주문, ${quantity}개, ${price}가 생성됨`);
             buyerOrder = await tx.order.create({
               data: {
                 userId,
@@ -376,6 +386,13 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
           if (!sellerStock || sellerStock.quantity < quantity) {
             throw new Error('가지고 있는 주식이 부족합니다.');
           }
+          const buyingOrders = await tx.order.findMany({
+            where: {
+              companyId,
+              type: 'buy',
+            },
+          });
+          // console.log('구매주문 수', buyingOrders.length);
           // 구매주문들을 모두 조회
           const totalQuantity = await tx.order.groupBy({
             where: {
@@ -387,13 +404,15 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
               quantity: true,
             },
           });
-          // console.log(totalQuantity[0]._sum.quantity, quantity);
+          // console.log('에러 체크 전: 전체 매수 주문 주식수', totalQuantity[0]._sum.quantity, '사용자 주문 주식수', quantity);
           if (totalQuantity[0]._sum.quantity <= quantity) {
             throw new Error(`최대 ${totalQuantity[0]._sum.quantity - 1}주까지만 판매할 수 있습니다.`);
           }
+          // console.log('에러 체크 이후: 전체 매수 주문 주식수', totalQuantity[0]._sum.quantity, '사용자 주문 주식수', quantity);
           if (!price) price = 0; //시장가 주문
           let sellerOrder; //사용자 주문
           if (!orderId) {
+            // console.log(`${userId}님의 ${companyId}에 대한 ${type} 주문, ${quantity}개, ${price}가 생성됨`);
             sellerOrder = await tx.order.create({
               data: {
                 userId,
