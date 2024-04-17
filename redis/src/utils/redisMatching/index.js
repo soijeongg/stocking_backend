@@ -79,7 +79,7 @@ async function matching(message) {
             finalPrice = 0;
             needMoney = 0;
             if (!price) {
-              const sellerOrderIds = await redis.zrange(`orders:companyId:${companyId}:type:se;;`, 0, -1);
+              const sellerOrderIds = await redis.zrange(`orders:companyId:${companyId}:type:sell`, 0, -1);
               for (let sellerOrderId of sellerOrderIds) {
                 const sellerOrder = await redis.hgetall(`orderId:${sellerOrderId}`);
                 if (nowQuantity + sellerOrder.quantity >= quantity) {
