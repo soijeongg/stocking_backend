@@ -1,4 +1,4 @@
-import { insertOrderMessageQueue } from '../../utils/orderQueue/index.js';
+import { insertMatchingMessageQueue } from '../../utils/matchingQueue/index.js'
 export class OrderController {
   constructor(orderService) {
     this.orderService = orderService;
@@ -71,7 +71,7 @@ export class OrderController {
     }
     try {
       const jsonOrderData = {
-        orderType: 'create',
+        reqType: 'orderCreate',
         userId: userId,
         companyId: companyId,
         orderId: null,
@@ -80,7 +80,7 @@ export class OrderController {
         price: orderData.price,
       };
       const jsonOrderDataString = JSON.stringify(jsonOrderData);
-      insertOrderMessageQueue(jsonOrderDataString);
+      insertMatchingMessageQueue(jsonOrderDataString);
       return res.json({ message: '주문이 접수 되었습니다.' });
     } catch (error) {
       console.log(error.stack);
@@ -135,7 +135,7 @@ export class OrderController {
 
       // 정정 주문 실행
       const jsonOrderData = {
-        orderType: 'update',
+        reqType: 'orderUpdate',
         userId: userId,
         companyId: companyId,
         orderId: orderId,
@@ -144,7 +144,7 @@ export class OrderController {
         price: correctedPrice,
       };
       const jsonOrderDataString = JSON.stringify(jsonOrderData);
-      insertOrderMessageQueue(jsonOrderDataString);
+      insertMatchingMessageQueue(jsonOrderDataString);
       return res.json({ message: '주문이  접수되었습니다.' });
     } catch (error) {
       console.log(error.stack);
@@ -171,7 +171,7 @@ export class OrderController {
         return res.status(400).json({ message: '존재하지 않는 주문입니다.' });
       }
       const jsonOrderData = {
-        orderType: 'delete',
+        reqType: 'orderDelete',
         userId: userId,
         companyId: originalOrder.companyId,
         orderId: orderId,
@@ -180,7 +180,7 @@ export class OrderController {
         price: originalOrder.price,
       };
       const jsonOrderDataString = JSON.stringify(jsonOrderData);
-      insertOrderMessageQueue(jsonOrderDataString);
+      insertMatchingMessageQueue(jsonOrderDataString);
       return res.json({ message: '주문이  접수되었습니다.' });
     } catch (error) {
       console.log(error.stack);

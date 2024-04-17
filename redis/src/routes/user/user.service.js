@@ -1,4 +1,6 @@
 import crypto from 'crypto';
+import { insertMatchingMessageQueue } from '../../utils/matchingQueue/index.js';
+
 export class userService {
   constructor(userRepository) {
     this.userRepository = userRepository;
@@ -24,6 +26,12 @@ export class userService {
       error.status = 401;
       throw error;
     }
+    const jsonOrderData = {
+      reqType: 'gameCreate',
+    };
+    const jsonOrderDataString = JSON.stringify(jsonOrderData);
+    insertMatchingMessageQueue(jsonOrderDataString);
+
     return createUserOne;
   };
 
