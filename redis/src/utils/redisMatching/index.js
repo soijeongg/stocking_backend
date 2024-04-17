@@ -1,6 +1,8 @@
 import Redis from 'ioredis';
 import { prisma } from '../prisma/index.js';
+import { insertExecutionMessageQueue } from '../executionQueue/index.js';
 async function matching(message) {
+  const messageList = [];
   try {
     const redis = new Redis();
     const orderData = JSON.parse(message);
@@ -64,7 +66,6 @@ async function matching(message) {
       default:
         const { userId, companyId, orderId, type, quantity, price } = orderData;
         const orderList = [];
-        const messageList = [];
         let nowQuantity, finalPrice, needMoney;
         // 주문 유효성 검증
         if (reqType !== 'orderDelete') {
@@ -105,7 +106,7 @@ async function matching(message) {
             }
             if (tradableMoney < needMoney) {
               messageList.push({ reqType: 'messageToClient', userId: userId, message: '예약가능한 금액이 부족합니다.' });
-              return;
+              throw new Error('예약가능한 금액이 부족합니다.');
             }
           } else {
             nowQuantity = 0;
@@ -114,7 +115,7 @@ async function matching(message) {
             const tradableQuantity = await redis.hget(`stockId:${stockId}`, 'tradableQuantity');
             if (!tradableQuantity || tradableQuantity < quantity) {
               messageList.push({ reqType: 'messageToClient', userId: userId, message: '예약 가능한 주식수가 부족합니다.' });
-              return;
+              throw new Error('예약 가능한 주식수가 부족합니다.');
             }
             if (reqType !== 'orderCreate') {
               sellOrder = await redis.hgetall(`orderId:${orderId}`);
@@ -158,7 +159,7 @@ async function matching(message) {
             const deleteOrder = await redis.hgetall(`orderId:${orderId}`);
             if (!deleteOrder) {
               messageList.push({ reqType: 'messageToClient', userId, message: '존재하지 않는 주문입니다.' });
-              return;
+              throw new Error('존재하지 않는 주문입니다.');
             }
             pipeline.del(`orderId:${orderId}`);
             if (type === 'buy') {
@@ -179,7 +180,7 @@ async function matching(message) {
             const nowTime = new Date();
             const timeGap = nowTime.getTime() - new Date('2024-01-01').getTime();
             const score = type === 'buy' ? -price + timeGap / 1e11 : price + timeGap / 1e11;
-            pipeline.hset(`orderId:${newOrderId}`, 'userId', userId, 'companyId', companyId, 'type', type, 'updatedAt', nowTime, 'price', price, 'quantity', quantity);
+            pipeline.hset(`orderId:${newOrderId}`, 'userId', userId, 'companyId', companyId, 'type', type, 'updatedAt', nowTime, 'price', finalPrice, 'quantity', quantity);
             if (type === 'buy') {
               pipeline.zadd(`orders:companyId:${companyId}:type:buy`, score, newOrderId);
               pipeline.incrby(`totalQuantity:companyId:${companyId}:type:buy`, quantity);
@@ -265,7 +266,11 @@ async function matching(message) {
           await pipeline.exec();
         }
     }
+    const executionMessage = JSON.stringify(messageList);
+    insertExecutionMessageQueue(executionMessage);
   } catch (err) {
+    const executionMessage = JSON.parse(messageList);
+    insertExecutionMessageQueue(executionMessage);
     console.error(err);
   }
 }
