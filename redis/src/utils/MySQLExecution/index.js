@@ -21,6 +21,7 @@ async function execution(message) {
         let companyCurrentPrice = -1;
         while (messageQueue.length > 0) {
           const message = messageQueue.shift();
+          console.log('현재 처리중인 message', message);
           switch (message.reqType) {
             case 'messageToClient':
               sendToClient(message.userId, message.message);
@@ -46,18 +47,21 @@ async function execution(message) {
                 },
               });
               break;
-            case 'orderCreaete':
+            case 'orderCreate':
+              message.updatedAt = new Date(message.updatedAt);
+              message.updatedAt = message.updatedAt.toISOString();
               await tx.order.create({
                 data: {
-                  orderId: message.orderId,
-                  userId: message.userId,
-                  companyId: message.companyId,
+                  orderId: +message.orderId,
+                  userId: +message.userId,
+                  companyId: +message.companyId,
                   type: message.type,
                   updatedAt: message.updatedAt,
-                  price: message.price,
-                  quantity: message.quantity,
+                  price: +message.price,
+                  quantity: +message.quantity,
                 },
               });
+              break;
             case 'orderDelete':
               await tx.order.delete({
                 where: {
@@ -66,6 +70,14 @@ async function execution(message) {
               });
               break;
             default:
+              message.order.companyId = +message.order.companyId;
+              message.order.orderId = +message.order.orderId;
+              message.order.updatedAt = new Date(message.order.updatedAt);
+              message.order.updatedAt = message.order.updatedAt.toISOString();
+              message.order.userId = +message.order.userId;
+              message.order.price = +message.order.price;
+              message.quantity = +message.quantity;
+              message.price = +message.price;
               if (companyId === -1) {
                 companyId = message.order.companyId;
               }

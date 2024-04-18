@@ -52,7 +52,7 @@ async function matching(message) {
         const stocks = await prisma.stock.findMany({});
         pipeline.set('maxStockId', stocks[stocks.length - 1].stockId);
         for (let stock of stocks) {
-          pipeline.hset(`stockId:${stock.stockId}`, ['userId', stock.userId, 'companyId', stock.companyId, 'tradableQuantity', stock.tradableQuantity]);
+          pipeline.hmset(`stockId:${stock.stockId}`, ['userId', stock.userId, 'companyId', stock.companyId, 'tradableQuantity', stock.tradableQuantity]);
           pipeline.set(`stockIndex:userId:${stock.userId}:companyId:${stock.companyId}`, stock.stockId);
         }
         await pipeline.exec();
@@ -62,7 +62,7 @@ async function matching(message) {
         break;
       case 'userCreate':
         const newUserId = orderData.userId;
-        await redis.hset(`userId:${newUserId}`, 'tradableMoney', 10000000);
+        await redis.hmset(`userId:${newUserId}`, 'tradableMoney', 10000000);
         break;
       default:
         let { userId, companyId, orderId, type, quantity, price } = orderData;
@@ -187,7 +187,7 @@ async function matching(message) {
             const newOrderId = await redis.incr('maxOrderId');
             const nowTime = new Date();
             const timeGap = nowTime.getTime() - new Date('2024-01-01').getTime();
-            const score = type === 'buy' ? -price + timeGap / 1e11 : price + timeGap / 1e11;
+            const score = type === 'buy' ? -finalPrice + timeGap / 1e11 : finalPrice + timeGap / 1e11;
             pipeline.hmset(`orderId:${newOrderId}`, ['userId', userId, 'companyId', companyId, 'type', type, 'updatedAt', nowTime, 'price', finalPrice, 'quantity', quantity]);
             if (type === 'buy') {
               pipeline.zadd(`orders:companyId:${companyId}:type:buy`, score, newOrderId);
@@ -228,25 +228,27 @@ async function matching(message) {
           const sellerOrderId = await redis.zrange(`orders:companyId:${companyId}:type:sell`, 0, 0);
           const buyerOrder = await redis.hgetall(`orderId:${buyerOrderId[0]}`);
           const sellerOrder = await redis.hgetall(`orderId:${sellerOrderId[0]}`);
+          buyerOrder.orderId = buyerOrderId[0];
+          sellerOrder.orderId = sellerOrderId[0];
           if (buyerOrder.price < sellerOrder.price) {
             break;
           }
           const executionPrice = type === 'buy' ? sellerOrder.price : buyerOrder.price;
           let pipeline = redis.pipeline();
           if (sellerOrder.quantity <= buyerOrder.quantity) {
-            messageList.push({ reqType: 'execution', excutionType: 'complete', order: sellerOrder, quantity: sellerOrder.quantity, price: executionPrice });
+            messageList.push({ reqType: 'execution', executionType: 'complete', order: sellerOrder, quantity: sellerOrder.quantity, price: executionPrice });
             pipeline.del(`orderId:${sellerOrderId[0]}`);
             pipeline.zrem(`orders:companyId:${companyId}:type:sell`, sellerOrderId[0]);
             pipeline.decrby(`totalQuantity:companyId:${companyId}:type:sell`, sellerOrder.quantity);
             pipeline.hincrby(`userId:${sellerOrder.userId}`, 'tradableMoney', executionPrice * sellerOrder.quantity);
           } else {
-            messageList.push({ reqType: 'execution', excutionType: 'partial', order: sellerOrder, quantity: buyerOrder.quantity, price: executionPrice });
+            messageList.push({ reqType: 'execution', executionType: 'partial', order: sellerOrder, quantity: buyerOrder.quantity, price: executionPrice });
             pipeline.hincrby(`orderId:${sellerOrderId[0]}`, 'quantity', -buyerOrder.quantity);
             pipeline.decrby(`totalQuantity:companyId:${companyId}:type:sell`, buyerOrder.quantity);
             pipeline.hincrby(`userId:${sellerOrder.userId}`, 'tradableMoney', executionPrice * buyerOrder.quantity);
           }
           if (buyerOrder.quantity <= sellerOrder.quantity) {
-            messageList.push({ reqType: 'execution', excutionType: 'complete', order: buyerOrder, quantity: buyerOrder.quantity, price: executionPrice });
+            messageList.push({ reqType: 'execution', executionType: 'complete', order: buyerOrder, quantity: buyerOrder.quantity, price: executionPrice });
             pipeline.del(`orderId:${buyerOrderId[0]}`);
             pipeline.zrem(`orders:companyId:${companyId}:type:buy`, buyerOrderId[0]);
             pipeline.decrby(`totalQuantity:companyId:${companyId}:type:buy`, buyerOrder.quantity);
@@ -256,10 +258,10 @@ async function matching(message) {
             } else {
               const newStockId = await redis.incr('maxStockId');
               await redis.set(`stockIndex:userId:${buyerOrder.userId}:companyId:${buyerOrder.companyId}`, newStockId);
-              pipeline.hset(`stockId:${newStockId}`, ['userId', buyerOrder.userId, 'companyId', buyerOrder.companyId, 'tradableQuantity', buyerOrder.quantity]);
+              pipeline.hmset(`stockId:${newStockId}`, ['userId', buyerOrder.userId, 'companyId', buyerOrder.companyId, 'tradableQuantity', buyerOrder.quantity]);
             }
           } else {
-            messageList.push({ reqType: 'execution', excutionType: 'partial', order: buyerOrder, quantity: sellerOrder.quantity, price: executionPrice });
+            messageList.push({ reqType: 'execution', executionType: 'partial', order: buyerOrder, quantity: sellerOrder.quantity, price: executionPrice });
             pipeline.hincrby(`orderId:${buyerOrderId[0]}`, 'quantity', -sellerOrder.quantity);
             pipeline.decrby(`totalQuantity:companyId:${companyId}:type:buy`, sellerOrder.quantity);
             const buyerStockId = await redis.get(`stockIndex:userId:${buyerOrder.userId}:companyId:${buyerOrder.companyId}`);
@@ -268,20 +270,20 @@ async function matching(message) {
             } else {
               const newStockId = await redis.incr('maxStockId');
               await redis.set(`stockIndex:userId:${buyerOrder.userId}:companyId:${buyerOrder.companyId}`, newStockId);
-              pipeline.hset(`stockId:${newStockId}`, 'userId', buyerOrder.userId, 'companyId', buyerOrder.companyId, 'tradableQuantity', sellerOrder.quantity);
+              pipeline.hmset(`stockId:${newStockId}`, ['userId', buyerOrder.userId, 'companyId', buyerOrder.companyId, 'tradableQuantity', sellerOrder.quantity]);
             }
           }
           await pipeline.exec();
         }
     }
     if (messageList.length > 0) {
-      console.log(messageList);
+      console.log('messageList', messageList);
       const executionMessage = JSON.stringify(messageList);
       insertExecutionMessageQueue(executionMessage);
     }
   } catch (err) {
     console.error(err);
-    console.log(messageList);
+    console.log('messageList', messageList);
     if (messageList.length > 0) {
       const executionMessage = JSON.stringify(messageList);
       insertExecutionMessageQueue(executionMessage);
