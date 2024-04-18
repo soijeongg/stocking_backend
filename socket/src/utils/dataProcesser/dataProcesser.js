@@ -19,25 +19,25 @@ function setupWebSocketServer(server) {
     // 메시지 수신 시 처리
     ws.on('message', async function incoming(message) {
       const data = JSON.parse(message);
-      console.log(data);
+      // console.log(data);
       // 백엔드 메인 서버로부터의 메시지 처리 (개인 메시지)
       if (data.type === 'personal' && data.userId) {
-        console.log('체결 메세지 수신:', data.userId, ' ', data.notices);
+        // console.log('체결 메세지 수신:', data.userId, ' ', data.notices);
         // 개별 메시지 처리 - 체결 정보
         const targetWs = clients.get(data.userId);
         if (targetWs && targetWs.readyState === WebSocket.OPEN) {
-          console.log(`클라이언트에 연결된 유저의 체결 정보입니다. 클라이언트에 갱신을 전송합니다.`);
+          // console.log(`클라이언트에 연결된 유저의 체결 정보입니다. 클라이언트에 갱신을 전송합니다.`);
           targetWs.send(JSON.stringify({ type: 'notices', notices: data.notices }));
 
           // 해당 userId에 연결된 companyId를 찾아 호가창 데이터를 갱신하고 전송
-          console.log(data);
+          // console.log(data);
           const companyId = parseInt(data.companyId);
-          console.log('체결된 주문의 companyId:', companyId);
+          // console.log('체결된 주문의 companyId:', companyId);
         } else {
-          console.log(`클라이언트에 연결된 유저가 아닙니다.`);
+          // console.log(`클라이언트에 연결된 유저가 아닙니다.`);
         }
       } else if (data.type === 'broadcast') {
-        console.log('전체 메세지 수신:', data.notices);
+        // console.log('전체 메세지 수신:', data.notices);
         // 브로드캐스트 메시지 처리 - 호재/악재 발생 정보
         clients.forEach((client) => {
           if (client.readyState === WebSocket.OPEN) {
@@ -61,28 +61,28 @@ function setupWebSocketServer(server) {
       // 1초마다 차트 데이터 전송
       const chartDataInterval = setInterval(async () => {
         const chartData = await fetchAndSendChartData(companyId);
-        console.log('차트 데이터를 보냅니다:', chartData.currentPrice);
+        // console.log('차트 데이터를 보냅니다:', chartData.currentPrice);
         ws.send(JSON.stringify({ type: 'chartData', data: chartData }));
       }, 1000);
 
       ws.on('close', () => {
         clearInterval(chartDataInterval);
-        console.log('차트 데이터 연결 종료:', companyId);
+        // console.log('차트 데이터 연결 종료:', companyId);
       });
     } else if (path === 'orderData') {
-      console.log('호가 데이터를 보내야합니다:', companyId);
+      // console.log('호가 데이터를 보내야합니다:', companyId);
 
       // 1초마다 호가 데이터 전송
       const orderDataInterval = setInterval(async () => {
         const orderData = await fetchAndSendOrderData(companyId);
 
-        console.log('호가 데이터를 보냅니다.', '현재가:', orderData.currentPrice);
+        // console.log('호가 데이터를 보냅니다.', '현재가:', orderData.currentPrice);
         ws.send(JSON.stringify({ type: 'orderData', data: orderData }));
       }, 1000);
 
       ws.on('close', () => {
         clearInterval(orderDataInterval);
-        console.log('호가 데이터 연결 종료:', companyId);
+        // console.log('호가 데이터 연결 종료:', companyId);
       });
     }
   });
@@ -138,7 +138,7 @@ async function fetchAndSendOrderData(companyId) {
     // 결과 전송
     return { groupedOrders, currentPrice };
   } else {
-    console.log('에러가 발생해 호가 데이터를 보내지 못했습니다.');
+    // console.log('에러가 발생해 호가 데이터를 보내지 못했습니다.');
     return { groupedOrders: [], currentPrice: null };
   }
 }
