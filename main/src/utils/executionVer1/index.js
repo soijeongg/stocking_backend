@@ -229,11 +229,6 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
             });
           }
         }
-        if (type === 'buy') {
-          messageQueue.push({ orderType: 'tradableMoneyUpdate', userId: user.userId, tradableMoney: user.tradableMoney });
-        } else {
-          messageQueue.push({ orderType: 'tradableQuantityUpdate', stockId: stock.stockId, tradableQuantity: stock.tradableQuantity });
-        }
         // 주문 매칭 파트
         const sellerOrders = await tx.order.findMany({
           where: {
@@ -275,6 +270,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
                   price: sellerOrder.price,
                 });
                 sellerOrders.shift();
+                user.tradableMoney += (BigInt(buyerOrder.price) - BigInt(sellerOrder.price)) * BigInt(sellerOrder.quantity);
                 notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${sellerOrder.quantity}주, ${sellerOrder.price}원 구매주문이 체결되었습니다.`);
                 messageQueue.push({
                   orderType: 'execution',
@@ -307,6 +303,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
                 });
                 sellerOrder.quantity -= buyerOrder.quantity;
               }
+              user.tradableMoney += (BigInt(buyerOrder.price) - BigInt(sellerOrder.price)) * BigInt(buyerOrder.quantity);
               notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${buyerOrder.quantity}주, ${sellerOrder.price}원 구매주문이 체결되었습니다.`);
               messageQueue.push({
                 orderType: 'execution',
@@ -387,6 +384,11 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
               sellerOrder.quantity = 0;
             }
           }
+        }
+        if (type === 'buy') {
+          messageQueue.push({ orderType: 'tradableMoneyUpdate', userId: user.userId, tradableMoney: user.tradableMoney });
+        } else {
+          messageQueue.push({ orderType: 'tradableQuantityUpdate', stockId: stock.stockId, tradableQuantity: stock.tradableQuantity });
         }
         sendToAllClient(notices);
         // 주문 체결 결과 전송
