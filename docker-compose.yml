@@ -27,6 +27,9 @@ services:
         KAKAO_ID: $KAKAO_ID
         BACKEND_URL: $BACKEND_URL
         FRONTEND_URL: $FRONTEND_URL
+        REDIS_HOST: $REDIS_HOST
+        REDIS_PORT: $REDIS_PORT
+        REDIS_PASSWORD: $REDIS_PASSWORD
     image: ${ECR_REGISTRY}/stocking:latest
     environment:
       PORT: $PORT
@@ -51,6 +54,9 @@ services:
       AWS_REGION: $AWS_REGION
       REMOTE_PRIVATE_KEY: $REMOTE_PRIVATE_KEY
       EC2_HOST: $EC2_HOST
+      REDIS_HOST: $REDIS_HOST
+      REDIS_PORT: $REDIS_PORT
+      REDIS_PASSWORD: $REDIS_PASSWORD
   node-exporter:
     build:
       context: .
