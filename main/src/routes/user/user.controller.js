@@ -107,7 +107,7 @@ export class userController {
   getUserController = async (req, res, next) => {
     let { userId } = res.locals.user;
     let getOne = await this.userService.selectUserInfo(userId);
-    console.log('getOne: ', getOne);
+    // console.log('getOne: ', getOne);
     const processedUsers = getOne.map((user) => ({
       nickname: user.nickname,
       currentMoney: user.currentMoney.toString(),
@@ -117,7 +117,7 @@ export class userController {
       tier: user.tier,
       userId: user.userId,
     }));
-    console.log('processedUsers: ', processedUsers);
+    // console.log('processedUsers: ', processedUsers);
     return res.status(200).json({ data: processedUsers });
   };
   //회원의 닉네임을 받아오자.
