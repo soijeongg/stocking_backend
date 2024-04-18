@@ -38,9 +38,29 @@ app.use(express.urlencoded({ extended: false }));
 const redisClient = createClient({
   url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
   password: `${process.env.REDIS_PASSWORD}`,
+  connectTimeout: 10000, // 연결 시도 시간을 10초로 설정
 });
 
-await redisClient.connect();
+const connectWithRetry = async (retryCount = 0, maxRetries = 5) => {
+  if (redisClient.isOpen) {
+    return;
+  }
+  if (redisClient.isReady) {
+    return;
+  }
+  try {
+    await redisClient.connect();
+  } catch (err) {
+    console.log(err);
+    if (retryCount < maxRetries) {
+      console.log(`Retrying to connect... Attempt ${retryCount + 1}/${maxRetries}`);
+      await new Promise((resolve) => setTimeout(resolve, 1000 * (retryCount + 1)));
+      await connectWithRetry(retryCount + 1, maxRetries);
+    }
+  }
+};
+
+await connectWithRetry();
 console.log('Redis 서버에 연결되었습니다.');
 
 app.get('/metrics', async (req, res) => {

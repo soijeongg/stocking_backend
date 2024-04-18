@@ -229,6 +229,11 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
             });
           }
         }
+        if (type === 'buy') {
+          messageQueue.push({ orderType: 'tradableMoneyUpdate', userId: user.userId, tradableMoney: user.tradableMoney });
+        } else {
+          messageQueue.push({ orderType: 'tradableQuantityUpdate', userId: userId, companyId: companyId, tradableQuantity: stock.tradableQuantity });
+        }
         // 주문 매칭 파트
         const sellerOrders = await tx.order.findMany({
           where: {
@@ -270,7 +275,13 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
                   price: sellerOrder.price,
                 });
                 sellerOrders.shift();
-                user.tradableMoney += (BigInt(buyerOrder.price) - BigInt(sellerOrder.price)) * BigInt(sellerOrder.quantity);
+                if (buyerOrder.price > sellerOrder.price) {
+                  messageQueue.push({
+                    orderType: 'tradableMoneyIncrease',
+                    userId,
+                    tradableMoney: (BigInt(buyerOrder.price) - BigInt(sellerOrder.price)) * BigInt(sellerOrder.quantity),
+                  });
+                }
                 notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${sellerOrder.quantity}주, ${sellerOrder.price}원 구매주문이 체결되었습니다.`);
                 messageQueue.push({
                   orderType: 'execution',
@@ -303,7 +314,13 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
                 });
                 sellerOrder.quantity -= buyerOrder.quantity;
               }
-              user.tradableMoney += (BigInt(buyerOrder.price) - BigInt(sellerOrder.price)) * BigInt(buyerOrder.quantity);
+              if (buyerOrder.price > sellerOrder.price) {
+                messageQueue.push({
+                  orderType: 'tradableMoneyIncrease',
+                  userId,
+                  tradableMoney: (BigInt(buyerOrder.price) - BigInt(sellerOrder.price)) * BigInt(buyerOrder.quantity),
+                });
+              }
               notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${buyerOrder.quantity}주, ${sellerOrder.price}원 구매주문이 체결되었습니다.`);
               messageQueue.push({
                 orderType: 'execution',
@@ -385,11 +402,6 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
             }
           }
         }
-        if (type === 'buy') {
-          messageQueue.push({ orderType: 'tradableMoneyUpdate', userId: user.userId, tradableMoney: user.tradableMoney });
-        } else {
-          messageQueue.push({ orderType: 'tradableQuantityUpdate', userId: userId, companyId: companyId, tradableQuantity: stock.tradableQuantity });
-        }
         sendToAllClient(notices);
         // 주문 체결 결과 전송
         // messageQueue 배열을 queue처럼 사용하여 순차적으로 처리
@@ -403,6 +415,17 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
               },
               data: {
                 tradableMoney: message.tradableMoney,
+              },
+            });
+          } else if (message.orderType === 'tradableMoneyIncrease') {
+            await tx.user.update({
+              where: {
+                userId: message.userId,
+              },
+              data: {
+                tradableMoney: {
+                  increment: message.tradableMoney,
+                },
               },
             });
           } else if (message.orderType === 'tradableQuantityUpdate') {
