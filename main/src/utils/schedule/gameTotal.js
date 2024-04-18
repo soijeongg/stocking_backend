@@ -1,7 +1,7 @@
 import { resetUserMoney, createDummyUser, createCompany, createDummyOrderAndStock } from './gameStart.js';
 import { createDummyEvent } from './gameMiddle.js';
 import { deleteDummyUser, deleteCompany, updateStockToCash, updateRankBoard, updateMMR } from './gameEnd.js';
-import { sendNoticesToClient, sendNoticesToAllClients } from '../chartData/chartData.js';
+import { sendNoticesToClient, sendNoticesToAllClients } from '../socketConnecter/socketConnecter.js';
 
 async function waitForMinuteRemainder(minute) {
   return new Promise((resolve) => {

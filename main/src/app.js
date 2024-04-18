@@ -10,7 +10,6 @@ import { createClient } from 'redis';
 import RedisStore from 'connect-redis';
 import passportConfig from './utils/passportConfig/index.js';
 import { register, Counter, Histogram } from 'prom-client';
-import setupWebSocketServer from './utils/chartData/chartData.js';
 import LogMiddleware from './middlewares/log.middleware.js';
 import notFoundErrorHandler from './middlewares/notFoundError.middleware.js';
 import generalErrorHandler from './middlewares/generalError.middleware.js';
@@ -40,6 +39,9 @@ const redisClient = createClient({
   url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
   password: `${process.env.REDIS_PASSWORD}`,
 });
+console.log('host: ', process.env.REDIS_HOST);
+console.log('Port: ', process.env.REDIS_PORT);
+console.log('Password: ', process.env.REDIS_PASSWORD);
 
 await redisClient.connect();
 console.log('Redis 서버에 연결되었습니다.');
@@ -70,7 +72,6 @@ const sessionMiddleware = session({
 
 app.use(sessionMiddleware);
 // Passport 초기화 및 세션 사용
-setupWebSocketServer(server, sessionStore);
 
 app.get('/', (req, res) => {
   res.send('<h1>Stocking</h1>');
