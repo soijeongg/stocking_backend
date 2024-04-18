@@ -70,7 +70,7 @@ services:
   stocking_socket:
     build:
       context: .
-      dockerfile: dockerfile.socket
+      dockerfile: Dockerfile.socket
       args:
         PORT: $PORT
         DATABASE_URL: $DATABASE_URL
