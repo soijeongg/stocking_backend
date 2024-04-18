@@ -1,0 +1,113 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Rank {
+  rankId      Int     @id @default(autoincrement()) @unique @map("rankId")
+  userId      Int     @map("userId") @unique
+  earningRate Float   @default(0) @map("earningRate")
+  nickname    String  @map("nickname")
+  ranking     Int     @map("ranking")
+  User        User    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  
+  @@map("Rank")
+}
+
+model User {
+  userId       Int       @id @default(autoincrement()) @unique @map("userId")
+  email        String    @unique @map("email")
+  password     String    @map("password")
+  provider     String?   @map("provider")
+  isVerified   Boolean   @default(false)
+  token        String    @unique @map("token")
+  nickname     String    @map("nickname")
+  currentMoney BigInt    @default(0) @map("currentMoney")
+  totalAsset   BigInt    @default(0) @map("totalAsset")
+  initialSeed  BigInt    @default(0) @map("initialSeed")
+  mmr          Int       @default(0) @map("mmr")
+  tier         Tier      @default(bronze) @map("tier")
+  dummy        Boolean   @default(false) @map("dummy")
+  Stocks       Stock[]
+  Orders       Order[]
+  Concludeds   Concluded[]
+  rank         Rank?
+  
+  @@map("User")
+}
+
+model Company {
+  companyId     Int       @id @default(autoincrement()) @unique
+  name          String    @unique @map("name")
+  currentPrice  Int       @default(0) @map("currentPrice")
+  initialPrice  Int       @map("initialPrice")
+  Stocks        Stock[]
+  Orders        Order[]
+  Concludeds    Concluded[]
+
+  @@map("Company")
+}
+
+
+model Stock {
+  stockId      Int     @id @default(autoincrement()) @unique
+  userId       Int     @map("userId")
+  companyId    Int     @map("companyId")
+  quantity     Int     @map("quantity")
+  averagePrice Float   @map("averagePrice")
+  User         User    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  Company      Company @relation(fields: [companyId], references: [companyId], onDelete: Cascade)
+  
+  @@map("Stock")
+}
+
+model Order {
+  orderId    Int      @id @default(autoincrement()) @unique @map("orderId")
+  updatedAt  DateTime @default(now()) @map("updatedAt")
+  userId     Int      @map("userId")
+  companyId  Int      @map("companyId")
+  type       Type     @map("type")
+  price      Int      @map("price")
+  quantity   Int      @map("quantity")
+  User       User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  Company    Company  @relation(fields: [companyId], references: [companyId], onDelete: Cascade)
+  
+  @@map("Order")
+}
+
+model Concluded {
+  concludedId Int      @id @default(autoincrement()) @unique @map("concludedId")
+  createdAt   DateTime @default(now()) @map("createdAt")
+  userId      Int      @map("userId")
+  companyId   Int      @map("companyId")
+  type        Type     @map("type")
+  price       Int      @map("price")
+  quantity    Int      @map("quantity")
+  User        User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  Company     Company  @relation(fields: [companyId], references: [companyId], onDelete: Cascade)
+
+  @@map("Concluded")
+}
+
+enum Type {
+  buy
+  sell
+}
+
+enum Tier {
+  bronze
+  silver
+  gold
+  platinum
+  diamond
+}
