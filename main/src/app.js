@@ -10,7 +10,6 @@ import { createClient } from 'redis';
 import RedisStore from 'connect-redis';
 import passportConfig from './utils/passportConfig/index.js';
 import { register, Counter, Histogram } from 'prom-client';
-import setupWebSocketServer from './utils/chartData/chartData.js';
 import LogMiddleware from './middlewares/log.middleware.js';
 import notFoundErrorHandler from './middlewares/notFoundError.middleware.js';
 import generalErrorHandler from './middlewares/generalError.middleware.js';
@@ -70,7 +69,6 @@ const sessionMiddleware = session({
 
 app.use(sessionMiddleware);
 // Passport 초기화 및 세션 사용
-setupWebSocketServer(server, sessionStore);
 
 app.get('/', (req, res) => {
   res.send('<h1>Stocking</h1>');
@@ -88,6 +86,7 @@ app.use('/api', router);
 // 테스트 시에는 아래 코드를 사용합니다.
 await gameSetting();
 // setInterval(createDummyEvent, 5000);
+setInterval(createDummyEvent, 5000);
 
 app.use(notFoundErrorHandler);
 app.use(generalErrorHandler);
