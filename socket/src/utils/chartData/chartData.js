@@ -1,191 +1,147 @@
 import { WebSocketServer, WebSocket } from 'ws';
-import url from 'url';
-import { parse } from 'cookie';
 import { prisma } from '../prisma/index.js';
+import url from 'url';
+
 let wss;
 const clients = new Map();
-function setupWebSocketServer(server, sessionStore) {
+
+function setupWebSocketServer(server) {
   wss = new WebSocketServer({ server });
 
-  wss.on('connection', async function connection(ws, req) {
-    // const requestUrl = new URL(req.url, 'ws://localhost:3000/ws/chartData/:companyId'); // 기본 URL을 제공해야 합니다.
-    console.log('Received request URL:', req.url);
-    const pathSegments = req.url.split('/');
-    if (pathSegments[1] === 'ws' && pathSegments[2] === 'chartData') {
-      const companyId = Number(pathSegments[pathSegments.length - 1]);
-      console.log(companyId);
+  wss.on('connection', (ws, req) => {
+    // 1. 메인서버로부터 체결 데이터 수신
+    // 프론트엔드 클라이언트 식별을 위해 userId와 WebSocket 인스턴스를 맵핑
+    console.log('req.url: ', req.url);
+    const requestUrl = new url.URL(req.url, `ws://${req.headers.host}`);
+    console.log('requestUrl: ', requestUrl);
+    const userId = parseInt(requestUrl.pathname.split('/')[3]);
 
-      console.log('클라이언트가 연결되었습니다.');
+    console.log('클라이언트 연결 URL:', req.url, '\nUserId:', userId);
 
-      const getCurrentPrice = async () => {
-        let price = await prisma.Company.findFirst({
-          select: { currentPrice: true, initialPrice: true },
-          where: { companyId: +companyId },
-        });
-        ws.send(JSON.stringify(price));
-        // console.log(`가격 정보 전송: ${JSON.stringify(price)}`);
-      };
-      // 1초마다 가격 정보 전송
-      const intervalId = setInterval(getCurrentPrice, 1000);
-      // 클라이언트 연결이 끊어지면 인터벌 중지
-      ws.on('close', () => {
-        clearInterval(intervalId);
-        console.log('클라이언트와의 연결이 끊겼습니다.');
-      });
-    } else if (pathSegments[1] === 'ws' && pathSegments[2] === 'orderData') {
-      const companyId = Number(pathSegments[pathSegments.length - 1]);
-      console.log('클라이언트가 연결되었습니다');
+    // 메시지 수신 시 처리
+    ws.on('message', async function incoming(message) {
+      const data = JSON.parse(message);
+      console.log(data);
+      // 백엔드 메인 서버로부터의 메시지 처리 (개인 메시지)
+      if (data.type === 'personal' && data.userId) {
+        console.log('체결 메세지 수신:', data.userId, ' ', data.notices);
+        // 개별 메시지 처리 - 체결 정보
+        const targetWs = clients.get(data.userId);
+        if (targetWs && targetWs.readyState === WebSocket.OPEN) {
+          console.log(`클라이언트에 연결된 유저의 체결 정보입니다. 클라이언트에 갱신을 전송합니다.`);
+          targetWs.send(JSON.stringify({ type: 'notices', notices: data.notices }));
 
-      const getCurrentOrder = async () => {
-        let priceResult = await prisma.company.findFirst({
-          select: { currentPrice: true },
-          where: { companyId: companyId },
-        });
-
-        if (priceResult) {
-          let currentPrice = priceResult.currentPrice;
-          let groupedOrders = await prisma.order.groupBy({
-            by: ['type', 'price'], // type과 price로 그룹화합니다.
-            where: {
-              companyId: companyId,
-              price: {
-                gte: currentPrice - 50000,
-                lte: currentPrice + 50000,
-              },
-            },
-            _sum: {
-              quantity: true, // 각 그룹의 quantity 합계를 계산합니다.
-            },
-            having: {
-              quantity: {
-                _sum: {
-                  gt: 0, // quantity 합계가 0보다 큰 그룹만 포함시킵니다. 필요에 따라 이 조건을 조정할 수 있습니다.
-                },
-              },
-            },
-          });
-          groupedOrders.sort((a, b) => {
-            if (a.price === b.price) {
-              return a.type === 'sell' ? -1 : 1;
-            }
-            return b.price - a.price;
-          });
-          ws.send(JSON.stringify({ groupedOrders, currentPrice }));
+          // 해당 userId에 연결된 companyId를 찾아 호가창 데이터를 갱신하고 전송
+          console.log(data);
+          const companyId = parseInt(data.companyId);
+          console.log('체결된 주문의 companyId:', companyId);
         } else {
-          console.log('Company not found or currentPrice is undefined');
-          ws.send(JSON.stringify({ groupedOrders: [], currentPrice: null })); // 또는 적절한 오류 메시지
+          console.log(`클라이언트에 연결된 유저가 아닙니다.`);
         }
-      };
-      // 1초마다 가격 정보 전송
-      const intervalId = setInterval(getCurrentOrder, 1000);
-      // 클라이언트 연결이 끊어지면 인터벌 중지
-      ws.on('close', () => {
-        clearInterval(intervalId);
-        console.log('클라이언트와의 연결이 끊겼습니다.');
-      });
-    } else if (pathSegments[1] === 'ws' && pathSegments[2] === 'chatting') {
-      console.log('클라이언트가 연결되었습니다.');
-
-      const sessionCookie = req.headers.cookie;
-      const session = await findSessionByCookie(sessionCookie, sessionStore);
-      if (!session) {
-        console.log('세션 정보를 찾을 수 없습니다.');
-        ws.close(); // 세션 정보가 없는 경우 연결 종료
-        return;
-      }
-
-      // console.log('session: ' + JSON.stringify(session, null, 2));
-      const userId = session.passport?.user;
-      if (!userId) {
-        console.log('세션에서 사용자 ID를 찾을 수 없습니다.');
-        ws.close(); // 사용자 ID가 없는 경우 종료
-        return;
-      }
-
-      clients.set(userId, ws); // 사용자 ID를 키로 WebSocket 연결 저장
-
-      const nickname = await getUserNickname(userId);
-      // console.log('nickname: ', nickname);
-
-      ws.on('message', function incoming(message) {
-        const messageData = JSON.parse(message);
-        const { text, receiverId } = messageData; // 수신자 ID 포함
-
-        console.log(`${nickname}: ${text}`);
-
-        if (receiverId && clients.has(receiverId)) {
-          const receiverWs = clients.get(receiverId);
-          if (receiverWs.readyState === WebSocket.OPEN) {
-            receiverWs.send(JSON.stringify({ nickname, text })); // 지정된 수신자에게만 메시지 전송
+      } else if (data.type === 'broadcast') {
+        console.log('전체 메세지 수신:', data.notices);
+        // 브로드캐스트 메시지 처리 - 호재/악재 발생 정보
+        clients.forEach((client) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({ type: 'notices', notices: data.notices }));
           }
-        } else {
-          // 수신자가 지정되지 않았거나 찾을 수 없는 경우 모든 클라이언트에게 메시지 브로드캐스트 (선택적)
-          wss.clients.forEach(function each(client) {
-            if (client !== ws && client.readyState === WebSocket.OPEN) {
-              client.send(JSON.stringify({ nickname, text }));
-            }
-          });
-        }
-      });
+        });
+      }
+    });
+    //---------------------------------------------------------------------------------
+
+    // 2. 클라이언트에 차트데이터와 호가 데이터 전송
+    // URL에서 경로와 companyId 분석
+    const path = req.url.split('/')[2];
+    const companyId = parseInt(req.url.split('/')[3], 10);
+
+    if (userId) {
+      clients.set(userId, ws); // userId와 WebSocket 연결 객체 맵핑
+    }
+    // 프론트엔드 클라이언트로부터의 요청 처리
+    if (path === 'chartData') {
+      // 1초마다 차트 데이터 전송
+      const chartDataInterval = setInterval(async () => {
+        const chartData = await fetchAndSendChartData(companyId);
+        console.log('차트 데이터를 보냅니다:', chartData.currentPrice);
+        ws.send(JSON.stringify({ type: 'chartData', data: chartData }));
+      }, 1000);
 
       ws.on('close', () => {
-        console.log('클라이언트와의 연결이 끊겼습니다.');
-        clients.delete(userId); // 연결이 종료되면 클라이언트 목록에서 제거
+        clearInterval(chartDataInterval);
+        console.log('차트 데이터 연결 종료:', companyId);
+      });
+    } else if (path === 'orderData') {
+      console.log('호가 데이터를 보내야합니다:', companyId);
+
+      // 1초마다 호가 데이터 전송
+      const orderDataInterval = setInterval(async () => {
+        const orderData = await fetchAndSendOrderData(companyId);
+
+        console.log('호가 데이터를 보냅니다.', '현재가:', orderData.currentPrice);
+        ws.send(JSON.stringify({ type: 'orderData', data: orderData }));
+      }, 1000);
+
+      ws.on('close', () => {
+        clearInterval(orderDataInterval);
+        console.log('호가 데이터 연결 종료:', companyId);
       });
     }
   });
 }
 
-// 세션 쿠키를 사용하여 세션 스토어에서 세션 정보를 조회하는 함수
-async function findSessionByCookie(sessionCookie, sessionStore) {
-  if (!sessionCookie) return null;
+// 차트 데이터 조회 로직
+async function fetchAndSendChartData(companyId) {
+  const price = await prisma.company.findFirst({
+    select: { currentPrice: true, initialPrice: true },
+    where: { companyId: companyId },
+  });
+  return price;
+}
 
-  // express-session은 기본적으로 세션 쿠키 이름으로 'connect.sid'를 사용 + 우리 쿠키 이름도
-  const sessionIdCookie = parse(sessionCookie)['connect.sid'];
-  if (!sessionIdCookie) return null;
+// 호가 데이터 조회
+async function fetchAndSendOrderData(companyId) {
+  let priceResult = await prisma.company.findFirst({
+    select: { currentPrice: true },
+    where: { companyId: +companyId },
+  });
 
-  // 세션 ID를 추출하기 위한 정규 표현식
-  const sid = sessionIdCookie.split(':')[1].split('.')[0];
-  if (!sid) return null;
-
-  return new Promise((resolve, reject) => {
-    sessionStore.get(sid, (err, session) => {
-      if (err) reject(err);
-      else resolve(session);
+  if (priceResult) {
+    let currentPrice = priceResult.currentPrice;
+    let groupedOrders = await prisma.order.groupBy({
+      by: ['type', 'price'], // type과 price로 그룹화합니다.
+      where: {
+        companyId: +companyId,
+        price: {
+          gte: currentPrice - 50000, // 현재 가격 기준으로 -50000 이상
+          lte: currentPrice + 50000, // 현재 가격 기준으로 +50000 이하
+        },
+      },
+      _sum: {
+        quantity: true, // 각 그룹의 quantity 합계를 계산합니다.
+      },
+      having: {
+        quantity: {
+          _sum: {
+            gt: 0, // quantity 합계가 0보다 큰 그룹만 포함시킵니다.
+          },
+        },
+      },
     });
-  });
-}
 
-async function getUserNickname(userId) {
-  const user = await prisma.user.findUnique({
-    where: { userId: +userId },
-  });
-  return user?.nickname; // 'nickname'은 유저 모델의 닉네임 필드입니다.
-}
+    // 가격에 따라 정렬 (판매 주문은 오름차순, 구매 주문은 내림차순)
+    groupedOrders.sort((a, b) => {
+      if (a.price === b.price) {
+        return a.type === 'sell' ? -1 : 1;
+      }
+      return b.price - a.price;
+    });
 
-// 프론트로 메시지를 보내기 위해 사용(sendNoticesToAllClients, sendNoticesToClient)
-
-// 모든 사용자에게 메시지 전달
-export function sendNoticesToAllClients(notices) {
-  /*
-  if (!wss.clients)
-    return console.log('wss', wss); // 추가된 파트
-  else console.log('wss.clients.size', wss.clients.size); //추가된 파트
-  */
-  wss.clients.forEach(function each(client) {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify({ type: 'notices', notices }));
-    }
-  });
-}
-
-// 개별 사용자에게 메시지 전달
-export function sendNoticesToClient(userId, notices) {
-  if (clients.has(userId)) {
-    const client = clients.get(userId);
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify({ type: 'notices', notices }));
-    }
+    // 결과 전송
+    return { groupedOrders, currentPrice };
+  } else {
+    console.log('에러가 발생해 호가 데이터를 보내지 못했습니다.');
+    return { groupedOrders: [], currentPrice: null };
   }
 }
 
