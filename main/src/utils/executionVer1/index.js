@@ -1,6 +1,6 @@
 import { prisma } from '../prisma/index.js';
 import { Prisma } from '@prisma/client';
-import { sendNoticesToClient, sendNoticesToAllClients } from '../chartData/chartData.js';
+import { sendNoticesToClient, sendNoticesToAllClients } from '../socketConnecter/socketConnecter.js';
 
 // 전체 유저에게 전송
 function sendToAllClient(notices) {

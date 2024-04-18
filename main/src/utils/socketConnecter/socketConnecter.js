@@ -1,8 +1,6 @@
 import WebSocket from 'ws';
 
-const SOCKET_SERVER_URL = 'ws://localhost:4000';
-
-const socketClient = new WebSocket(SOCKET_SERVER_URL);
+const socketClient = new WebSocket(process.env.SOCKET_SERVER_URL);
 
 socketClient.on('open', function open() {
   console.log('소켓 서버에 연결됨');
