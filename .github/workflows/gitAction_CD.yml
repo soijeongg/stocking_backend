@@ -64,11 +64,11 @@ jobs:
           docker-compose push
 
       # SSH로 EC2 인스턴스에 접속하여 Docker 컨테이너 재시작!~
-      - name: SSH into EC2 instance and restart Docker container
+      - name: SSH into EC2 instance and restart Docker container for socket
         uses: appleboy/ssh-action@master
         with:
           key: ${{ secrets.REMOTE_PRIVATE_KEY }}
-          host: ${{ secrets.EC2_HOST}}
+          host: ${{ secrets.EC2_HOST_SOCKET}}
           username: ${{ secrets.EC2_USERNAME }}
           port: 22
           script: |
@@ -86,11 +86,11 @@ jobs:
             sudo docker system prune -a -f
 
       # SSH로 EC2 인스턴스에 접속하여 Docker 컨테이너 재시작!~
-      - name: SSH into EC2 instance and restart Docker container for socket
+      - name: SSH into EC2 instance and restart Docker container 
         uses: appleboy/ssh-action@master
         with:
           key: ${{ secrets.REMOTE_PRIVATE_KEY }}
-          host: ${{ secrets.EC2_HOST_SOCKET}}
+          host: ${{ secrets.EC2_HOST}}
           username: ${{ secrets.EC2_USERNAME }}
           port: 22
           script: |
