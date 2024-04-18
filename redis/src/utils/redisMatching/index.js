@@ -2,6 +2,7 @@ import Redis from 'ioredis';
 import { prisma } from '../prisma/index.js';
 import { insertExecutionMessageQueue } from '../executionQueue/index.js';
 async function matching(message) {
+  console.log('matchingQueue', message);
   const messageList = [];
   try {
     const redis = new Redis();
@@ -18,7 +19,7 @@ async function matching(message) {
         pipeline.set('maxOrderId', orders[orders.length - 1].orderId);
 
         for (let order of orders) {
-          pipeline.hset(`orderId:${order.orderId}`, [
+          pipeline.hmset(`orderId:${order.orderId}`, [
             'userId',
             order.userId,
             'companyId',
@@ -64,7 +65,13 @@ async function matching(message) {
         await redis.hset(`userId:${newUserId}`, 'tradableMoney', 10000000);
         break;
       default:
-        const { userId, companyId, orderId, type, quantity, price } = orderData;
+        let { userId, companyId, orderId, type, quantity, price } = orderData;
+        if (quantity <= 0) return;
+        if (userId) userId = +userId;
+        if (companyId) companyId = +companyId;
+        if (orderId) orderId = +orderId;
+        if (quantity) quantity = +quantity;
+        if (price) price = +price;
         const orderList = [];
         let nowQuantity, finalPrice, needMoney;
         // 주문 유효성 검증
@@ -83,7 +90,7 @@ async function matching(message) {
               const sellerOrderIds = await redis.zrange(`orders:companyId:${companyId}:type:sell`, 0, -1);
               for (let sellerOrderId of sellerOrderIds) {
                 const sellerOrder = await redis.hgetall(`orderId:${sellerOrderId}`);
-                if (nowQuantity + sellerOrder.quantity >= quantity) {
+                if (nowQuantity + sellerOrder.quantity < quantity) {
                   nowQuantity += sellerOrder.quantity;
                   needMoney += sellerOrder.price * sellerOrder.quantity;
                   finalPrice = sellerOrder.price;
@@ -100,6 +107,7 @@ async function matching(message) {
               finalPrice = price;
             }
             let tradableMoney = await redis.hget(`userId:${userId}`, 'tradableMoney');
+            if (tradableMoney) tradableMoney = +tradableMoney;
             if (reqType !== 'orderCreate') {
               buyOrder = await redis.hgetall(`orderId:${orderId}`);
               tradableMoney += buyOrder.price * buyOrder.quantity;
@@ -180,7 +188,7 @@ async function matching(message) {
             const nowTime = new Date();
             const timeGap = nowTime.getTime() - new Date('2024-01-01').getTime();
             const score = type === 'buy' ? -price + timeGap / 1e11 : price + timeGap / 1e11;
-            pipeline.hset(`orderId:${newOrderId}`, 'userId', userId, 'companyId', companyId, 'type', type, 'updatedAt', nowTime, 'price', finalPrice, 'quantity', quantity);
+            pipeline.hmset(`orderId:${newOrderId}`, ['userId', userId, 'companyId', companyId, 'type', type, 'updatedAt', nowTime, 'price', finalPrice, 'quantity', quantity]);
             if (type === 'buy') {
               pipeline.zadd(`orders:companyId:${companyId}:type:buy`, score, newOrderId);
               pipeline.incrby(`totalQuantity:companyId:${companyId}:type:buy`, quantity);
@@ -266,12 +274,18 @@ async function matching(message) {
           await pipeline.exec();
         }
     }
-    const executionMessage = JSON.stringify(messageList);
-    insertExecutionMessageQueue(executionMessage);
+    if (messageList.length > 0) {
+      console.log(messageList);
+      const executionMessage = JSON.stringify(messageList);
+      insertExecutionMessageQueue(executionMessage);
+    }
   } catch (err) {
-    const executionMessage = JSON.parse(messageList);
-    insertExecutionMessageQueue(executionMessage);
     console.error(err);
+    console.log(messageList);
+    if (messageList.length > 0) {
+      const executionMessage = JSON.stringify(messageList);
+      insertExecutionMessageQueue(executionMessage);
+    }
   }
 }
 

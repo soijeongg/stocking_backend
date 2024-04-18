@@ -3,7 +3,6 @@ import { deleteDummyUser, deleteCompany, updateStockToCash, updateRankBoard, upd
 import { insertMatchingMessageQueue } from '../matchingQueue/index.js';
 
 async function gameSetting() {
-  insertMatchingMessageQueue(jsonOrderDataString);
   await deleteDummyUser();
   await deleteCompany();
   await resetUserMoney();
