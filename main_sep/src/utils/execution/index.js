@@ -121,7 +121,6 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                   orderId: sellerOrder.orderId,
                 },
               });
-              notices.push(`${seller.nickname}님의 ${company.name} 종목에 대한 ${sellerOrder.quantity}주, ${sellerOrder.price}원 판매주문이 체결되지 않았습니다.`);
               continue;
             }
             const buyerStock = await tx.stock.findFirst({
@@ -357,7 +356,9 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
           // console.log(`Execution time: ${endTime - startTime} ms`);
           // console.log('notices', notices);
           // sendToClient(userId, notices);
-          sendToAllClient(notices);
+          if (notices.length > 0) {
+            sendToAllClient(notices);
+          }
           return '요청한 주문이 완료되었습니다.';
           //종결
         } else {
@@ -449,7 +450,6 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
                   orderId: buyerOrder.orderId,
                 },
               });
-              notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${buyerOrder.quantity}주, ${buyerOrder.price}원 구매주문이 체결되지 않았습니다.`);
               continue;
             }
             const buyerStock = await tx.stock.findFirst({
@@ -687,7 +687,9 @@ async function execution(userId, companyId, orderId, type, quantity, price) {
           // let endTime = performance.now();
           // console.log(`Execution time: ${endTime - startTime} ms`);
           // sendToClient(userId, notices);
-          sendToAllClient(notices);
+          if (notices.length > 0) {
+            sendToAllClient(notices);
+          }
           return '주문이 완료되었습니다.';
           //종결
         }

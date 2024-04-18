@@ -1,3 +1,4 @@
+#메인 서버를 만들자 (메안과 node expoter를 사용하자)
 version: "3.8"
 services:
   stocking:
@@ -58,23 +59,3 @@ services:
     container_name: node-exporter
     ports:
       - "9100:9100"
-  prometheus:
-    build:
-      context: .
-      dockerfile: Dockerfile.prometheus
-    image: ${ECR_REGISTRY}/prometheus:latest
-    ports:
-      - "9091:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    depends_on:
-      - node-exporter
-  grafana:
-    build:
-      context: .
-      dockerfile: Dockerfile.grafana
-    image: ${ECR_REGISTRY}/grafana:latest
-    ports:
-      - "3001:3001"
-    volumes:
-      - ./grafana.ini:/etc/grafana/grafana.ini
