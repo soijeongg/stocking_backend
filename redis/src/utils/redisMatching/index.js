@@ -192,7 +192,7 @@ async function matching(message) {
             if (type === 'buy') {
               pipeline.zadd(`orders:companyId:${companyId}:type:buy`, score, newOrderId);
               pipeline.incrby(`totalQuantity:companyId:${companyId}:type:buy`, quantity);
-              pipeline.hincrby(`userId:${userId}`, 'tradableMoney', -needMoney);
+              pipeline.hincrby(`userId:${userId}`, 'tradableMoney', -finalPrice * quantity);
             } else {
               const stockId = await redis.get(`stockIndex:userId:${userId}:companyId:${companyId}`);
               pipeline.zadd(`orders:companyId:${companyId}:type:sell`, score, newOrderId);
@@ -214,9 +214,9 @@ async function matching(message) {
           }
         }
         // trablableMoney, tradableQuantity 업데이트
+        const initialTradableMoney = await redis.hget(`userId:${userId}`, 'tradableMoney');
         if (type === 'buy') {
-          const tradableMoney = await redis.hget(`userId:${userId}`, 'tradableMoney');
-          messageList.push({ reqType: 'tradableMoneyUpdate', userId, tradableMoney });
+          messageList.push({ reqType: 'tradableMoneyUpdate', userId, initialTradableMoney });
         } else {
           const stockId = await redis.get(`stockIndex:userId:${userId}:companyId:${companyId}`);
           const tradableQuantity = await redis.hget(`stockId:${stockId}`, 'tradableQuantity');
@@ -235,6 +235,7 @@ async function matching(message) {
           }
           const executionPrice = type === 'buy' ? sellerOrder.price : buyerOrder.price;
           let pipeline = redis.pipeline();
+          // 매도 주문 처리
           if (sellerOrder.quantity <= buyerOrder.quantity) {
             messageList.push({ reqType: 'execution', executionType: 'complete', order: sellerOrder, quantity: sellerOrder.quantity, price: executionPrice });
             pipeline.del(`orderId:${sellerOrderId[0]}`);
@@ -246,6 +247,10 @@ async function matching(message) {
             pipeline.hincrby(`orderId:${sellerOrderId[0]}`, 'quantity', -buyerOrder.quantity);
             pipeline.decrby(`totalQuantity:companyId:${companyId}:type:sell`, buyerOrder.quantity);
             pipeline.hincrby(`userId:${sellerOrder.userId}`, 'tradableMoney', executionPrice * buyerOrder.quantity);
+          }
+          // 매수 주문 처리
+          if (buyerOrder.price > executionPrice) {
+            pipeline.hincrby(`userId:${buyerOrder.userId}`, 'tradableMoney', (buyerOrder.price - executionPrice) * Math.min(+buyerOrder.quantity, +sellerOrder.quantity));
           }
           if (buyerOrder.quantity <= sellerOrder.quantity) {
             messageList.push({ reqType: 'execution', executionType: 'complete', order: buyerOrder, quantity: buyerOrder.quantity, price: executionPrice });
@@ -274,6 +279,10 @@ async function matching(message) {
             }
           }
           await pipeline.exec();
+        }
+        const finalTradableMoney = await redis.hget(`userId:${userId}`, 'tradableMoney');
+        if (type === 'buy' && initialTradableMoney !== finalTradableMoney) {
+          messageList.push({ reqType: 'tradableMoneyUpdate', userId, finalTradableMoney });
         }
     }
     if (messageList.length > 0) {
