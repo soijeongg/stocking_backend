@@ -1,7 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import { createServer } from 'http';
-import setupWebSocketServer from './utils/chartData/chartData.js';
+import setupWebSocketServer from './utils/dataProcesser/dataProcesser.js';
 
 dotenv.config();
 

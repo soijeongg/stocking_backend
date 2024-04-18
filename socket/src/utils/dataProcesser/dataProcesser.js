@@ -11,9 +11,7 @@ function setupWebSocketServer(server) {
   wss.on('connection', (ws, req) => {
     // 1. 메인서버로부터 체결 데이터 수신
     // 프론트엔드 클라이언트 식별을 위해 userId와 WebSocket 인스턴스를 맵핑
-    console.log('req.url: ', req.url);
     const requestUrl = new url.URL(req.url, `ws://${req.headers.host}`);
-    console.log('requestUrl: ', requestUrl);
     const userId = parseInt(requestUrl.pathname.split('/')[3]);
 
     console.log('클라이언트 연결 URL:', req.url, '\nUserId:', userId);
