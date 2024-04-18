@@ -406,6 +406,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
               },
             });
           } else if (message.orderType === 'tradableQuantityUpdate') {
+            console.log('1번 업데이트');
             await tx.stock.update({
               where: {
                 stockId: message.stockId,
@@ -462,6 +463,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
                 },
               });
               if (stock) {
+                console.log('2번 업데이트');
                 await tx.stock.update({
                   where: {
                     stockId: stock.stockId,
@@ -542,6 +544,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
                   },
                 });
               } else {
+                console.log('3번 업데이트');
                 await tx.stock.update({
                   where: {
                     stockId: stock.stockId,
