@@ -388,7 +388,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
         if (type === 'buy') {
           messageQueue.push({ orderType: 'tradableMoneyUpdate', userId: user.userId, tradableMoney: user.tradableMoney });
         } else {
-          messageQueue.push({ orderType: 'tradableQuantityUpdate', stockId: stock.stockId, tradableQuantity: stock.tradableQuantity });
+          messageQueue.push({ orderType: 'tradableQuantityUpdate', userId: userId, companyId: companyId, tradableQuantity: stock.tradableQuantity });
         }
         sendToAllClient(notices);
         // 주문 체결 결과 전송
@@ -406,15 +406,22 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
               },
             });
           } else if (message.orderType === 'tradableQuantityUpdate') {
-            console.log('1번 업데이트');
-            await tx.stock.update({
+            const stock = await tx.stock.findFirst({
               where: {
-                stockId: message.stockId,
-              },
-              data: {
-                tradableQuantity: message.tradableQuantity,
+                userId: message.userId,
+                companyId: message.companyId,
               },
             });
+            if (stock) {
+              await tx.stock.update({
+                where: {
+                  stockId: stock.stockId,
+                },
+                data: {
+                  tradableQuantity: message.tradableQuantity,
+                },
+              });
+            }
           } else if (message.orderType === 'execution') {
             companyCurrentPrice = message.price;
             if (message.order.type === 'buy') {
@@ -463,7 +470,6 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
                 },
               });
               if (stock) {
-                console.log('2번 업데이트');
                 await tx.stock.update({
                   where: {
                     stockId: stock.stockId,
@@ -544,7 +550,6 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
                   },
                 });
               } else {
-                console.log('3번 업데이트');
                 await tx.stock.update({
                   where: {
                     stockId: stock.stockId,
