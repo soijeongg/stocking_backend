@@ -1,6 +1,6 @@
 import argon2 from 'argon2';
 import { sendVerificationEmail } from '../../utils/nodemailer/index.js';
-import { sendToMatchingServer } from '../../utils/sendToMatchingServer';
+import { sendToMatchingServer } from '../../utils/sendToMatchingServer/index.js';
 
 export class userRepository {
   constructor(prisma) {

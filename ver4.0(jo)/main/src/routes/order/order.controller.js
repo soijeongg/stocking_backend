@@ -1,4 +1,4 @@
-import { sendToMatchingServer } from '../../utils/sendToMatchingServer';
+import { sendToMatchingServer } from '../../utils/sendToMatchingServer/index.js';
 export class OrderController {
   constructor(orderService) {
     this.orderService = orderService;
