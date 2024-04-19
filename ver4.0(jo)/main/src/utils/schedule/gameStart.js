@@ -155,7 +155,7 @@ async function sendMatchingServerGameStart() {
     reqType: 'gameCreate',
   };
   const jsonDataString = JSON.stringify(jsonData);
-  sendToMatchingServer(jsonDataString);
+  await sendToMatchingServer(jsonDataString);
 }
 
 export { resetUserMoney, createDummyUser, createCompany, createDummyOrderAndStock, sendMatchingServerGameStart };

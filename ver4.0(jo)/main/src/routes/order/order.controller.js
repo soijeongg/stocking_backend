@@ -71,7 +71,7 @@ export class OrderController {
     }
     try {
       const jsonOrderData = {
-        orderType: 'create',
+        reqType: 'orderCreate',
         userId: userId,
         companyId: companyId,
         orderId: null,
@@ -135,7 +135,7 @@ export class OrderController {
 
       // 정정 주문 실행
       const jsonOrderData = {
-        orderType: 'update',
+        reqType: 'orderUpdate',
         userId: userId,
         companyId: companyId,
         orderId: orderId,
@@ -171,7 +171,7 @@ export class OrderController {
         return res.status(400).json({ message: '존재하지 않는 주문입니다.' });
       }
       const jsonOrderData = {
-        orderType: 'delete',
+        reqType: 'orderDelete',
         userId: userId,
         companyId: originalOrder.companyId,
         orderId: orderId,

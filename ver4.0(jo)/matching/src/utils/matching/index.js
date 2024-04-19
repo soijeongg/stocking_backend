@@ -106,7 +106,6 @@ async function matching(message) {
         if (orderId) orderId = +orderId;
         if (quantity) quantity = +quantity;
         if (price) price = +price;
-        const orderList = [];
         let nowQuantity, finalPrice, needMoney;
         // 주문 유효성 검증
         if (reqType !== 'orderDelete') {
@@ -143,7 +142,7 @@ async function matching(message) {
             let tradableMoney = await redis.hget(`userId:${userId}`, 'tradableMoney');
             if (tradableMoney) tradableMoney = +tradableMoney;
             if (reqType !== 'orderCreate') {
-              buyOrder = await redis.hgetall(`orderId:${orderId}`);
+              const buyOrder = await redis.hgetall(`orderId:${orderId}`);
               tradableMoney += buyOrder.price * buyOrder.quantity;
             }
             if (tradableMoney < needMoney) {
@@ -181,6 +180,7 @@ async function matching(message) {
             }
           }
         }
+        const orderList = [];
         // 주문 생성/정정/삭제
         switch (reqType) {
           case 'orderCreate':
@@ -194,8 +194,10 @@ async function matching(message) {
             orderList.push({ reqType: 'delete', orderId, userId, companyId, type, quantity, price });
             break;
         }
+        console.log('orderList', orderList);
         for (let order of orderList) {
           const { reqType, orderId, userId, companyId, type, quantity, price } = order;
+          console.log(reqType, orderId, userId, companyId, type, quantity, price);
           if (reqType === 'delete') {
             let pipeline = redis.pipeline();
             const deleteOrder = await redis.hgetall(`orderId:${orderId}`);
@@ -250,7 +252,7 @@ async function matching(message) {
         // trablableMoney, tradableQuantity 업데이트
         const initialTradableMoney = await redis.hget(`userId:${userId}`, 'tradableMoney');
         if (type === 'buy') {
-          messageList.push({ reqType: 'tradableMoneyUpdate', userId, initialTradableMoney });
+          messageList.push({ reqType: 'tradableMoneyUpdate', userId, tradableMoney: initialTradableMoney });
         } else {
           const stockId = await redis.get(`stockIndex:userId:${userId}:companyId:${companyId}`);
           const tradableQuantity = await redis.hget(`stockId:${stockId}`, 'tradableQuantity');

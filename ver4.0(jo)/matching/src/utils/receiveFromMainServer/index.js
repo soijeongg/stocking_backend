@@ -24,7 +24,9 @@ const initKafka = async () => {
 
     await consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
-        await matching(message.value);
+        const messageString = message.value.toString();
+        console.log('받은 메시지 문자열', messageString);
+        await matching(messageString);
         console.log('Message processed successfully.');
       },
     });

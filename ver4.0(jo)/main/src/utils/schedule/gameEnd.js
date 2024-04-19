@@ -151,6 +151,6 @@ async function sendMatchingServerGameEnd() {
     reqType: 'gameDelete',
   };
   const jsonDataString = JSON.stringify(jsonData);
-  sendToMatchingServer(jsonDataString);
+  await sendToMatchingServer(jsonDataString);
 }
 export { deleteDummyUser, deleteCompany, updateStockToCash, updateRankBoard, updateMMR, sendMatchingServerGameEnd };
