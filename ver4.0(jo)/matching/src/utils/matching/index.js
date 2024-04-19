@@ -173,6 +173,7 @@ async function matching(message) {
                 }
                 nowQuantity = quantity;
                 finalPrice = buyerOrder.price;
+                break;
               }
             } else {
               nowQuantity = quantity;
@@ -223,6 +224,7 @@ async function matching(message) {
             const newOrderId = await redis.incr('maxOrderId');
             const nowTime = new Date();
             const timeGap = nowTime.getTime() - new Date('2024-01-01').getTime();
+            finalPrice = +finalPrice;
             const score = type === 'buy' ? -finalPrice + timeGap / 1e11 : finalPrice + timeGap / 1e11;
             pipeline.hmset(`orderId:${newOrderId}`, ['userId', userId, 'companyId', companyId, 'type', type, 'updatedAt', nowTime, 'price', finalPrice, 'quantity', quantity]);
             if (type === 'buy') {
@@ -266,6 +268,8 @@ async function matching(message) {
           const sellerOrder = await redis.hgetall(`orderId:${sellerOrderId[0]}`);
           buyerOrder.orderId = buyerOrderId[0];
           sellerOrder.orderId = sellerOrderId[0];
+          buyerOrder.price = +buyerOrder.price;
+          sellerOrder.price = +sellerOrder.price;
           if (buyerOrder.price < sellerOrder.price) {
             break;
           }
@@ -318,7 +322,7 @@ async function matching(message) {
         }
         const finalTradableMoney = await redis.hget(`userId:${userId}`, 'tradableMoney');
         if (type === 'buy' && initialTradableMoney !== finalTradableMoney) {
-          messageList.push({ reqType: 'tradableMoneyUpdate', userId, finalTradableMoney });
+          messageList.push({ reqType: 'tradableMoneyUpdate', userId, tradableMoney: finalTradableMoney });
         }
     }
     if (messageList.length > 0) {

@@ -37,13 +37,18 @@ async function execution(message) {
               });
               break;
             case 'tradableQuantityUpdate':
-              await tx.stock.update({
+              const stock = await tx.stock.findFirst({
                 where: {
                   userId: message.userId,
                   companyId: message.companyId,
                 },
+              });
+              await tx.stock.update({
+                where: {
+                  stockId: stock.stockId,
+                },
                 data: {
-                  tradableQuantity: message.tradableQuantity,
+                  tradableQuantity: +message.tradableQuantity,
                 },
               });
               break;
