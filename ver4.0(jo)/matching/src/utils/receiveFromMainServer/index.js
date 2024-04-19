@@ -24,8 +24,7 @@ const initKafka = async () => {
 
     await consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
-        const message = message.value;
-        await matching(message);
+        await matching(message.value);
         console.log('Message processed successfully.');
       },
     });
