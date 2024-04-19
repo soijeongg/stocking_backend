@@ -1,4 +1,4 @@
-import { insertOrderMessageQueue } from '../../utils/orderQueue/index.js';
+import { sendToMatchingServer } from '../../utils/sendToMatchingServer';
 export class OrderController {
   constructor(orderService) {
     this.orderService = orderService;
@@ -80,7 +80,7 @@ export class OrderController {
         price: orderData.price,
       };
       const jsonOrderDataString = JSON.stringify(jsonOrderData);
-      insertOrderMessageQueue(jsonOrderDataString);
+      sendToMatchingServer(jsonOrderDataString);
       return res.json({ message: '주문이 접수 되었습니다.' });
     } catch (error) {
       console.log(error.stack);
@@ -144,7 +144,7 @@ export class OrderController {
         price: correctedPrice,
       };
       const jsonOrderDataString = JSON.stringify(jsonOrderData);
-      insertOrderMessageQueue(jsonOrderDataString);
+      sendToMatchingServer(jsonOrderDataString);
       return res.json({ message: '주문이  접수되었습니다.' });
     } catch (error) {
       console.log(error.stack);
@@ -180,7 +180,7 @@ export class OrderController {
         price: originalOrder.price,
       };
       const jsonOrderDataString = JSON.stringify(jsonOrderData);
-      insertOrderMessageQueue(jsonOrderDataString);
+      sendToMatchingServer(jsonOrderDataString);
       return res.json({ message: '주문이  접수되었습니다.' });
     } catch (error) {
       console.log(error.stack);

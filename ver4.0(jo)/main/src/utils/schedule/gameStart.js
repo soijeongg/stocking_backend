@@ -1,6 +1,7 @@
 import { prisma } from '../prisma/index.js';
 import crypto from 'crypto';
 import argon2 from 'argon2';
+import { sendToMatchingServer } from '../sendToMatchingServer/index.js';
 
 /**
  * @description
@@ -149,5 +150,12 @@ async function createDummyOrderAndStock() {
     console.error('더미 주문을 생성하는 동안 오류가 발생했습니다:', err);
   }
 }
+async function sendMatchingServerGameStart() {
+  const jsonData = {
+    reqType: 'gameCreate',
+  };
+  const jsonDataString = JSON.stringify(jsonData);
+  sendToMatchingServer(jsonDataString);
+}
 
-export { resetUserMoney, createDummyUser, createCompany, createDummyOrderAndStock };
+export { resetUserMoney, createDummyUser, createCompany, createDummyOrderAndStock, sendMatchingServerGameStart };

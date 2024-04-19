@@ -145,5 +145,11 @@ async function updateMMR() {
     console.error('MMR 업데이트 중 오류가 발생했습니다:', err);
   }
 }
-
-export { deleteDummyUser, deleteCompany, updateStockToCash, updateRankBoard, updateMMR };
+async function sendMatchingServerGameEnd() {
+  const jsonData = {
+    reqType: 'gameDelete',
+  };
+  const jsonDataString = JSON.stringify(jsonData);
+  sendToMatchingServer(jsonDataString);
+}
+export { deleteDummyUser, deleteCompany, updateStockToCash, updateRankBoard, updateMMR, sendMatchingServerGameEnd };
