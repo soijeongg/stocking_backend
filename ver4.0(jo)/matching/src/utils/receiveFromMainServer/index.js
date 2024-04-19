@@ -1,4 +1,5 @@
 import { Kafka } from 'kafkajs'; // kafkajs 패키지에서 Kafka를 import합니다
+import { matching } from '../matching/index.js';
 
 // Kafka 클라이언트를 생성합니다.
 const kafka = new Kafka({
@@ -23,10 +24,8 @@ const initKafka = async () => {
 
     await consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
-        console.log({
-          value: message.value.toString(),
-        });
-        // 여기에서 받은 메시지를 처리하는 로직을 추가하세요.
+        const message = message.value;
+        await matching(message);
         console.log('Message processed successfully.');
       },
     });
@@ -35,4 +34,4 @@ const initKafka = async () => {
   }
 };
 
-initKafka();
+export { initKafka };
