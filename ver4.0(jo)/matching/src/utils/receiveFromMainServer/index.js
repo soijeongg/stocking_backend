@@ -4,7 +4,7 @@ import { matching } from '../matching/index.js';
 // Kafka 클라이언트를 생성합니다.
 const kafka = new Kafka({
   clientId: 'matching-server',
-  brokers: ['52.79.201.23:9092', '43.200.179.176:9092', '13.124.81.159:9092'],
+  brokers: [`${process.env.KAFKA_IP1}`, `${process.env.KAFKA_IP2}`, `${process.env.KAFKA_IP2}`],
 });
 const consumer = kafka.consumer({ groupId: 'matching-group' });
 
