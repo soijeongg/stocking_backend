@@ -17,6 +17,7 @@ import router from './routes/index.js';
 import { gameTotal } from './utils/schedule/gameTotal.js';
 import { gameSetting } from './utils/schedule/gameSetting.js';
 import { createDummyEvent } from './utils/schedule/gameMiddle.js';
+import { initKafka } from './utils/receiveFromMatchingServer/index.js';
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ app.use(
     credentials: true, // 쿠키를 포함한 요청을 허용
   })
 );
+initKafka();
 
 app.use(express.json());
 app.use(cookieParser());
