@@ -123,6 +123,8 @@ async function matching(message) {
               const sellerOrderIds = await redis.zrange(`orders:companyId:${companyId}:type:sell`, 0, -1);
               for (let sellerOrderId of sellerOrderIds) {
                 const sellerOrder = await redis.hgetall(`orderId:${sellerOrderId}`);
+                sellerOrder.price = +sellerOrder.price;
+                sellerOrder.quantity = +sellerOrder.quantity;
                 if (nowQuantity + sellerOrder.quantity < quantity) {
                   nowQuantity += sellerOrder.quantity;
                   needMoney += sellerOrder.price * sellerOrder.quantity;
@@ -143,6 +145,8 @@ async function matching(message) {
             if (tradableMoney) tradableMoney = +tradableMoney;
             if (reqType !== 'orderCreate') {
               const buyOrder = await redis.hgetall(`orderId:${orderId}`);
+              buyOrder.price = +buyOrder.price;
+              buyOrder.quantity = +buyOrder.quantity;
               tradableMoney += buyOrder.price * buyOrder.quantity;
             }
             if (tradableMoney < needMoney) {
@@ -154,18 +158,22 @@ async function matching(message) {
             finalPrice = 1e14;
             const stockId = await redis.get(`stockIndex:userId:${userId}:companyId:${companyId}`);
             const tradableQuantity = await redis.hget(`stockId:${stockId}`, 'tradableQuantity');
+            tradableQuantity = +tradableQuantity;
             if (!tradableQuantity || tradableQuantity < quantity) {
               messageList.push({ reqType: 'messageToClient', userId: userId, message: '예약 가능한 주식수가 부족합니다.' });
               throw new Error('예약 가능한 주식수가 부족합니다.');
             }
             if (reqType !== 'orderCreate') {
               sellOrder = await redis.hgetall(`orderId:${orderId}`);
+              sellOrder.quantity = +sellOrder.quantity;
               tradableQuantity += sellOrder.quantity;
             }
             if (!price) {
               const buyerOrderIds = await redis.zrange(`orders:companyId:${companyId}:type:buy`, 0, -1);
               for (let buyerOrderId of buyerOrderIds) {
                 const buyerOrder = await redis.hgetall(`orderId:${buyerOrderId}`);
+                buyerOrder.price = +buyerOrder.price;
+                buyerOrder.quantity = +buyerOrder.quantity;
                 if (nowQuantity + buyerOrder.quantity <= quantity) {
                   nowQuantity += buyerOrder.quantity;
                   finalPrice = buyerOrder.price;
@@ -202,6 +210,8 @@ async function matching(message) {
           if (reqType === 'delete') {
             let pipeline = redis.pipeline();
             const deleteOrder = await redis.hgetall(`orderId:${orderId}`);
+            deleteOrder.price = +deleteOrder.price;
+            deleteOrder.quantity = +deleteOrder.quantity;
             if (!deleteOrder) {
               messageList.push({ reqType: 'messageToClient', userId, message: '존재하지 않는 주문입니다.' });
               throw new Error('존재하지 않는 주문입니다.');
@@ -239,6 +249,8 @@ async function matching(message) {
             }
             await pipeline.exec();
             const createdOrder = await redis.hgetall(`orderId:${newOrderId}`);
+            createdOrder.price = +createdOrder.price;
+            createdOrder.quantity = +createdOrder.quantity;
             messageList.push({
               reqType: 'orderCreate',
               orderId: newOrderId,
@@ -269,7 +281,9 @@ async function matching(message) {
           buyerOrder.orderId = buyerOrderId[0];
           sellerOrder.orderId = sellerOrderId[0];
           buyerOrder.price = +buyerOrder.price;
+          buyerOrder.quantity = +buyerOrder.quantity;
           sellerOrder.price = +sellerOrder.price;
+          sellerOrder.quantity = +sellerOrder.quantity;
           if (buyerOrder.price < sellerOrder.price) {
             break;
           }
