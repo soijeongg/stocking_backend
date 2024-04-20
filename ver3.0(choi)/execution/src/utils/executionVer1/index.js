@@ -282,7 +282,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
                     tradableMoney: (BigInt(buyerOrder.price) - BigInt(sellerOrder.price)) * BigInt(sellerOrder.quantity),
                   });
                 }
-                notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${sellerOrder.quantity}주, ${sellerOrder.price}원 구매주문이 체결되었습니다.`);
+                notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${sellerOrder.quantity}주, ${sellerOrder.price}원 구매주문이 체결되었습니다.1`);
                 messageQueue.push({
                   orderType: 'execution',
                   executionType: 'partial',
@@ -321,7 +321,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
                   tradableMoney: (BigInt(buyerOrder.price) - BigInt(sellerOrder.price)) * BigInt(buyerOrder.quantity),
                 });
               }
-              notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${buyerOrder.quantity}주, ${sellerOrder.price}원 구매주문이 체결되었습니다.`);
+              notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${buyerOrder.quantity}주, ${sellerOrder.price}원 구매주문이 체결되었습니다.1`);
               messageQueue.push({
                 orderType: 'execution',
                 executionType: 'complete',
@@ -349,7 +349,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
                 },
               });
               if (sellerOrder.quantity > buyerOrder.quantity) {
-                notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${buyerOrder.quantity}주, ${buyerOrder.price}원 구매주문이 체결되었습니다.`);
+                notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${buyerOrder.quantity}주, ${buyerOrder.price}원 구매주문이 체결되었습니다.1`);
                 messageQueue.push({
                   orderType: 'execution',
                   executionType: 'complete',
@@ -370,7 +370,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
                 continue;
               }
               if (sellerOrder.quantity === buyerOrder.quantity) {
-                notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${sellerOrder.quantity}주, ${buyerOrder.price}원 구매주문이 체결되었습니다.`);
+                notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${sellerOrder.quantity}주, ${buyerOrder.price}원 구매주문이 체결되었습니다.1`);
                 messageQueue.push({
                   orderType: 'execution',
                   executionType: 'complete',
@@ -380,7 +380,7 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
                 });
                 buyerOrders.shift();
               } else {
-                notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${sellerOrder.quantity}주, ${buyerOrder.price}원 구매주문이 체결되었습니다.`);
+                notices.push(`${buyer.nickname}님의 ${company.name} 종목에 대한 ${sellerOrder.quantity}주, ${buyerOrder.price}원 구매주문이 체결되었습니다.1`);
                 messageQueue.push({
                   orderType: 'execution',
                   executionType: 'partial',
