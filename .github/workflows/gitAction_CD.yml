@@ -1,5 +1,4 @@
 name: Deploy to EC2 with ECR
-#ECR
 on:
   push:
     branches:
@@ -59,6 +58,11 @@ jobs:
           REDIS_PORT: ${{ secrets.REDIS_PORT}}
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD}}
           SOCKET_SERVER_URL: ${{ secrets.SOCKET_SERVER_URL}}
+          KAFKA_IP1: ${{ secrets.KAFKA_IP1}}
+          KAFKA_IP2: ${{ secrets.KAFKA_IP2}}
+          KAFKA_IP3: ${{ secrets.KAFKA_IP3}}
+          MATCHING_REDIS_HOST: ${{ secrets.MATCHING_REDIS_HOST}}
+          MATCHING_REDIS_PORT: ${{ secrets.MATCHING_REDIS_PORT}}
         run: |
           docker-compose build
           docker-compose push
@@ -86,7 +90,7 @@ jobs:
             sudo docker system prune -a -f
 
       # SSH로 EC2 인스턴스에 접속하여 Docker 컨테이너 재시작!~
-      - name: SSH into EC2 instance and restart Docker container 
+      - name: SSH into EC2 instance and restart Docker container
         uses: appleboy/ssh-action@master
         with:
           key: ${{ secrets.REMOTE_PRIVATE_KEY }}
@@ -96,6 +100,28 @@ jobs:
           script: |
             docker login -u AWS -p $(aws ecr get-login-password --region ${{ secrets.AWS_REGION }}) ${{ steps.login-ecr.outputs.registry }}
             docker pull ${{ steps.login-ecr.outputs.registry }}/stocking:latest
+            docker pull ${{ steps.login-ecr.outputs.registry }}/node-exporter:latest
+            sudo docker ps -a
+            sudo docker stop $(docker ps -a -q)
+            sudo docker ps -a
+            sudo docker rm $(docker ps -aq)
+            sudo docker ps -a
+            sudo docker run -d -p 3000:3000 ${{ steps.login-ecr.outputs.registry }}/stocking:latest
+            sudo docker run -d -p 9100:9100 --name node-exporter ${{ steps.login-ecr.outputs.registry }}/node-exporter:latest
+            sudo docker ps -a
+            sudo docker system prune -a -f
+
+      # SSH로 EC2 인스턴스에 접속하여 Docker 컨테이너 재시작!~
+      - name: SSH into EC2 instance and restart Docker container
+        uses: appleboy/ssh-action@master
+        with:
+          key: ${{ secrets.REMOTE_PRIVATE_KEY }}
+          host: ${{ secrets.EC2_HOST_EXECUTION}}
+          username: ${{ secrets.EC2_USERNAME }}
+          port: 22
+          script: |
+            docker login -u AWS -p $(aws ecr get-login-password --region ${{ secrets.AWS_REGION }}) ${{ steps.login-ecr.outputs.registry }}
+            docker pull ${{ steps.login-ecr.outputs.registry }}/stocking-execution:latest
             docker pull ${{ steps.login-ecr.outputs.registry }}/node-exporter:latest
             sudo docker ps -a
             sudo docker stop $(docker ps -a -q)

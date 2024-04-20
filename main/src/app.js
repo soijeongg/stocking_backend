@@ -17,12 +17,15 @@ import router from './routes/index.js';
 import { gameTotal } from './utils/schedule/gameTotal.js';
 import { gameSetting } from './utils/schedule/gameSetting.js';
 import { createDummyEvent } from './utils/schedule/gameMiddle.js';
+import { initializeProducer, terminateProducer } from './utils/kafkaProducer/kafkaProducer.js';
 
 dotenv.config();
 
 const app = express();
 const server = createServer(app);
 const PORT = process.env.PORT;
+
+initializeProducer().catch(console.error);
 
 //app.use(LogMiddleware);
 app.use(
@@ -38,9 +41,29 @@ app.use(express.urlencoded({ extended: false }));
 const redisClient = createClient({
   url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
   password: `${process.env.REDIS_PASSWORD}`,
+  connectTimeout: 10000, // 연결 시도 시간을 10초로 설정
 });
 
-await redisClient.connect();
+const connectWithRetry = async (retryCount = 0, maxRetries = 5) => {
+  if (redisClient.isOpen) {
+    return;
+  }
+  if (redisClient.isReady) {
+    return;
+  }
+  try {
+    await redisClient.connect();
+  } catch (err) {
+    console.log(err);
+    if (retryCount < maxRetries) {
+      console.log(`Retrying to connect... Attempt ${retryCount + 1}/${maxRetries}`);
+      await new Promise((resolve) => setTimeout(resolve, 1000 * (retryCount + 1)));
+      await connectWithRetry(retryCount + 1, maxRetries);
+    }
+  }
+};
+
+await connectWithRetry();
 console.log('Redis 서버에 연결되었습니다.');
 
 app.get('/metrics', async (req, res) => {
@@ -90,5 +113,16 @@ await gameSetting();
 app.use(notFoundErrorHandler);
 app.use(generalErrorHandler);
 server.listen(PORT, () => {
-  console.log(PORT, '포트로 서버가 열렸어요!');
+  console.log(PORT, '포트로 메인 서버가 열렸어요!');
 });
+
+// 애플리케이션 종료 시 Kafka Producer 연결 해제
+const gracefulShutdown = async () => {
+  console.log('Shutting down gracefully...');
+  await terminateProducer();
+  console.log('Kafka Producer disconnected');
+  process.exit(0);
+};
+
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);

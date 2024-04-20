@@ -12,5 +12,5 @@ const PORT = process.env.PORT || 4000;
 setupWebSocketServer(server);
 
 server.listen(PORT, () => {
-  console.log(`${PORT} 포트로 서버가 시작되었습니다.`);
+  console.log(`${PORT} 포트로 소켓 서버가 시작되었습니다.`);
 });

@@ -57,10 +57,10 @@ async function createDummyUser() {
         nickname: 'dummy',
         password: hashedPassword,
         token: crypto.randomBytes(20).toString('hex'),
-        currentMoney: BigInt(10000000000),
-        tradableMoney: BigInt(10000000000),
-        initialSeed: BigInt(10000000000),
-        totalAsset: BigInt(10000000000),
+        currentMoney: BigInt(100000000000),
+        tradableMoney: BigInt(100000000000),
+        initialSeed: BigInt(100000000000),
+        totalAsset: BigInt(100000000000),
         isVerified: true,
         dummy: true,
       },
@@ -108,9 +108,8 @@ async function createDummyOrderAndStock() {
       for (let company of companies) {
         let currentPrice = company.currentPrice;
         currentPrice /= 10000;
-        let maxOrder = Math.round(1000 / currentPrice);
+        let maxOrder = 1000 * Math.round(1000 / currentPrice);
         for (let i = currentPrice / 2; i < currentPrice; ++i) {
-          //1부터 10까지 랜덤으로된 숫자 생성
           let random = Math.floor(Math.random() * maxOrder) + 1;
           await prisma.order.create({
             data: {
