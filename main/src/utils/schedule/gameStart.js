@@ -108,9 +108,8 @@ async function createDummyOrderAndStock() {
       for (let company of companies) {
         let currentPrice = company.currentPrice;
         currentPrice /= 10000;
-        let maxOrder = Math.round(1000 / currentPrice);
+        let maxOrder = 10 * Math.round(1000 / currentPrice);
         for (let i = currentPrice / 2; i < currentPrice; ++i) {
-          //1부터 10까지 랜덤으로된 숫자 생성
           let random = Math.floor(Math.random() * maxOrder) + 1;
           await prisma.order.create({
             data: {

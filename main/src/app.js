@@ -113,7 +113,7 @@ await gameSetting();
 app.use(notFoundErrorHandler);
 app.use(generalErrorHandler);
 server.listen(PORT, () => {
-  console.log(PORT, '포트로 서버가 열렸어요!');
+  console.log(PORT, '포트로 메인 서버가 열렸어요!');
 });
 
 // 애플리케이션 종료 시 Kafka Producer 연결 해제
