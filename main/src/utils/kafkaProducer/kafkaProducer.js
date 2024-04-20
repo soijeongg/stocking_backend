@@ -28,10 +28,10 @@ export const sendMessage = async (topic, messages) => {
       topic: 'executionQueue',
       messages: [{ value: JSON.stringify(messages) }],
     });
-    console.log(`메세지: `, JSON.stringify(messages));
-    console.log(`메세지가 kafka서버에 보내졌습니다. 토픽: ${topic}`);
+    // console.log(`메세지: `, JSON.stringify(messages));
+    // console.log(`메세지가 kafka서버에 보내졌습니다. 토픽: ${topic}`);
   } catch (error) {
-    console.error(`kafka통신에 에러가 발생했습니다. 토픽 ${topic}:`, error);
+    console.error(`kafka통신에 에러가 발생했습니다. 토픽 ${topic}:`, error.message);
     throw new Error(`Kafka sendMessage error: ${error.message}`);
   }
 };

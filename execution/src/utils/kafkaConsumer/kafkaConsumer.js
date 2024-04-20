@@ -25,14 +25,14 @@ const initKafka = async () => {
     await consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
         const messageString = message.value.toString();
-        console.log('받은 메시지 문자열', messageString);
+        // console.log('받은 메시지 문자열', messageString);
         const messageObject = JSON.parse(messageString);
         const orderData = JSON.parse(messageObject[0].value);
         try {
           await execution(orderData.orderType, orderData.userId, orderData.companyId, orderData.orderId, orderData.type, orderData.quantity, orderData.price);
-          console.log('주문을 처리했습니다.');
+          // console.log('주문을 처리했습니다.');
         } catch (error) {
-          console.error('주문을 처리하지 못했습니다.', error);
+          console.error('주문을 처리하지 못했습니다.', error.message);
         }
         console.log('Message processed successfully.');
       },
