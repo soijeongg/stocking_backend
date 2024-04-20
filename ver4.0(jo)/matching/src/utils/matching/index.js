@@ -18,8 +18,16 @@ async function waitForRedisConnection(redis, timeout = 1000) {
     }
   }
 }
+//개발시 로컬에서 사용
+// const redis = new Redis({
+//   retryStrategy: (times) => Math.min(times * 50, 2000),
+//   maxRetriesPerRequest: 10,
+// });
 
+//배포시 elasticache 주소로 변경
 const redis = new Redis({
+  host: `${process.env.MATCHING_REDIS_HOST}`, // Elasticache Redis 엔드포인트 주소
+  port: `${process.env.MATCHING_REDIS_PORT}`, // 기본 Redis 포트
   retryStrategy: (times) => Math.min(times * 50, 2000),
   maxRetriesPerRequest: 10,
 });
