@@ -77,7 +77,7 @@ async function createCompany() {
   try {
     // 회사 이름과 현재가격을 배열로 저장
     const companies = ['항해 전자', '항해 자동차', '항해 화학'];
-    const companyPrices = [300000, 500000, 1000000];
+    const companyPrices = [100000, 200000, 300000];
     // 더미 회사 생성
     for (let i = 0; i < companies.length; i++) {
       await prisma.company.create({
@@ -108,7 +108,7 @@ async function createDummyOrderAndStock() {
       for (let company of companies) {
         let currentPrice = company.currentPrice;
         currentPrice /= 10000;
-        let maxOrder = 1000 * Math.round(1000 / currentPrice);
+        let maxOrder = 5000 * Math.round(1000 / currentPrice);
         for (let i = currentPrice / 2; i < currentPrice; ++i) {
           let random = Math.floor(Math.random() * maxOrder) + 1;
           await prisma.order.create({
