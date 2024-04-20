@@ -31,13 +31,16 @@ const initKafka = async () => {
         const orderData = JSON.parse(messageObject[0].value);
         try {
           const startTime = Date.now();
-          await execution(orderData.orderType, orderData.userId, orderData.companyId, orderData.orderId, orderData.type, orderData.quantity, orderData.price);
-          const endTime = Date.now();
-          const executionTime = endTime - startTime;
-          executionTimeSum += executionTime;
-          executionCount++;
-          const averageExecutionTime = executionTimeSum / executionCount;
-          console.log(`현재까지의 평균 주문 처리 시간: ${averageExecutionTime.toFixed(2)}ms`);
+          const result = await execution(orderData.orderType, orderData.userId, orderData.companyId, orderData.orderId, orderData.type, orderData.quantity, orderData.price);
+          if (result === 'success') {
+            const endTime = Date.now();
+            const executionTime = endTime - startTime;
+            executionTimeSum += executionTime;
+            executionCount++;
+            const averageExecutionTime = executionTimeSum / executionCount;
+            console.log(`현재까지의 평균 주문 처리 시간: ${averageExecutionTime.toFixed(2)}ms`);
+          }
+
           // console.log('주문을 처리했습니다.');
         } catch (error) {
           console.error('주문을 처리하지 못했습니다.', error.message);
