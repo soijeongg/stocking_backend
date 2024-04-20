@@ -45,7 +45,7 @@ const initKafka = async () => {
         } catch (error) {
           console.error('주문을 처리하지 못했습니다.', error.message);
         }
-        console.log('Message processed successfully.');
+        console.log(orderData.orderType, orderData.userId, orderData.companyId, orderData.orderId, orderData.type, orderData.quantity, orderData.price);
       },
     });
   } catch (err) {
