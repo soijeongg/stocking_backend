@@ -12,7 +12,7 @@ function sendToClient(userId, notices) {
 }
 
 async function execution(orderType, userId, companyId, orderId, type, quantity, price) {
-  if (quantity <= 0) return;
+  if (quantity <= 0) return 'fail';
   if (userId) userId = +userId;
   if (companyId) companyId = +companyId;
   if (orderId) orderId = +orderId;
@@ -606,9 +606,11 @@ async function execution(orderType, userId, companyId, orderId, type, quantity, 
       }
     );
     //여기서 notices 배열을 이용하여 채팅창으로 사용자들에게 체결 내역 전달
+    return 'success';
   } catch (err) {
     console.log(err.message);
     sendToClient(userId, [`요청 실패: ${err.message}`]);
+    return 'fail';
   }
 }
 
