@@ -59,6 +59,11 @@ jobs:
           REDIS_PORT: ${{ secrets.REDIS_PORT}}
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD}}
           SOCKET_SERVER_URL: ${{ secrets.SOCKET_SERVER_URL}}
+          KAFKA_IP1: ${{ secrets.KAFKA_IP1}}
+          KAFKA_IP2: ${{ secrets.KAFKA_IP2}}
+          KAFKA_IP3: ${{ secrets.KAFKA_IP3}}
+          MATCHING_REDIS_HOST: ${{ secrets.MATCHING_REDIS_HOST}}
+          MATCHING_REDIS_PORT: ${{ secrets.MATCHING_REDIS_PORT}}
         run: |
           docker-compose build
           docker-compose push
