@@ -21,7 +21,8 @@ const initKafka = async () => {
     console.log('start subscribe');
     await consumer.connect();
     await consumer.subscribe({ topic: 'executionQueue', fromBeginning: true });
-
+    let executionTimeSum = 0;
+    let executionCount = 0;
     await consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
         const messageString = message.value.toString();
@@ -29,7 +30,14 @@ const initKafka = async () => {
         const messageObject = JSON.parse(messageString);
         const orderData = JSON.parse(messageObject[0].value);
         try {
+          const startTime = Date.now();
           await execution(orderData.orderType, orderData.userId, orderData.companyId, orderData.orderId, orderData.type, orderData.quantity, orderData.price);
+          const endTime = Date.now();
+          const executionTime = endTime - startTime;
+          executionTimeSum += executionTime;
+          executionCount++;
+          const averageExecutionTime = executionTimeSum / executionCount;
+          console.log(`현재까지의 평균 주문 처리 시간: ${averageExecutionTime.toFixed(2)}ms`);
           // console.log('주문을 처리했습니다.');
         } catch (error) {
           console.error('주문을 처리하지 못했습니다.', error.message);
