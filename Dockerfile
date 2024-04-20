@@ -60,8 +60,8 @@ MATCHING_REDIS_PORT=$MATCHING_REDIS_PORT
 
 
 
-LABEL creator="no6@trello"
-LABEL version="1.0.0"
+LABEL creator="no7@stocking"
+LABEL version="3.0.0"
 
 
 
