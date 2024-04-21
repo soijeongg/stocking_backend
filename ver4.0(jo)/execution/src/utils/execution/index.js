@@ -21,7 +21,7 @@ async function execution(message) {
         let companyCurrentPrice = -1;
         while (messageQueue.length > 0) {
           const message = messageQueue.shift();
-          console.log('현재 처리중인 message', message);
+          // console.log('현재 처리중인 message', message);
           switch (message.reqType) {
             case 'messageToClient':
               sendToClient(message.userId, message.message);

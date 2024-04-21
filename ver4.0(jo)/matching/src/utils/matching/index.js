@@ -44,7 +44,7 @@ redis.on('reconnecting', () => {
 });
 
 async function matching(message) {
-  console.log('matchingQueue', message);
+  // console.log('matchingQueue', message);
   const messageList = [];
   try {
     await waitForRedisConnection(redis);
@@ -211,10 +211,10 @@ async function matching(message) {
             orderList.push({ reqType: 'delete', orderId, userId, companyId, type, quantity, price });
             break;
         }
-        console.log('orderList', orderList);
+        // console.log('orderList', orderList);
         for (let order of orderList) {
           const { reqType, orderId, userId, companyId, type, quantity, price } = order;
-          console.log(reqType, orderId, userId, companyId, type, quantity, price);
+          // console.log(reqType, orderId, userId, companyId, type, quantity, price);
           if (reqType === 'delete') {
             let pipeline = redis.pipeline();
             const deleteOrder = await redis.hgetall(`orderId:${orderId}`);
@@ -348,14 +348,14 @@ async function matching(message) {
         }
     }
     if (messageList.length > 0) {
-      console.log('messageList', messageList);
+      // console.log('messageList', messageList);
       const executionMessage = JSON.stringify(messageList);
       sendToExecutionServer(executionMessage);
     }
     return 'success';
   } catch (err) {
     console.error(err);
-    console.log('messageList', messageList);
+    // console.log('messageList', messageList);
     if (messageList.length > 0) {
       const executionMessage = JSON.stringify(messageList);
       sendToExecutionServer(executionMessage);

@@ -26,7 +26,7 @@ const initKafka = async () => {
     await consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
         const messageString = message.value.toString();
-        console.log('받은 메시지 문자열', messageString);
+        // console.log('받은 메시지 문자열', messageString);
         const startTime = Date.now();
         await execution(messageString);
         const endTime = Date.now();
@@ -35,7 +35,7 @@ const initKafka = async () => {
         executionCount++;
         const averageExecutionTime = executionTimeSum / executionCount;
         console.log(`현재까지의 평균 체결 처리 시간: ${averageExecutionTime.toFixed(2)}ms`);
-        console.log('Message processed successfully.');
+        // console.log('Message processed successfully.');
       },
     });
   } catch (err) {
