@@ -352,6 +352,7 @@ async function matching(message) {
       const executionMessage = JSON.stringify(messageList);
       sendToExecutionServer(executionMessage);
     }
+    return 'success';
   } catch (err) {
     console.error(err);
     console.log('messageList', messageList);
@@ -359,6 +360,7 @@ async function matching(message) {
       const executionMessage = JSON.stringify(messageList);
       sendToExecutionServer(executionMessage);
     }
+    return 'fail';
   }
 }
 
