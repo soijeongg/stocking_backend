@@ -1,6 +1,6 @@
 import { prisma } from '../prisma/index.js';
-import { insertOrderMessageQueue } from '../orderQueue/index.js';
 import { sendNoticesToAllClients } from '../socketConnecter/socketConnecter.js';
+import { sendMessage } from '../kafkaProducer/kafkaProducer.js';
 
 // 전체 유저에게 전송
 function sendToAllClient(notices) {
@@ -77,13 +77,13 @@ async function createDummyEvent() {
         jsonOrderData.quantity = -quantity;
         jsonOrderData.price = null;
         const jsonOrderDataString = JSON.stringify(jsonOrderData);
-        insertOrderMessageQueue(jsonOrderDataString);
+        await sendMessage('postOrder', [{ value: jsonOrderDataString }]);
       } else {
         jsonOrderData.type = 'buy';
         jsonOrderData.quantity = quantity;
         jsonOrderData.price = null;
         const jsonOrderDataString = JSON.stringify(jsonOrderData);
-        insertOrderMessageQueue(jsonOrderDataString);
+        await sendMessage('postOrder', [{ value: jsonOrderDataString }]);
       }
     } else if (random < 0.4) {
       // 지정가 주문 생성
@@ -98,13 +98,13 @@ async function createDummyEvent() {
         jsonOrderData.quantity = -quantity;
         jsonOrderData.price = company.currentPrice + constprice * 10000;
         const jsonOrderDataString = JSON.stringify(jsonOrderData);
-        insertOrderMessageQueue(jsonOrderDataString);
+        await sendMessage('postOrder', [{ value: jsonOrderDataString }]);
       } else {
         jsonOrderData.type = 'buy';
         jsonOrderData.quantity = quantity;
         jsonOrderData.price = company.currentPrice - constprice * 10000;
         const jsonOrderDataString = JSON.stringify(jsonOrderData);
-        insertOrderMessageQueue(jsonOrderDataString);
+        await sendMessage('postOrder', [{ value: jsonOrderDataString }]);
       }
     } else {
       // 사건과 관계없이 매도/매수 주문 모두 생성
@@ -113,14 +113,14 @@ async function createDummyEvent() {
         jsonOrderData.quantity = Math.floor(Math.random() * 3);
         jsonOrderData.price = company.currentPrice + i * 10000;
         const jsonOrderDataString = JSON.stringify(jsonOrderData);
-        insertOrderMessageQueue(jsonOrderDataString);
+        await sendMessage('postOrder', [{ value: jsonOrderDataString }]);
       }
       for (let i = 0; i <= 5; ++i) {
         jsonOrderData.type = 'sell';
         jsonOrderData.quantity = Math.floor(Math.random() * 3);
         jsonOrderData.price = company.currentPrice + i * 10000;
         const jsonOrderDataString = JSON.stringify(jsonOrderData);
-        insertOrderMessageQueue(jsonOrderDataString);
+        await sendMessage('postOrder', [{ value: jsonOrderDataString }]);
       }
     }
   } catch (err) {

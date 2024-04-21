@@ -1,4 +1,4 @@
-import { insertOrderMessageQueue } from '../../utils/orderQueue/index.js';
+import { sendMessage } from '../../utils/kafkaProducer/kafkaProducer.js';
 export class OrderController {
   constructor(orderService) {
     this.orderService = orderService;
@@ -80,10 +80,12 @@ export class OrderController {
         price: orderData.price,
       };
       const jsonOrderDataString = JSON.stringify(jsonOrderData);
-      insertOrderMessageQueue(jsonOrderDataString);
+      // console.log('주문이 접수되었습니다.');
+      await sendMessage('executionQueue', [{ value: jsonOrderDataString }]);
+      // console.log('주문을 kafka서버로 전송합니다.');
       return res.json({ message: '주문이 접수 되었습니다.' });
     } catch (error) {
-      console.log(error.stack);
+      console.log(error.message);
       const { message } = error.message ? error : { message: '주문 생성 도중 문제가 발생했습니다.' };
       if (error.message) return res.status(400).json({ message });
     }
@@ -144,10 +146,10 @@ export class OrderController {
         price: correctedPrice,
       };
       const jsonOrderDataString = JSON.stringify(jsonOrderData);
-      insertOrderMessageQueue(jsonOrderDataString);
+      await sendMessage('executionQueue', [{ value: jsonOrderDataString }]);
       return res.json({ message: '주문이  접수되었습니다.' });
     } catch (error) {
-      console.log(error.stack);
+      console.log(error.message);
       const { message } = error.message ? error : { message: '주문 정정 도중 문제가 발생했습니다.' };
       if (error.message) return res.status(400).json({ message });
     }
@@ -183,7 +185,7 @@ export class OrderController {
       insertOrderMessageQueue(jsonOrderDataString);
       return res.json({ message: '주문이  접수되었습니다.' });
     } catch (error) {
-      console.log(error.stack);
+      console.log(error.message);
       return res.status(400).json({ message: '주문 삭제 도중 문제가 발생했습니다.' });
     }
   };
