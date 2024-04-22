@@ -354,7 +354,7 @@ async function matching(message) {
     }
     return 'success';
   } catch (err) {
-    console.error(err);
+    console.log(err.message);
     // console.log('messageList', messageList);
     if (messageList.length > 0) {
       const executionMessage = JSON.stringify(messageList);

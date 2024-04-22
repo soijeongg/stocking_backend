@@ -19,7 +19,7 @@ function setupWebSocketServer(server) {
     // 메시지 수신 시 처리
     ws.on('message', async function incoming(message) {
       const data = JSON.parse(message);
-      console.log(data);
+      // console.log(data);
       // 백엔드 메인 서버로부터의 메시지 처리 (개인 메시지)
       if (data.type === 'personal' && data.userId) {
         // console.log('체결 메세지 수신:', data.userId, ' ', data.notices);
