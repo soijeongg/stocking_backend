@@ -26,7 +26,7 @@ const initKafka = async () => {
     await consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
         const messageString = message.value.toString();
-        console.log('매칭 서버로부터 받은 메시지 문자열', messageString);
+        // console.log('매칭 서버로부터 받은 메시지 문자열', messageString);
         const startTime = Date.now();
         await execution(messageString);
         const endTime = Date.now();

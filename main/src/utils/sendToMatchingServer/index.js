@@ -23,7 +23,7 @@ async function sendToMatchingServer(message) {
       topic: 'matchingQueue',
       messages: [{ value: message }],
     });
-    console.log('Successfully sent message to matchingQueue:', message);
+    // console.log('Successfully sent message to matchingQueue:', message);
   } catch (error) {
     console.error('Error sending message to matchingQueue:', error);
   }
