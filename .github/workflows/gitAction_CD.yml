@@ -154,3 +154,25 @@ jobs:
             sudo docker run -d -p 9100:9100 --name node-exporter ${{ steps.login-ecr.outputs.registry }}/node-exporter:latest
             sudo docker ps -a
             sudo docker system prune -a -f
+            # SSH로 EC2 인스턴스에 접속하여 Docker 컨테이너 재시작!~
+
+      - name: SSH into EC2 instance and restart Docker container for game
+        uses: appleboy/ssh-action@master
+        with:
+          key: ${{ secrets.REMOTE_PRIVATE_KEY }}
+          host: ${{ secrets.EC2_HOST_GAME}}
+          username: ${{ secrets.EC2_USERNAME }}
+          port: 22
+          script: |
+            docker login -u AWS -p $(aws ecr get-login-password --region ${{ secrets.AWS_REGION }}) ${{ steps.login-ecr.outputs.registry }}
+            docker pull ${{ steps.login-ecr.outputs.registry }}/stocking-matching:latest
+            docker pull ${{ steps.login-ecr.outputs.registry }}/node-exporter:latest
+            sudo docker ps -a
+            sudo docker stop $(docker ps -a -q)
+            sudo docker ps -a
+            sudo docker rm $(docker ps -aq)
+            sudo docker ps -a
+            sudo docker run -d -p 3000:3000 ${{ steps.login-ecr.outputs.registry }}/stocking-matching:latest
+            sudo docker run -d -p 9100:9100 --name node-exporter ${{ steps.login-ecr.outputs.registry }}/node-exporter:latest
+            sudo docker ps -a
+            sudo docker system prune -a -f
