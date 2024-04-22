@@ -110,7 +110,6 @@ jobs:
             sudo docker run -d -p 9100:9100 --name node-exporter ${{ steps.login-ecr.outputs.registry }}/node-exporter:latest
             sudo docker ps -a
             sudo docker system prune -a -f
-            # SSH로 EC2 인스턴스에 접속하여 Docker 컨테이너 재시작!~
 
       - name: SSH into EC2 instance and restart Docker container for main sub1
         uses: appleboy/ssh-action@master
