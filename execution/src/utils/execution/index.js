@@ -195,7 +195,7 @@ async function execution(message) {
                     quantity: message.quantity,
                   },
                 });
-                await tx.user.update({
+                const userInfo = await tx.user.update({
                   where: {
                     userId: message.order.userId,
                   },
@@ -208,6 +208,9 @@ async function execution(message) {
                     },
                   },
                 });
+                const orderType = message.order.type === 'buy' ? '매수' : '매도';
+                // 첵결 메시지 전송
+                notices.push(`${userInfo.nickname}님의 ${company.name} 종목에 대한 ${message.quantity}주, ${message.price}원 ${orderType}주문이 체결되었습니다.`);
                 const stock = await tx.stock.findFirst({
                   where: {
                     userId: message.order.userId,
@@ -229,7 +232,7 @@ async function execution(message) {
                       quantity: {
                         decrement: message.quantity,
                       },
-                      averagePrice: (stock.averagePrice * stock.quantity - message.price * message.quantity) / (stock.quantity - message.quantity),
+                      averagePrice: (stock.averagePrice * stock.quantity - message.order.price * message.quantity) / (stock.quantity - message.quantity),
                     },
                   });
                 }

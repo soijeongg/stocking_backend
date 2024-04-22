@@ -25,7 +25,7 @@ export class OrderController {
       const result = await this.orderService.getOrder(userId, name, type, order, isSold);
       return res.status(200).json(result);
     } catch (error) {
-      console.log(error.stack);
+      console.log(error.message);
       return res.status(400).json({ message: '주문 조회 도중 문제가 발생했습니다.' });
     }
   };
@@ -83,7 +83,7 @@ export class OrderController {
       sendToMatchingServer(jsonOrderDataString);
       return res.json({ message: '주문이 접수 되었습니다.' });
     } catch (error) {
-      console.log(error.stack);
+      console.log(error.message);
       const { message } = error.message ? error : { message: '주문 생성 도중 문제가 발생했습니다.' };
       if (error.message) return res.status(400).json({ message });
     }
@@ -147,7 +147,7 @@ export class OrderController {
       sendToMatchingServer(jsonOrderDataString);
       return res.json({ message: '주문이  접수되었습니다.' });
     } catch (error) {
-      console.log(error.stack);
+      console.log(error.message);
       const { message } = error.message ? error : { message: '주문 정정 도중 문제가 발생했습니다.' };
       if (error.message) return res.status(400).json({ message });
     }
@@ -183,7 +183,7 @@ export class OrderController {
       sendToMatchingServer(jsonOrderDataString);
       return res.json({ message: '주문이  접수되었습니다.' });
     } catch (error) {
-      console.log(error.stack);
+      console.log(error.message);
       return res.status(400).json({ message: '주문 삭제 도중 문제가 발생했습니다.' });
     }
   };
