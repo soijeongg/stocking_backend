@@ -9,3 +9,11 @@ scrape_configs:
   - job_name: "node-exporter for socket"
     static_configs:
       - targets: ["15.165.80.225:9100"]
+
+  - job_name: "node-exporter for matching"
+    static_configs:
+      - targets: ["3.35.246.120:9100"]
+
+  - job_name: "node-exporter for execution"
+    static_configs:
+      - targets: ["3.37.219.254:9100"]
