@@ -1,5 +1,7 @@
 import argon2 from 'argon2';
 import { sendVerificationEmail } from '../../utils/nodemailer/index.js';
+import { sendToMatchingServer } from '../../utils/sendToMatchingServer/index.js';
+
 export class userRepository {
   constructor(prisma) {
     this.prisma = prisma;
@@ -19,6 +21,12 @@ export class userRepository {
     let user = await this.prisma.User.create({
       data: { email, password: hashedPassword, nickname, token, isVerified: true, currentMoney: 10000000, tradableMoney: 10000000, initialSeed: 10000000 },
     });
+    const jsonData = {
+      reqType: `userCreate`,
+      userId: user.userId,
+    };
+    const jsonDataString = JSON.stringify(jsonData);
+    sendToMatchingServer(jsonDataString);
     return user;
   };
 

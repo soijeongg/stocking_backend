@@ -1,4 +1,4 @@
-import { sendMessage } from '../../utils/kafkaProducer/kafkaProducer.js';
+import { sendToMatchingServer } from '../../utils/sendToMatchingServer/index.js';
 export class OrderController {
   constructor(orderService) {
     this.orderService = orderService;
@@ -71,7 +71,7 @@ export class OrderController {
     }
     try {
       const jsonOrderData = {
-        orderType: 'create',
+        reqType: 'orderCreate',
         userId: userId,
         companyId: companyId,
         orderId: null,
@@ -80,12 +80,10 @@ export class OrderController {
         price: orderData.price,
       };
       const jsonOrderDataString = JSON.stringify(jsonOrderData);
-      // console.log('주문이 접수되었습니다.');
-      await sendMessage('executionQueue', [{ value: jsonOrderDataString }]);
-      // console.log('주문을 kafka서버로 전송합니다.');
+      sendToMatchingServer(jsonOrderDataString);
       return res.json({ message: '주문이 접수 되었습니다.' });
     } catch (error) {
-      console.log(error.message);
+      console.log(error.stack);
       const { message } = error.message ? error : { message: '주문 생성 도중 문제가 발생했습니다.' };
       if (error.message) return res.status(400).json({ message });
     }
@@ -137,7 +135,7 @@ export class OrderController {
 
       // 정정 주문 실행
       const jsonOrderData = {
-        orderType: 'update',
+        reqType: 'orderUpdate',
         userId: userId,
         companyId: companyId,
         orderId: orderId,
@@ -146,10 +144,10 @@ export class OrderController {
         price: correctedPrice,
       };
       const jsonOrderDataString = JSON.stringify(jsonOrderData);
-      await sendMessage('executionQueue', [{ value: jsonOrderDataString }]);
+      sendToMatchingServer(jsonOrderDataString);
       return res.json({ message: '주문이  접수되었습니다.' });
     } catch (error) {
-      console.log(error.message);
+      console.log(error.stack);
       const { message } = error.message ? error : { message: '주문 정정 도중 문제가 발생했습니다.' };
       if (error.message) return res.status(400).json({ message });
     }
@@ -173,7 +171,7 @@ export class OrderController {
         return res.status(400).json({ message: '존재하지 않는 주문입니다.' });
       }
       const jsonOrderData = {
-        orderType: 'delete',
+        reqType: 'orderDelete',
         userId: userId,
         companyId: originalOrder.companyId,
         orderId: orderId,
@@ -182,10 +180,10 @@ export class OrderController {
         price: originalOrder.price,
       };
       const jsonOrderDataString = JSON.stringify(jsonOrderData);
-      insertOrderMessageQueue(jsonOrderDataString);
+      sendToMatchingServer(jsonOrderDataString);
       return res.json({ message: '주문이  접수되었습니다.' });
     } catch (error) {
-      console.log(error.message);
+      console.log(error.stack);
       return res.status(400).json({ message: '주문 삭제 도중 문제가 발생했습니다.' });
     }
   };

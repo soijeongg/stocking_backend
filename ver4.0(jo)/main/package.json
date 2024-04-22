@@ -19,6 +19,7 @@
     "express-mysql-session": "^3.0.0",
     "express-session": "^1.18.0",
     "joi": "^17.12.2",
+    "kafkajs": "^2.2.4",
     "mysql": "^2.18.1",
     "node-schedule": "^2.1.1",
     "nodemailer": "^6.9.13",
@@ -28,8 +29,8 @@
     "passport-local": "^1.0.0",
     "passport-naver-v2": "^2.0.8",
     "prisma": "^5.11.0",
-    "redis": "^4.6.13",
     "prom-client": "^15.1.1",
+    "redis": "^4.6.13",
     "winston": "^3.13.0",
     "winston-daily-rotate-file": "^5.0.0",
     "ws": "^8.16.0"
