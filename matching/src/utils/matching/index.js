@@ -165,7 +165,7 @@ async function matching(message) {
             nowQuantity = 0;
             finalPrice = 1e14;
             const stockId = await redis.get(`stockIndex:userId:${userId}:companyId:${companyId}`);
-            const tradableQuantity = await redis.hget(`stockId:${stockId}`, 'tradableQuantity');
+            let tradableQuantity = await redis.hget(`stockId:${stockId}`, 'tradableQuantity');
             tradableQuantity = +tradableQuantity;
             if (!tradableQuantity || tradableQuantity < quantity) {
               messageList.push({ reqType: 'messageToClient', userId: userId, message: '예약 가능한 주식수가 부족합니다.' });
