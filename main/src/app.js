@@ -89,6 +89,9 @@ app.use(sessionMiddleware);
 app.get('/', (req, res) => {
   res.send('<h1>Stocking</h1>');
 });
+app.post('/api/order', (req, res) => {
+  return res.json({ message: '주문이 접수 되었습니다.' });
+});
 app.use(passport.initialize());
 app.use(passport.session());
 passportConfig(passport);
