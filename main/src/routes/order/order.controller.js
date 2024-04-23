@@ -46,26 +46,6 @@ export class OrderController {
   postOrder = async (req, res) => {
     const { userId } = res.locals.user;
     const orderData = req.body;
-    // 주문 데이터 유효성 확인- 나중에 joi로 바꿔야함--------------------------------controller단에서 가져온 데이터를 정수로(해당 데이터가 정수 데이터라면) 미리 바꿔서 전달
-    // 1. 가격 확인 - 시장가/지정가 판별할때까지 보류.
-    // 2. 회사id 확인
-    let companyId = parseInt(orderData.companyId);
-    if (companyId < 1 || !Number.isInteger(companyId)) {
-      return res.status(400).json({ message: '잘못된 회사정보입니다.' });
-    }
-
-    // 3.type 확인
-    let type = orderData.type;
-    if (type != 'buy' && type != 'sell') {
-      return res.status(400).json({ message: '잘못된 주문요청입니다. 매수/매도 주문만 가능합니다.' });
-    }
-    // 4. quantity 확인
-    let quantity = parseInt(orderData.quantity);
-    if (quantity < 1 || !Number.isInteger(quantity)) {
-      return res.status(400).json({ message: '잘못된 주문수량입니다.' });
-    }
-    orderData.companyId = +orderData.companyId;
-    orderData.quantity = +orderData.quantity;
     if (orderData.price) {
       orderData.price = 10000 * Math.floor(+orderData.price / 10000);
     }
@@ -73,14 +53,13 @@ export class OrderController {
       const jsonOrderData = {
         reqType: 'orderCreate',
         userId: userId,
-        companyId: companyId,
+        companyId: +orderData.companyId,
         orderId: null,
-        type: type,
-        quantity: quantity,
+        type: orderData.type,
+        quantity: +orderData.quantity,
         price: orderData.price,
       };
-      const jsonOrderDataString = JSON.stringify(jsonOrderData);
-      sendToMatchingServer(jsonOrderDataString);
+      sendToMatchingServer(JSON.stringify(jsonOrderData));
       return res.json({ message: '주문이 접수 되었습니다.' });
     } catch (error) {
       console.log(error.message);
