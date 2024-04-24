@@ -1,73 +1,85 @@
-// import { jest } from '@jest/globals';
-// import { userRepository } from '../../../src/routes/user/user.repository.js';
+import { jest } from '@jest/globals';
+import { RankRepository } from '../../src/routes/rank/rank.repository.js';
 
-// let mockPrisma = {
-//   User: {
-//     findFirst: jest.fn(),
-//     findUnique: jest.fn(),
-//     create: jest.fn(),
-//     update: jest.fn(),
-//     delete: jest.fn(),
-//   },
-// };
+let mockPrisma = {
+  rank: {
+    findMany: jest.fn(),
+  },
+  user: {
+    findMany: jest.fn(),
+  },
+};
 
-// // 'userRepository'를 'userRepositoryInstance'로 변경했습니다.
-// let userRepositoryInstance = new userRepository(mockPrisma);
+let rankRepositoryInstance = new RankRepository(mockPrisma);
 
-// describe('User Repository Unit Test', () => {
-//   // 각 test가 실행되기 전에 실행됩니다.
-//   beforeEach(() => {
-//     jest.resetAllMocks();
-//   });
+describe('Rank Repository', () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
 
-//   test('checkEmail Method', async () => {
-//     const mockEmail = 'test@example.com';
-//     const mockReturn = { email: mockEmail }; // 예상 반환값
-//     mockPrisma.User.findFirst.mockReturnValue(Promise.resolve(mockReturn));
+  describe('userRanking Method', () => {
+    const mockRankingReturn = [
+      { userId: 1, ranking: 1 },
+      { userId: 2, ranking: 2 },
+      { userId: 3, ranking: 3 },
+      { userId: 4, ranking: 4 },
+      { userId: 5, ranking: 5 },
+    ];
 
-//     const result = await userRepositoryInstance.checkEmail(mockEmail);
+    test('should successfully fetch user rankings', async () => {
+      mockPrisma.rank.findMany.mockResolvedValue(mockRankingReturn);
 
-//     expect(mockPrisma.User.findFirst).toHaveBeenCalledTimes(1);
-//     expect(mockPrisma.User.findFirst).toHaveBeenCalledWith({
-//       where: { email: mockEmail },
-//     });
-//     expect(result).toEqual(mockReturn);
-//   });
+      const result = await rankRepositoryInstance.userRanking();
 
-//   test('createUser Method', async () => {
-//     const mockUser = {
-//       email: 'new@example.com',
-//       password: 'password123',
-//       nickname: 'newUser',
-//     };
-//     const mockReturn = { id: 1, ...mockUser };
-//     mockPrisma.User.create.mockReturnValue(Promise.resolve(mockReturn));
+      expect(mockPrisma.rank.findMany).toHaveBeenCalledTimes(1);
+      expect(mockPrisma.rank.findMany).toHaveBeenCalledWith({ orderBy: { ranking: 'asc' } });
+      expect(result).toEqual(mockRankingReturn);
+    });
 
-//     const result = await userRepositoryInstance.createUser(mockUser.email, mockUser.password, mockUser.nickname);
+    test('should handle errors when fetching user rankings', async () => {
+      const errorMessage = 'Error fetching rankings';
+      mockPrisma.rank.findMany.mockRejectedValue(new Error(errorMessage));
 
-//     expect(mockPrisma.User.create).toHaveBeenCalledTimes(1);
-//     expect(mockPrisma.User.create).toHaveBeenCalledWith({
-//       data: {
-//         email: mockUser.email,
-//         nickname: mockUser.nickname,
-//         password: expect.any(String), // 비밀번호는 해시되므로, any(String)을 사용합니다.
-//       },
-//     });
-//     expect(result).toEqual(mockReturn);
-//   });
-//   test('updateNickname Method', async () => {
-//     const userId = 1;
-//     const newNickname = 'updatedNickname';
-//     const mockReturn = { userId, nickname: newNickname };
-//     mockPrisma.User.update.mockReturnValue(Promise.resolve(mockReturn));
+      await expect(rankRepositoryInstance.userRanking()).rejects.toThrow(errorMessage);
 
-//     const result = await userRepositoryInstance.updateNickname(newNickname, userId);
+      expect(mockPrisma.rank.findMany).toHaveBeenCalledTimes(1);
+      expect(mockPrisma.rank.findMany).toHaveBeenCalledWith({ orderBy: { ranking: 'asc' } });
+    });
+  });
 
-//     expect(mockPrisma.User.update).toHaveBeenCalledTimes(1);
-//     expect(mockPrisma.User.update).toHaveBeenCalledWith({
-//       where: { userId: +userId },
-//       data: { nickname: newNickname },
-//     });
-//     expect(result).toEqual(mockReturn);
-//   });
-// });
+  describe('usermmrRanking Method', () => {
+    const mockUsermmrRankingReturn = [
+      { userId: 1, mmr: 500 },
+      { userId: 2, mmr: 450 },
+      { userId: 3, mmr: 400 },
+      { userId: 4, mmr: 350 },
+      { userId: 5, mmr: 300 },
+    ];
+
+    test('should successfully fetch MMR rankings', async () => {
+      mockPrisma.user.findMany.mockResolvedValue(mockUsermmrRankingReturn);
+
+      const result = await rankRepositoryInstance.usermmrRanking();
+
+      expect(mockPrisma.user.findMany).toHaveBeenCalledTimes(1);
+      expect(mockPrisma.user.findMany).toHaveBeenCalledWith({
+        orderBy: { mmr: 'desc' },
+        take: 5,
+      });
+      expect(result).toEqual(mockUsermmrRankingReturn);
+    });
+
+    test('should handle errors when fetching MMR rankings', async () => {
+      const errorMessage = 'Error fetching MMR rankings';
+      mockPrisma.user.findMany.mockRejectedValue(new Error(errorMessage));
+
+      await expect(rankRepositoryInstance.usermmrRanking()).rejects.toThrow(errorMessage);
+
+      expect(mockPrisma.user.findMany).toHaveBeenCalledTimes(1);
+      expect(mockPrisma.user.findMany).toHaveBeenCalledWith({
+        orderBy: { mmr: 'desc' },
+        take: 5,
+      });
+    });
+  });
+});
