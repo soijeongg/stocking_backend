@@ -4,8 +4,8 @@ export class RankRepository {
   }
 
   /**
-   * 모든 사용자의 랭킹을 가져오는 메소드
-   * @returns {Promise<object[]>} 모든 사용자의 랭킹을 반환하는 프로미스
+   * @description 랭크 테이블에서 rank를 기준으로 오름차순으로 정렬하여 상위 5명의 사용자 정보를 조회합니다.
+   * @returns {Promise<Object[]>} 사용자 랭킹 정보를 담은 객체 배열을 비동기적으로 반환합니다.
    */
   userRanking = async () => {
     const ranking = await this.prisma.rank.findMany({
@@ -15,6 +15,10 @@ export class RankRepository {
     });
     return ranking;
   };
+  /**
+   * @description 유저 테이블에서 사용자의 MMR을 기준으로 내림차순 정렬하여 상위 5명의 사용자 정보를 조회합니다.
+   * @returns {Promise<Object[]>} 상위 5명의 사용자 정보를 담은 객체 배열을 비동기적으로 반환합니다.
+   */
   usermmrRanking = async () => {
     const usermmrRanking = await this.prisma.user.findMany({
       orderBy: {
