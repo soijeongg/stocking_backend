@@ -1,8 +1,10 @@
+// CompanyController 클래스는 회사 관련 데이터 처리를 담당합니다.
 export class CompanyController {
   constructor(CompanyService) {
     this.CompanyService = CompanyService;
   }
 
+  // 모든 회사 정보를 조회합니다.
   getCompanies = async (req, res, next) => {
     try {
       const companies = await this.CompanyService.getCompanies();
@@ -11,6 +13,8 @@ export class CompanyController {
       next(err);
     }
   };
+
+  // 특정 회사의 이름을 조회합니다.
   getCompanyNameController = async (req, res, next) => {
     try {
       let { companyId } = req.body;
