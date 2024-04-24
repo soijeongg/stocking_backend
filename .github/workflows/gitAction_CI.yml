@@ -19,3 +19,6 @@ jobs:
       - name: Lint
         run: yarn lint
         working-directory: ./main
+      - name: Jest
+        run: yarn jest
+        working-directory: ./main
