@@ -7,7 +7,7 @@ export class userRepository {
     this.prisma = prisma;
   }
   //회원 가입을 해보자
-  //1. 일단 아이디 체크를 해야 한다 들어온 이메일이 중복인지 확인하자
+  //1. 일단 아이디 체크를 해야 한다 들어온 이메일이 중복인지 확인하자ll
 
   checkemail = async (email) => {
     let checkEmail = await this.prisma.User.findFirst({
@@ -15,7 +15,7 @@ export class userRepository {
     });
     return checkEmail;
   };
-
+  //ll
   createUser = async (email, password, nickname, token) => {
     let hashedPassword = await argon2.hash(password);
     let user = await this.prisma.User.create({
@@ -79,7 +79,7 @@ export class userRepository {
   };
 
   //============================이메일 인증시 들어온 토큰이 맞는 토큰인지 찾는다============
-  findToken = async (token, userId) => {
+  findToken = async (token) => {
     return await this.prisma.User.findFirst({
       where: { token: token },
     });
@@ -115,9 +115,9 @@ export class userRepository {
     });
     return stocks;
   };
-  //회사의 id를 가지고 회사의 현재 주가를 보내준다
+  //회사의 id를 가지고 회사의 현재 주가를 보내준다ll
   getCompany = async (companyId) => {
-    return await this.prisma.Company.findUnique({
+    return await this.prisma.Company.findFirst({
       where: {
         companyId: +companyId,
       },
