@@ -87,7 +87,7 @@ app.use(sessionMiddleware);
 // Passport 초기화 및 세션 사용
 
 app.get('/', (req, res) => {
-  res.send('<h1>Stocking!</h1>');
+  res.send('<h1>Stocking!!</h1>');
 });
 
 app.use(passport.initialize());
