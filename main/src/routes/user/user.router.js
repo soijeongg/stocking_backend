@@ -54,7 +54,7 @@ router.delete('/logout', authMiddleware, (req, res, next) => {
 router.get('/userGet', authMiddleware, UserController.getUserController);
 router.get('/nickname', authMiddleware, UserController.getUserSimpleController);
 router.put('/user', authMiddleware, UserController.putLoginController);
-router.delete('/user', authMiddleware, UserController.deleteUseController);
+router.delete('/user', authMiddleware, UserController.deleteUserController);
 router.get('/verify', UserController.getVerifyController);
 router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/auth/google/callback', (req, res, next) => {

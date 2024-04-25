@@ -69,7 +69,7 @@ export class userService {
   deleteUserService = async (userId) => {
     let deleteuser = await this.userRepository.deleteUser(userId);
     if (!deleteuser) {
-      const error = new Error('삭제에 실패했습니다');
+      const error = new Error('삭제에 실패했거나 존재하지 않는 유저입니다');
       throw error;
     }
     return deleteuser;
