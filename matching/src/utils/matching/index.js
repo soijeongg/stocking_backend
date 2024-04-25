@@ -194,7 +194,7 @@ async function makeOrderList(reqType, userId, companyId, orderId, type, quantity
   return orderList;
 }
 async function processDeleteOrder(messageList, order) {
-  const { orderId, userId, companyId, type, quantity, price } = order;
+  const { orderId, userId, companyId, type } = order;
   let pipeline = redis.pipeline();
   const deleteOrder = await redis.hgetall(`orderId:${orderId}`);
   deleteOrder.price = +deleteOrder.price;
@@ -218,7 +218,7 @@ async function processDeleteOrder(messageList, order) {
   messageList.push({ reqType: 'orderDelete', orderId });
 }
 async function processCreateOrder(messageList, order, finalPrice) {
-  const { orderId, userId, companyId, type, quantity, price } = order;
+  const { userId, companyId, type, quantity } = order;
   let pipeline = redis.pipeline();
   const newOrderId = await redis.incr('maxOrderId');
   const nowTime = new Date();
@@ -250,6 +250,75 @@ async function processCreateOrder(messageList, order, finalPrice) {
     price: createdOrder.price,
     quantity: createdOrder.quantity,
   });
+}
+async function findBuyerOrderAndSellerOrder(companyId) {
+  const buyerOrderId = await redis.zrange(`orders:companyId:${companyId}:type:buy`, 0, 0);
+  const sellerOrderId = await redis.zrange(`orders:companyId:${companyId}:type:sell`, 0, 0);
+  const buyerOrder = await redis.hgetall(`orderId:${buyerOrderId[0]}`);
+  const sellerOrder = await redis.hgetall(`orderId:${sellerOrderId[0]}`);
+  buyerOrder.orderId = buyerOrderId[0];
+  sellerOrder.orderId = sellerOrderId[0];
+  buyerOrder.price = +buyerOrder.price;
+  buyerOrder.quantity = +buyerOrder.quantity;
+  sellerOrder.price = +sellerOrder.price;
+  sellerOrder.quantity = +sellerOrder.quantity;
+  return { buyerOrderId, buyerOrder, sellerOrderId, sellerOrder };
+}
+async function trablableMoneyUpdate(messageList, userId, tradableMoney) {
+  messageList.push({ reqType: 'tradableMoneyUpdate', userId, tradableMoney: tradableMoney });
+}
+async function tradableQuantityUpdate(messageList, userId, companyId) {
+  const stockId = await redis.get(`stockIndex:userId:${userId}:companyId:${companyId}`);
+  const tradableQuantity = await redis.hget(`stockId:${stockId}`, 'tradableQuantity');
+  messageList.push({ reqType: 'tradableQuantityUpdate', userId, companyId, tradableQuantity });
+}
+async function matchingOrderPair(messageList, companyId, type, buyerOrderId, buyerOrder, sellerOrderId, sellerOrder) {
+  const executionPrice = type === 'buy' ? sellerOrder.price : buyerOrder.price;
+  let pipeline = redis.pipeline();
+  // 매도 주문 처리
+  if (sellerOrder.quantity <= buyerOrder.quantity) {
+    messageList.push({ reqType: 'execution', executionType: 'complete', order: sellerOrder, quantity: sellerOrder.quantity, price: executionPrice });
+    pipeline.del(`orderId:${sellerOrderId[0]}`);
+    pipeline.zrem(`orders:companyId:${companyId}:type:sell`, sellerOrderId[0]);
+    pipeline.decrby(`totalQuantity:companyId:${companyId}:type:sell`, sellerOrder.quantity);
+    pipeline.hincrby(`userId:${sellerOrder.userId}`, 'tradableMoney', executionPrice * sellerOrder.quantity);
+  } else {
+    messageList.push({ reqType: 'execution', executionType: 'partial', order: sellerOrder, quantity: buyerOrder.quantity, price: executionPrice });
+    pipeline.hincrby(`orderId:${sellerOrderId[0]}`, 'quantity', -buyerOrder.quantity);
+    pipeline.decrby(`totalQuantity:companyId:${companyId}:type:sell`, buyerOrder.quantity);
+    pipeline.hincrby(`userId:${sellerOrder.userId}`, 'tradableMoney', executionPrice * buyerOrder.quantity);
+  }
+  // 매수 주문 처리
+  if (buyerOrder.price > executionPrice) {
+    pipeline.hincrby(`userId:${buyerOrder.userId}`, 'tradableMoney', (buyerOrder.price - executionPrice) * Math.min(+buyerOrder.quantity, +sellerOrder.quantity));
+  }
+  if (buyerOrder.quantity <= sellerOrder.quantity) {
+    messageList.push({ reqType: 'execution', executionType: 'complete', order: buyerOrder, quantity: buyerOrder.quantity, price: executionPrice });
+    pipeline.del(`orderId:${buyerOrderId[0]}`);
+    pipeline.zrem(`orders:companyId:${companyId}:type:buy`, buyerOrderId[0]);
+    pipeline.decrby(`totalQuantity:companyId:${companyId}:type:buy`, buyerOrder.quantity);
+    const buyerStockId = await redis.get(`stockIndex:userId:${buyerOrder.userId}:companyId:${buyerOrder.companyId}`);
+    if (buyerStockId) {
+      pipeline.hincrby(`stockId:${buyerStockId}`, 'tradableQuantity', buyerOrder.quantity);
+    } else {
+      const newStockId = await redis.incr('maxStockId');
+      await redis.set(`stockIndex:userId:${buyerOrder.userId}:companyId:${buyerOrder.companyId}`, newStockId);
+      pipeline.hmset(`stockId:${newStockId}`, ['userId', buyerOrder.userId, 'companyId', buyerOrder.companyId, 'tradableQuantity', buyerOrder.quantity]);
+    }
+  } else {
+    messageList.push({ reqType: 'execution', executionType: 'partial', order: buyerOrder, quantity: sellerOrder.quantity, price: executionPrice });
+    pipeline.hincrby(`orderId:${buyerOrderId[0]}`, 'quantity', -sellerOrder.quantity);
+    pipeline.decrby(`totalQuantity:companyId:${companyId}:type:buy`, sellerOrder.quantity);
+    const buyerStockId = await redis.get(`stockIndex:userId:${buyerOrder.userId}:companyId:${buyerOrder.companyId}`);
+    if (buyerStockId) {
+      pipeline.hincrby(`stockId:${buyerStockId}`, 'tradableQuantity', sellerOrder.quantity);
+    } else {
+      const newStockId = await redis.incr('maxStockId');
+      await redis.set(`stockIndex:userId:${buyerOrder.userId}:companyId:${buyerOrder.companyId}`, newStockId);
+      pipeline.hmset(`stockId:${newStockId}`, ['userId', buyerOrder.userId, 'companyId', buyerOrder.companyId, 'tradableQuantity', sellerOrder.quantity]);
+    }
+  }
+  await pipeline.exec();
 }
 async function matching(message) {
   const messageList = [];
@@ -291,88 +360,32 @@ async function matching(message) {
           // 생성/삭제 주문 처리 파트
           for (let order of orderList) {
             if (order.reqType === 'delete') {
-              processDeleteOrder(messageList, order);
+              await processDeleteOrder(messageList, order);
               continue;
             }
             if (order.reqType === 'create') {
-              processCreateOrder(messageList, order, finalPrice);
+              await processCreateOrder(messageList, order, finalPrice);
             }
           }
           // trablableMoney, tradableQuantity 업데이트
           const initialTradableMoney = await redis.hget(`userId:${userId}`, 'tradableMoney');
           if (type === 'buy') {
-            messageList.push({ reqType: 'tradableMoneyUpdate', userId, tradableMoney: initialTradableMoney });
+            await trablableMoneyUpdate(messageList, userId, initialTradableMoney);
           } else {
-            const stockId = await redis.get(`stockIndex:userId:${userId}:companyId:${companyId}`);
-            const tradableQuantity = await redis.hget(`stockId:${stockId}`, 'tradableQuantity');
-            messageList.push({ reqType: 'tradableQuantityUpdate', userId, companyId, tradableQuantity });
+            await tradableQuantityUpdate(messageList, userId, companyId);
           }
           // 주문 매칭 파트
           // eslint-disable-next-line no-constant-condition
           while (true) {
-            const buyerOrderId = await redis.zrange(`orders:companyId:${companyId}:type:buy`, 0, 0);
-            const sellerOrderId = await redis.zrange(`orders:companyId:${companyId}:type:sell`, 0, 0);
-            const buyerOrder = await redis.hgetall(`orderId:${buyerOrderId[0]}`);
-            const sellerOrder = await redis.hgetall(`orderId:${sellerOrderId[0]}`);
-            buyerOrder.orderId = buyerOrderId[0];
-            sellerOrder.orderId = sellerOrderId[0];
-            buyerOrder.price = +buyerOrder.price;
-            buyerOrder.quantity = +buyerOrder.quantity;
-            sellerOrder.price = +sellerOrder.price;
-            sellerOrder.quantity = +sellerOrder.quantity;
+            const { buyerOrderId, buyerOrder, sellerOrderId, sellerOrder } = await findBuyerOrderAndSellerOrder(companyId);
             if (buyerOrder.price < sellerOrder.price) {
               break;
             }
-            const executionPrice = type === 'buy' ? sellerOrder.price : buyerOrder.price;
-            let pipeline = redis.pipeline();
-            // 매도 주문 처리
-            if (sellerOrder.quantity <= buyerOrder.quantity) {
-              messageList.push({ reqType: 'execution', executionType: 'complete', order: sellerOrder, quantity: sellerOrder.quantity, price: executionPrice });
-              pipeline.del(`orderId:${sellerOrderId[0]}`);
-              pipeline.zrem(`orders:companyId:${companyId}:type:sell`, sellerOrderId[0]);
-              pipeline.decrby(`totalQuantity:companyId:${companyId}:type:sell`, sellerOrder.quantity);
-              pipeline.hincrby(`userId:${sellerOrder.userId}`, 'tradableMoney', executionPrice * sellerOrder.quantity);
-            } else {
-              messageList.push({ reqType: 'execution', executionType: 'partial', order: sellerOrder, quantity: buyerOrder.quantity, price: executionPrice });
-              pipeline.hincrby(`orderId:${sellerOrderId[0]}`, 'quantity', -buyerOrder.quantity);
-              pipeline.decrby(`totalQuantity:companyId:${companyId}:type:sell`, buyerOrder.quantity);
-              pipeline.hincrby(`userId:${sellerOrder.userId}`, 'tradableMoney', executionPrice * buyerOrder.quantity);
-            }
-            // 매수 주문 처리
-            if (buyerOrder.price > executionPrice) {
-              pipeline.hincrby(`userId:${buyerOrder.userId}`, 'tradableMoney', (buyerOrder.price - executionPrice) * Math.min(+buyerOrder.quantity, +sellerOrder.quantity));
-            }
-            if (buyerOrder.quantity <= sellerOrder.quantity) {
-              messageList.push({ reqType: 'execution', executionType: 'complete', order: buyerOrder, quantity: buyerOrder.quantity, price: executionPrice });
-              pipeline.del(`orderId:${buyerOrderId[0]}`);
-              pipeline.zrem(`orders:companyId:${companyId}:type:buy`, buyerOrderId[0]);
-              pipeline.decrby(`totalQuantity:companyId:${companyId}:type:buy`, buyerOrder.quantity);
-              const buyerStockId = await redis.get(`stockIndex:userId:${buyerOrder.userId}:companyId:${buyerOrder.companyId}`);
-              if (buyerStockId) {
-                pipeline.hincrby(`stockId:${buyerStockId}`, 'tradableQuantity', buyerOrder.quantity);
-              } else {
-                const newStockId = await redis.incr('maxStockId');
-                await redis.set(`stockIndex:userId:${buyerOrder.userId}:companyId:${buyerOrder.companyId}`, newStockId);
-                pipeline.hmset(`stockId:${newStockId}`, ['userId', buyerOrder.userId, 'companyId', buyerOrder.companyId, 'tradableQuantity', buyerOrder.quantity]);
-              }
-            } else {
-              messageList.push({ reqType: 'execution', executionType: 'partial', order: buyerOrder, quantity: sellerOrder.quantity, price: executionPrice });
-              pipeline.hincrby(`orderId:${buyerOrderId[0]}`, 'quantity', -sellerOrder.quantity);
-              pipeline.decrby(`totalQuantity:companyId:${companyId}:type:buy`, sellerOrder.quantity);
-              const buyerStockId = await redis.get(`stockIndex:userId:${buyerOrder.userId}:companyId:${buyerOrder.companyId}`);
-              if (buyerStockId) {
-                pipeline.hincrby(`stockId:${buyerStockId}`, 'tradableQuantity', sellerOrder.quantity);
-              } else {
-                const newStockId = await redis.incr('maxStockId');
-                await redis.set(`stockIndex:userId:${buyerOrder.userId}:companyId:${buyerOrder.companyId}`, newStockId);
-                pipeline.hmset(`stockId:${newStockId}`, ['userId', buyerOrder.userId, 'companyId', buyerOrder.companyId, 'tradableQuantity', sellerOrder.quantity]);
-              }
-            }
-            await pipeline.exec();
+            await matchingOrderPair(messageList, companyId, type, buyerOrderId, buyerOrder, sellerOrderId, sellerOrder);
           }
           const finalTradableMoney = await redis.hget(`userId:${userId}`, 'tradableMoney');
           if (type === 'buy' && initialTradableMoney !== finalTradableMoney) {
-            messageList.push({ reqType: 'tradableMoneyUpdate', userId, tradableMoney: finalTradableMoney });
+            await trablableMoneyUpdate(messageList, userId, finalTradableMoney);
           }
         }
         if (messageList.length > 0) {
