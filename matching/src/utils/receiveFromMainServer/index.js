@@ -21,22 +21,11 @@ const initKafka = async () => {
     console.log('start subscribe');
     await consumer.connect();
     await consumer.subscribe({ topic: 'matchingQueue', fromBeginning: false });
-    let matchingTimeSum = 0;
-    let matchingCount = 0;
     await consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
         const messageString = message.value.toString();
         // console.log('메인 서버로부터 받은 메시지 문자열', messageString);
-        const startTime = Date.now();
-        const result = await matching(messageString);
-        if (result === 'success') {
-          const endTime = Date.now();
-          const matchingTime = endTime - startTime;
-          matchingTimeSum += matchingTime;
-          matchingCount++;
-          const averageMatchingTime = matchingTimeSum / matchingCount;
-          console.log(`현재까지의 평균 매칭 처리 시간: ${averageMatchingTime.toFixed(2)}ms`);
-        }
+        await matching(messageString);
         // console.log('Message processed successfully.');
       },
     });
