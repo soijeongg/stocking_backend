@@ -23,10 +23,12 @@ async function execution(message) {
           const message = messageQueue.shift();
           // console.log('현재 처리중인 message', message);
           switch (message.reqType) {
+            // 메시지 소켓 서버 전송 요청
             case 'messageToClient': {
               sendToClient(message.userId, message.message);
               break;
             }
+            // 가용 금액을 업데이트 요청
             case 'tradableMoneyUpdate': {
               await tx.user.update({
                 where: {
@@ -38,6 +40,7 @@ async function execution(message) {
               });
               break;
             }
+            // 가용 주식 수량을 업데이트 요청
             case 'tradableQuantityUpdate': {
               const stock = await tx.stock.findFirst({
                 where: {
@@ -55,6 +58,7 @@ async function execution(message) {
               });
               break;
             }
+            // 주문 생성 요청
             case 'orderCreate': {
               message.updatedAt = new Date(message.updatedAt);
               message.updatedAt = message.updatedAt.toISOString();
@@ -71,6 +75,7 @@ async function execution(message) {
               });
               break;
             }
+            // 주문 삭제 요청
             case 'orderDelete': {
               await tx.order.delete({
                 where: {
@@ -79,7 +84,9 @@ async function execution(message) {
               });
               break;
             }
+            // 주문 체결 처리 요청
             default: {
+              //message.order의 strng 값을 number/Date로 변환
               message.order.companyId = +message.order.companyId;
               message.order.orderId = +message.order.orderId;
               message.order.updatedAt = new Date(message.order.updatedAt);
@@ -88,23 +95,34 @@ async function execution(message) {
               message.order.price = +message.order.price;
               message.quantity = +message.quantity;
               message.price = +message.price;
+              let userInfo;
+              const orderType = message.order.type === 'buy' ? '매수' : '매도';
               if (companyId === -1) {
+                // companyId 갱신
                 companyId = message.order.companyId;
               }
+              // companyCurrentPrice 갱신
               companyCurrentPrice = message.price;
+              // company 정보 조회
               const company = await tx.company.findFirst({
                 where: {
                   companyId: message.order.companyId,
                 },
               });
+              // 주문 체결 처리 파트
+              // order => concluded => user => stock 순으로 업데이트
               if (message.order.type === 'buy') {
+                // 매수 주문의 경우
+                // Order 테이블 업데이트
                 if (message.executionType === 'complete') {
+                  // 완전체결인 경우
                   await tx.order.delete({
                     where: {
                       orderId: message.order.orderId,
                     },
                   });
                 } else {
+                  // 부분체결인 경우
                   await tx.order.update({
                     where: {
                       orderId: message.order.orderId,
@@ -117,6 +135,7 @@ async function execution(message) {
                     },
                   });
                 }
+                // Concluded 테이블 업데이트
                 await tx.concluded.create({
                   data: {
                     userId: message.order.userId,
@@ -126,7 +145,8 @@ async function execution(message) {
                     quantity: message.quantity,
                   },
                 });
-                const userInfo = await tx.user.update({
+                // User 테이블 업데이트
+                userInfo = await tx.user.update({
                   where: {
                     userId: message.order.userId,
                   },
@@ -136,9 +156,7 @@ async function execution(message) {
                     },
                   },
                 });
-                const orderType = message.order.type === 'buy' ? '매수' : '매도';
-                // 첵결 메시지 전송
-                notices.push(`${userInfo.nickname}님의 ${company.name} 종목에 대한 ${message.quantity}주, ${message.price}원 ${orderType}주문이 체결되었습니다.`);
+                // Stock 테이블 업데이트
                 const stock = await tx.stock.findFirst({
                   where: {
                     userId: message.order.userId,
@@ -172,13 +190,17 @@ async function execution(message) {
                   });
                 }
               } else {
+                // 매도 주문의 경우
+                // Order 테이블 업데이트
                 if (message.executionType === 'complete') {
+                  // 완전체결인 경우
                   await tx.order.delete({
                     where: {
                       orderId: message.order.orderId,
                     },
                   });
                 } else {
+                  // 부분체결인 경우
                   await tx.order.update({
                     where: {
                       orderId: message.order.orderId,
@@ -191,6 +213,7 @@ async function execution(message) {
                     },
                   });
                 }
+                // Concluded 테이블 업데이트
                 await tx.concluded.create({
                   data: {
                     userId: message.order.userId,
@@ -200,7 +223,8 @@ async function execution(message) {
                     quantity: message.quantity,
                   },
                 });
-                const userInfo = await tx.user.update({
+                // User 테이블 업데이트
+                userInfo = await tx.user.update({
                   where: {
                     userId: message.order.userId,
                   },
@@ -213,9 +237,7 @@ async function execution(message) {
                     },
                   },
                 });
-                const orderType = message.order.type === 'buy' ? '매수' : '매도';
-                // 첵결 메시지 전송
-                notices.push(`${userInfo.nickname}님의 ${company.name} 종목에 대한 ${message.quantity}주, ${message.price}원 ${orderType}주문이 체결되었습니다.`);
+                // Stock 테이블 업데이트
                 const stock = await tx.stock.findFirst({
                   where: {
                     userId: message.order.userId,
@@ -241,11 +263,15 @@ async function execution(message) {
                   });
                 }
               }
+              // 체결 처리 완료 후, 유저에게 알림 전송
+              notices.push(`${userInfo.nickname}님의 ${company.name} 종목에 대한 ${message.quantity}주, ${message.price}원 ${orderType}주문이 체결되었습니다.`);
               break;
             }
           }
         }
         if (companyCurrentPrice !== -1 && companyId !== -1) {
+          //companyId와 companyCurrentPrice가 갱신된 경우
+          //company 테이블 업데이트
           await tx.company.update({
             where: {
               companyId: companyId,
