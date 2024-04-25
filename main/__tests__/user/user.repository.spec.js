@@ -2,7 +2,9 @@
 //실제 데이터가 아닌 가짜 객체를 만들어 구현
 import { expect, jest } from '@jest/globals';
 import { userRepository } from '../../src/routes/user/user.repository';
-
+jest.mock('../../src/utils/sendToMatchingServer/index.js', () => ({
+  sendToMatchingServer: jest.fn().mockResolvedValue({}),
+}));
 let mockPrisma = {
   User: {
     findMany: jest.fn(),
