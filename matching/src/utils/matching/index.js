@@ -109,15 +109,15 @@ async function createNewGame() {
     const companyId = totalQuantity.companyId;
     const type = totalQuantity.type;
     const quantity = totalQuantity._sum.quantity;
-    pipeline.set(`totalQuantity:companyId:${companyId}:type:${type}`, quantity);
+    pipeline.set(`totalQuantity:companyId:${companyId}:type:${type}`, quantity); // 회사별 주문 종류별 totalQuantity를 저장
   }
   const stocks = await prisma.stock.findMany({});
-  pipeline.set('maxStockId', stocks[stocks.length - 1].stockId);
+  pipeline.set('maxStockId', stocks[stocks.length - 1].stockId); //최대 stockId 저장
   for (let stock of stocks) {
-    pipeline.hmset(`stockId:${stock.stockId}`, ['userId', stock.userId, 'companyId', stock.companyId, 'tradableQuantity', stock.tradableQuantity]);
-    pipeline.set(`stockIndex:userId:${stock.userId}:companyId:${stock.companyId}`, stock.stockId);
+    pipeline.hmset(`stockId:${stock.stockId}`, ['userId', stock.userId, 'companyId', stock.companyId, 'tradableQuantity', stock.tradableQuantity]); //주식 정보 저장
+    pipeline.set(`stockIndex:userId:${stock.userId}:companyId:${stock.companyId}`, stock.stockId); //stock 서브 인덱스 저장
   }
-  await pipeline.exec();
+  await pipeline.exec(); //Redis에 데이터 저장
 }
 /**
  * @description 주문 요청의 유효성을 검사하고 최종 가격을 계산하여 반환하는 함수
@@ -135,88 +135,106 @@ async function createNewGame() {
  * @throws {Error} 유효하지 않은 주문 조건에서 발생하는 오류 (예: 예약 가능한 주식수가 부족할 때, 필요 금액이 부족할 때).
  */
 async function orderValidCheckAndReturnFinalPrice(messageList, reqType, userId, companyId, orderId, type, quantity, price) {
-  let nowQuantity, finalPrice, needMoney;
-  if (reqType !== 'orderDelete') {
-    const reverseType = type === 'buy' ? 'sell' : 'buy';
-    const totalQuantity = await redis.get(`totalQuantity:companyId:${companyId}:type:${reverseType}`);
-    if (totalQuantity <= quantity) {
-      messageList.push({ reqType: 'messageToClient', userId: userId, message: `최대 ${totalQuantity - 1}개까지만 주문할 수 있습니다.` });
-      return;
-    }
-    if (type === 'buy') {
-      nowQuantity = 0;
-      finalPrice = 0;
-      needMoney = 0;
-      if (!price) {
-        const sellerOrderIds = await redis.zrange(`orders:companyId:${companyId}:type:sell`, 0, -1);
-        for (let sellerOrderId of sellerOrderIds) {
-          const sellerOrder = await redis.hgetall(`orderId:${sellerOrderId}`);
-          sellerOrder.price = +sellerOrder.price;
-          sellerOrder.quantity = +sellerOrder.quantity;
-          if (nowQuantity + sellerOrder.quantity < quantity) {
-            nowQuantity += sellerOrder.quantity;
-            needMoney += sellerOrder.price * sellerOrder.quantity;
-            finalPrice = sellerOrder.price;
-            continue;
-          }
-          needMoney += sellerOrder.price * (quantity - nowQuantity);
-          nowQuantity = quantity;
+  if (reqType === 'orderDelete') return; // 주문 삭제 요청인 경우 함수 종료
+  let nowQuantity, finalPrice, needMoney; // 현재 까지의 주문 수량, 최종 가격, 필요 금액
+  const reverseType = type === 'buy' ? 'sell' : 'buy';
+  const totalQuantity = await redis.get(`totalQuantity:companyId:${companyId}:type:${reverseType}`);
+  if (totalQuantity <= quantity) {
+    messageList.push({ reqType: 'messageToClient', userId: userId, message: `최대 ${totalQuantity - 1}개까지만 주문할 수 있습니다.` }); //최대 주문 수량 초과시 메시지 전송
+    throw new Error(`최대 ${totalQuantity - 1}개까지만 주문할 수 있습니다.`);
+  }
+  // 매수 주문의 경우
+  if (type === 'buy') {
+    nowQuantity = 0;
+    finalPrice = 0;
+    needMoney = 0;
+    if (!price) {
+      // 시장가 주문인 경우
+      const sellerOrderIds = await redis.zrange(`orders:companyId:${companyId}:type:sell`, 0, -1); // 판매자 주문 Id 리스트 조회
+      for (let sellerOrderId of sellerOrderIds) {
+        const sellerOrder = await redis.hgetall(`orderId:${sellerOrderId}`); // 판매자 주문 조회
+        sellerOrder.price = +sellerOrder.price;
+        sellerOrder.quantity = +sellerOrder.quantity;
+        if (nowQuantity + sellerOrder.quantity < quantity) {
+          //현재 주문 수량에 지금 확인하는 판매자 주문 수량을 더해도 목표 주문 수량보다 작은 경우
+          nowQuantity += sellerOrder.quantity;
+          needMoney += sellerOrder.price * sellerOrder.quantity;
           finalPrice = sellerOrder.price;
-          break;
+          continue;
         }
-      } else {
+        // 지금 확인하는 판매자 주문을 처리하면 목표 주문 수량을 채울 수 있음
+        needMoney += sellerOrder.price * (quantity - nowQuantity);
         nowQuantity = quantity;
-        needMoney = price * quantity;
-        finalPrice = price;
-      }
-      let tradableMoney = await redis.hget(`userId:${userId}`, 'tradableMoney');
-      if (tradableMoney) tradableMoney = +tradableMoney;
-      if (reqType !== 'orderCreate') {
-        const buyOrder = await redis.hgetall(`orderId:${orderId}`);
-        buyOrder.price = +buyOrder.price;
-        buyOrder.quantity = +buyOrder.quantity;
-        tradableMoney += buyOrder.price * buyOrder.quantity;
-      }
-      if (tradableMoney < needMoney) {
-        messageList.push({ reqType: 'messageToClient', userId: userId, message: '예약가능한 금액이 부족합니다.' });
-        throw new Error('예약가능한 금액이 부족합니다.');
+        finalPrice = sellerOrder.price;
+        break;
       }
     } else {
-      nowQuantity = 0;
-      finalPrice = 1e14;
-      const stockId = await redis.get(`stockIndex:userId:${userId}:companyId:${companyId}`);
-      let tradableQuantity = await redis.hget(`stockId:${stockId}`, 'tradableQuantity');
-      tradableQuantity = +tradableQuantity;
-      if (!tradableQuantity || tradableQuantity < quantity) {
-        messageList.push({ reqType: 'messageToClient', userId: userId, message: '예약 가능한 주식수가 부족합니다.' });
-        throw new Error('예약 가능한 주식수가 부족합니다.');
-      }
-      if (reqType !== 'orderCreate') {
-        const sellOrder = await redis.hgetall(`orderId:${orderId}`);
-        sellOrder.quantity = +sellOrder.quantity;
-        tradableQuantity += sellOrder.quantity;
-      }
-      if (!price) {
-        const buyerOrderIds = await redis.zrange(`orders:companyId:${companyId}:type:buy`, 0, -1);
-        for (let buyerOrderId of buyerOrderIds) {
-          const buyerOrder = await redis.hgetall(`orderId:${buyerOrderId}`);
-          buyerOrder.price = +buyerOrder.price;
-          buyerOrder.quantity = +buyerOrder.quantity;
-          if (nowQuantity + buyerOrder.quantity <= quantity) {
-            nowQuantity += buyerOrder.quantity;
-            finalPrice = buyerOrder.price;
-            continue;
-          }
-          nowQuantity = quantity;
-          finalPrice = buyerOrder.price;
-          break;
-        }
-      } else {
-        nowQuantity = quantity;
-        finalPrice = price;
-      }
+      // 지정가 주문인 경우
+      nowQuantity = quantity;
+      needMoney = price * quantity;
+      finalPrice = price;
+    }
+    // 사용자의 거래 가능 금액 조회
+    let tradableMoney = await redis.hget(`userId:${userId}`, 'tradableMoney');
+    if (tradableMoney) tradableMoney = +tradableMoney;
+    if (reqType === 'orderUpdate') {
+      // 주문 정정의 경우 기존 주문을 삭제하면서 거래 가능 금액이 증가하는 것을 고려해야함
+      const buyOrder = await redis.hgetall(`orderId:${orderId}`);
+      buyOrder.price = +buyOrder.price;
+      buyOrder.quantity = +buyOrder.quantity;
+      tradableMoney += buyOrder.price * buyOrder.quantity;
+    }
+    if (tradableMoney < needMoney) {
+      messageList.push({ reqType: 'messageToClient', userId: userId, message: '예약 가능한 금액이 부족합니다.' }); //가용 금액이 부족한 경우 메시지 전송
+      throw new Error('예약가능한 금액이 부족합니다.');
     }
   }
+  // 매도 주문의 경우
+  if (type === 'sell') {
+    nowQuantity = 0;
+    finalPrice = 1e14;
+    const stockId = await redis.get(`stockIndex:userId:${userId}:companyId:${companyId}`);
+    let tradableQuantity = await redis.hget(`stockId:${stockId}`, 'tradableQuantity');
+    if (!tradableQuantity) {
+      messageList.push({ reqType: 'messageToClient', userId: userId, message: '예약 가능한 주식수가 부족합니다.' }); //가용 주식 수량이 부족한 경우 메시지 전송
+      throw new Error('예약 가능한 주식수가 부족합니다.');
+    }
+    tradableQuantity = +tradableQuantity;
+    if (reqType === 'orderUpdate') {
+      // 주문 정정의 경우 기존 주문을 삭제하면서 거래 가능 주식 수량이 증가하는 것을 고려해야함
+      const sellOrder = await redis.hgetall(`orderId:${orderId}`);
+      sellOrder.quantity = +sellOrder.quantity;
+      tradableQuantity += sellOrder.quantity;
+    }
+    if (tradableQuantity < quantity) {
+      messageList.push({ reqType: 'messageToClient', userId: userId, message: '예약 가능한 주식수가 부족합니다.' }); //가용 주식 수량이 부족한 경우 메시지 전송
+      throw new Error('예약 가능한 주식수가 부족합니다.');
+    }
+    if (!price) {
+      // 시장가 주문인 경우
+      const buyerOrderIds = await redis.zrange(`orders:companyId:${companyId}:type:buy`, 0, -1); // 구매자 주문 Id 리스트 조회
+      for (let buyerOrderId of buyerOrderIds) {
+        const buyerOrder = await redis.hgetall(`orderId:${buyerOrderId}`); // 구매자 주문 조회
+        buyerOrder.price = +buyerOrder.price;
+        buyerOrder.quantity = +buyerOrder.quantity;
+        if (nowQuantity + buyerOrder.quantity <= quantity) {
+          //현재 주문 수량에 지금 확인하는 구매자 주문 수량을 더해도 목표 주문 수량보다 작은 경우
+          nowQuantity += buyerOrder.quantity;
+          finalPrice = buyerOrder.price;
+          continue;
+        }
+        // 지금 확인하는 구매자 주문을 처리하면 목표 주문 수량을 채울 수 있음
+        nowQuantity = quantity;
+        finalPrice = buyerOrder.price;
+        break;
+      }
+    } else {
+      // 지정가 주문인 경우
+      nowQuantity = quantity;
+      finalPrice = price;
+    }
+  }
+  // 최종 가격을 반환
   finalPrice = +finalPrice;
   return finalPrice;
 }
@@ -236,16 +254,18 @@ async function orderValidCheckAndReturnFinalPrice(messageList, reqType, userId, 
  */
 async function makeOrderList(reqType, userId, companyId, orderId, type, quantity, price) {
   const orderList = [];
-
   switch (reqType) {
     case 'orderCreate':
+      // 주문 생성 요청인 경우
       orderList.push({ reqType: 'create', orderId, userId, companyId, type, quantity, price });
       break;
     case 'orderUpdate':
+      //  주문 정정 요청인 경우
       orderList.push({ reqType: 'delete', orderId, userId, companyId, type, quantity, price });
       orderList.push({ reqType: 'create', orderId, userId, companyId, type, quantity, price });
       break;
     case 'orderDelete':
+      // 주문 삭제 요청인 경우
       orderList.push({ reqType: 'delete', orderId, userId, companyId, type, quantity, price });
       break;
   }
@@ -264,27 +284,31 @@ async function makeOrderList(reqType, userId, companyId, orderId, type, quantity
  * @throws {Error} 주문이 존재하지 않을 때 발생하는 오류.
  */
 async function processDeleteOrder(messageList, order) {
+  // 주문 삭제
   const { orderId, userId, companyId, type } = order;
   let pipeline = redis.pipeline();
-  const deleteOrder = await redis.hgetall(`orderId:${orderId}`);
-  deleteOrder.price = +deleteOrder.price;
-  deleteOrder.quantity = +deleteOrder.quantity;
+  const deleteOrder = await redis.hgetall(`orderId:${orderId}`); // 삭제할 주문 조회
   if (!deleteOrder) {
-    messageList.push({ reqType: 'messageToClient', userId, message: '존재하지 않는 주문입니다.' });
+    messageList.push({ reqType: 'messageToClient', userId, message: '존재하지 않는 주문입니다.' }); //존재하지 않는 주문인 경우 메시지 전송
     throw new Error('존재하지 않는 주문입니다.');
   }
+  deleteOrder.price = +deleteOrder.price;
+  deleteOrder.quantity = +deleteOrder.quantity;
   pipeline.del(`orderId:${orderId}`);
   if (type === 'buy') {
+    // 매수 주문의 경우
     pipeline.hincrby(`userId:${userId}`, 'tradableMoney', deleteOrder.price * deleteOrder.quantity);
     pipeline.zrem(`orders:companyId:${companyId}:type:buy`, orderId);
     pipeline.decrby(`totalQuantity:companyId:${companyId}:type:buy`, deleteOrder.quantity);
   } else {
+    // 매도 주문의 경우
     const stockId = await redis.get(`stockIndex:userId:${userId}:companyId:${companyId}`);
     pipeline.hincrby(`stockId:${stockId}`, 'tradableQuantity', deleteOrder.quantity);
     pipeline.zrem(`orders:companyId:${companyId}:type:sell`, orderId);
     pipeline.decrby(`totalQuantity:companyId:${companyId}:type:sell`, deleteOrder.quantity);
   }
   await pipeline.exec();
+  //메시지 리스트에 주문 삭제 정보 추가
   messageList.push({ reqType: 'orderDelete', orderId });
 }
 /**
@@ -299,19 +323,22 @@ async function processDeleteOrder(messageList, order) {
  * @throws {Error} Redis 명령 실행 중 오류가 발생할 경우 에러를 발생
  */
 async function processCreateOrder(messageList, order, finalPrice) {
+  // 주문 생성
   const { userId, companyId, type, quantity } = order;
   let pipeline = redis.pipeline();
-  const newOrderId = await redis.incr('maxOrderId');
+  const newOrderId = await redis.incr('maxOrderId'); // 새 주문 ID 생성
   const nowTime = new Date();
   const timeGap = nowTime.getTime() - new Date('2024-01-01').getTime();
   finalPrice = +finalPrice;
-  const score = type === 'buy' ? -finalPrice + timeGap / 1e11 : finalPrice + timeGap / 1e11;
-  pipeline.hmset(`orderId:${newOrderId}`, ['userId', userId, 'companyId', companyId, 'type', type, 'updatedAt', nowTime, 'price', finalPrice, 'quantity', quantity]);
+  const score = type === 'buy' ? -finalPrice + timeGap / 1e11 : finalPrice + timeGap / 1e11; // 주문 가중치 계산
+  pipeline.hmset(`orderId:${newOrderId}`, ['userId', userId, 'companyId', companyId, 'type', type, 'updatedAt', nowTime, 'price', finalPrice, 'quantity', quantity]); // 주문 정보 저장
   if (type === 'buy') {
+    // 매수 주문의 경우
     pipeline.zadd(`orders:companyId:${companyId}:type:buy`, score, newOrderId);
     pipeline.incrby(`totalQuantity:companyId:${companyId}:type:buy`, quantity);
     pipeline.hincrby(`userId:${userId}`, 'tradableMoney', -finalPrice * quantity);
   } else {
+    // 매도 주문의 경우
     const stockId = await redis.get(`stockIndex:userId:${userId}:companyId:${companyId}`);
     pipeline.zadd(`orders:companyId:${companyId}:type:sell`, score, newOrderId);
     pipeline.incrby(`totalQuantity:companyId:${companyId}:type:sell`, quantity);
@@ -321,6 +348,7 @@ async function processCreateOrder(messageList, order, finalPrice) {
   const createdOrder = await redis.hgetall(`orderId:${newOrderId}`);
   createdOrder.price = +createdOrder.price;
   createdOrder.quantity = +createdOrder.quantity;
+  // 메시지 리스트에 주문 생성 정보 추가
   messageList.push({
     reqType: 'orderCreate',
     orderId: newOrderId,
@@ -341,14 +369,16 @@ async function processCreateOrder(messageList, order, finalPrice) {
  * @throws {Error} Redis 명령 실행 중 오류가 발생할 경우 에러를 발생시킵니다.
  */
 async function findBuyerOrderAndSellerOrder(companyId) {
+  // 매수자 주문 조회
   const buyerOrderId = await redis.zrange(`orders:companyId:${companyId}:type:buy`, 0, 0);
-  const sellerOrderId = await redis.zrange(`orders:companyId:${companyId}:type:sell`, 0, 0);
   const buyerOrder = await redis.hgetall(`orderId:${buyerOrderId[0]}`);
-  const sellerOrder = await redis.hgetall(`orderId:${sellerOrderId[0]}`);
   buyerOrder.orderId = buyerOrderId[0];
-  sellerOrder.orderId = sellerOrderId[0];
   buyerOrder.price = +buyerOrder.price;
   buyerOrder.quantity = +buyerOrder.quantity;
+  // 매도자 주문 조회
+  const sellerOrderId = await redis.zrange(`orders:companyId:${companyId}:type:sell`, 0, 0);
+  const sellerOrder = await redis.hgetall(`orderId:${sellerOrderId[0]}`);
+  sellerOrder.orderId = sellerOrderId[0];
   sellerOrder.price = +sellerOrder.price;
   sellerOrder.quantity = +sellerOrder.quantity;
   return { buyerOrderId, buyerOrder, sellerOrderId, sellerOrder };
@@ -360,6 +390,7 @@ async function findBuyerOrderAndSellerOrder(companyId) {
  * @param {number} tradableMoney - 사용자의 업데이트된 거래 가능 금액.
  */
 async function trablableMoneyUpdate(messageList, userId, tradableMoney) {
+  // 메시지 리스트에 거래 가능 금액 업데이트 정보 추가
   messageList.push({ reqType: 'tradableMoneyUpdate', userId, tradableMoney: tradableMoney });
 }
 /**
@@ -371,6 +402,7 @@ async function trablableMoneyUpdate(messageList, userId, tradableMoney) {
 async function tradableQuantityUpdate(messageList, userId, companyId) {
   const stockId = await redis.get(`stockIndex:userId:${userId}:companyId:${companyId}`);
   const tradableQuantity = await redis.hget(`stockId:${stockId}`, 'tradableQuantity');
+  // 메시지 리스트에 거래 가능 수량 업데이트 정보 추가
   messageList.push({ reqType: 'tradableQuantityUpdate', userId, companyId, tradableQuantity });
 }
 /**
@@ -388,16 +420,21 @@ async function tradableQuantityUpdate(messageList, userId, companyId) {
  * @throws {Error} Redis 명령 실행 중 오류가 발생할 경우 에러를 발생
  */
 async function matchingOrderPair(messageList, companyId, type, buyerOrderId, buyerOrder, sellerOrderId, sellerOrder) {
+  // 체결 가격 결정
   const executionPrice = type === 'buy' ? sellerOrder.price : buyerOrder.price;
   let pipeline = redis.pipeline();
   // 매도 주문 처리
   if (sellerOrder.quantity <= buyerOrder.quantity) {
+    // 판매자 주문 수량이 구매자 주문 수량보다 작거나 같은 경우
+    // 매도 주문은 완전 체결
     messageList.push({ reqType: 'execution', executionType: 'complete', order: sellerOrder, quantity: sellerOrder.quantity, price: executionPrice });
     pipeline.del(`orderId:${sellerOrderId[0]}`);
     pipeline.zrem(`orders:companyId:${companyId}:type:sell`, sellerOrderId[0]);
     pipeline.decrby(`totalQuantity:companyId:${companyId}:type:sell`, sellerOrder.quantity);
     pipeline.hincrby(`userId:${sellerOrder.userId}`, 'tradableMoney', executionPrice * sellerOrder.quantity);
   } else {
+    // 핀메지 주문 수량이 구매자 주문 수량보다 많은 경우
+    // 매도 주문은 부분 체결
     messageList.push({ reqType: 'execution', executionType: 'partial', order: sellerOrder, quantity: buyerOrder.quantity, price: executionPrice });
     pipeline.hincrby(`orderId:${sellerOrderId[0]}`, 'quantity', -buyerOrder.quantity);
     pipeline.decrby(`totalQuantity:companyId:${companyId}:type:sell`, buyerOrder.quantity);
@@ -405,29 +442,39 @@ async function matchingOrderPair(messageList, companyId, type, buyerOrderId, buy
   }
   // 매수 주문 처리
   if (buyerOrder.price > executionPrice) {
+    // 구매자 주문 가격이 체결 가격보다 높은 경우
+    // 사용자 거래 가능 금액 업데이트
     pipeline.hincrby(`userId:${buyerOrder.userId}`, 'tradableMoney', (buyerOrder.price - executionPrice) * Math.min(+buyerOrder.quantity, +sellerOrder.quantity));
   }
   if (buyerOrder.quantity <= sellerOrder.quantity) {
+    // 구매자 주문 수량이 판매자 주문 수량보다 작거나 같은 경우
+    // 매수 주문은 완전 체결
     messageList.push({ reqType: 'execution', executionType: 'complete', order: buyerOrder, quantity: buyerOrder.quantity, price: executionPrice });
     pipeline.del(`orderId:${buyerOrderId[0]}`);
     pipeline.zrem(`orders:companyId:${companyId}:type:buy`, buyerOrderId[0]);
     pipeline.decrby(`totalQuantity:companyId:${companyId}:type:buy`, buyerOrder.quantity);
     const buyerStockId = await redis.get(`stockIndex:userId:${buyerOrder.userId}:companyId:${buyerOrder.companyId}`);
     if (buyerStockId) {
+      // 사용자가 이미 해당 회사의 주식을 보유하고 있는 경우
       pipeline.hincrby(`stockId:${buyerStockId}`, 'tradableQuantity', buyerOrder.quantity);
     } else {
+      // 사용자가 해당 회사의 주식을 보유하고 있지 않은 경우
       const newStockId = await redis.incr('maxStockId');
       await redis.set(`stockIndex:userId:${buyerOrder.userId}:companyId:${buyerOrder.companyId}`, newStockId);
       pipeline.hmset(`stockId:${newStockId}`, ['userId', buyerOrder.userId, 'companyId', buyerOrder.companyId, 'tradableQuantity', buyerOrder.quantity]);
     }
   } else {
+    // 구매자 주문 수량이 판매자 주문 수량보다 많은 경우
+    // 매수 주문은 부분 체결
     messageList.push({ reqType: 'execution', executionType: 'partial', order: buyerOrder, quantity: sellerOrder.quantity, price: executionPrice });
     pipeline.hincrby(`orderId:${buyerOrderId[0]}`, 'quantity', -sellerOrder.quantity);
     pipeline.decrby(`totalQuantity:companyId:${companyId}:type:buy`, sellerOrder.quantity);
     const buyerStockId = await redis.get(`stockIndex:userId:${buyerOrder.userId}:companyId:${buyerOrder.companyId}`);
     if (buyerStockId) {
+      // 사용자가 이미 해당 회사의 주식을 보유하고 있는 경우
       pipeline.hincrby(`stockId:${buyerStockId}`, 'tradableQuantity', sellerOrder.quantity);
     } else {
+      // 사용자가 해당 회사의 주식을 보유하고 있지 않은 경우
       const newStockId = await redis.incr('maxStockId');
       await redis.set(`stockIndex:userId:${buyerOrder.userId}:companyId:${buyerOrder.companyId}`, newStockId);
       pipeline.hmset(`stockId:${newStockId}`, ['userId', buyerOrder.userId, 'companyId', buyerOrder.companyId, 'tradableQuantity', sellerOrder.quantity]);
@@ -472,45 +519,45 @@ async function matching(message) {
           if (!orderData.quantity || orderData.quantity <= 0) return;
           const numericFields = ['userId', 'companyId', 'orderId', 'quantity', 'price'];
           numericFields.forEach((field) => {
-            if (orderData[field]) orderData[field] = +orderData[field];
+            if (orderData[field]) orderData[field] = +orderData[field]; //문자열을 숫자로 변환
           });
           let { userId, companyId, orderId, type, quantity, price } = orderData;
-          // 주문 유효성 검증 및 최종 구매 금액 계산 파트
+          // 주문 유효성 검증 및 최종 구매 금액 계산 함수 호출
           const finalPrice = await orderValidCheckAndReturnFinalPrice(messageList, userId, companyId, orderId, type, quantity, price);
-          //  생성/정정/삭제 주문을 생성/삭제 주문으로 변경 후 orderList에 추가
+          // 생성/정정/삭제 주문을 생성/삭제 주문으로 변경 후 orderList에 추가
           const orderList = await makeOrderList(orderData);
           // 생성/삭제 주문 처리 파트
           for (let order of orderList) {
             if (order.reqType === 'delete') {
-              await processDeleteOrder(messageList, order);
+              await processDeleteOrder(messageList, order); // 주문 삭제
             } else if (order.reqType === 'create') {
-              await processCreateOrder(messageList, order, finalPrice);
+              await processCreateOrder(messageList, order, finalPrice); // 주문 생성
             }
           }
-          // trablableMoney, tradableQuantity 업데이트
+          // trablableMoney, tradableQuantity 업데이트 파트
           const initialTradableMoney = await redis.hget(`userId:${userId}`, 'tradableMoney');
           if (type === 'buy') {
-            await trablableMoneyUpdate(messageList, userId, initialTradableMoney);
+            await trablableMoneyUpdate(messageList, userId, initialTradableMoney); // 가용 금액 업데이트
           } else {
-            await tradableQuantityUpdate(messageList, userId, companyId);
+            await tradableQuantityUpdate(messageList, userId, companyId); // 가용 주식 수량 업데이트
           }
           // 주문 매칭 파트
           // eslint-disable-next-line no-constant-condition
           while (true) {
-            const { buyerOrderId, buyerOrder, sellerOrderId, sellerOrder } = await findBuyerOrderAndSellerOrder(companyId);
+            const { buyerOrderId, buyerOrder, sellerOrderId, sellerOrder } = await findBuyerOrderAndSellerOrder(companyId); // 매수자, 매도자 주문 조회
             if (buyerOrder.price < sellerOrder.price) {
-              break;
+              break; // 매수자 주문과 매도자 주문의 가격이 매칭되지 않으면 종료
             }
-            await matchingOrderPair(messageList, companyId, type, buyerOrderId, buyerOrder, sellerOrderId, sellerOrder);
+            await matchingOrderPair(messageList, companyId, type, buyerOrderId, buyerOrder, sellerOrderId, sellerOrder); // 매수자, 매도자 주문 매칭
           }
           const finalTradableMoney = await redis.hget(`userId:${userId}`, 'tradableMoney');
           if (type === 'buy' && initialTradableMoney !== finalTradableMoney) {
-            await trablableMoneyUpdate(messageList, userId, finalTradableMoney);
+            await trablableMoneyUpdate(messageList, userId, finalTradableMoney); // 가용 금액 업데이트
           }
         }
         if (messageList.length > 0) {
           const executionMessage = JSON.stringify(messageList);
-          sendToExecutionServer(executionMessage);
+          sendToExecutionServer(executionMessage); //메시지 리스트에 있는 메시지를 체결 서버로 전송
         }
         return 'success';
     }
@@ -518,7 +565,7 @@ async function matching(message) {
     console.log(err.message);
     if (messageList.length > 0) {
       const executionMessage = JSON.stringify(messageList);
-      sendToExecutionServer(executionMessage);
+      sendToExecutionServer(executionMessage); //메시지 리스트에 있는 메시지를 체결 서버로 전송
     }
     return 'fail';
   }
