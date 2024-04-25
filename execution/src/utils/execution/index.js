@@ -23,10 +23,11 @@ async function execution(message) {
           const message = messageQueue.shift();
           // console.log('현재 처리중인 message', message);
           switch (message.reqType) {
-            case 'messageToClient':
+            case 'messageToClient': {
               sendToClient(message.userId, message.message);
               break;
-            case 'tradableMoneyUpdate':
+            }
+            case 'tradableMoneyUpdate': {
               await tx.user.update({
                 where: {
                   userId: message.userId,
@@ -36,7 +37,8 @@ async function execution(message) {
                 },
               });
               break;
-            case 'tradableQuantityUpdate':
+            }
+            case 'tradableQuantityUpdate': {
               const stock = await tx.stock.findFirst({
                 where: {
                   userId: message.userId,
@@ -52,7 +54,8 @@ async function execution(message) {
                 },
               });
               break;
-            case 'orderCreate':
+            }
+            case 'orderCreate': {
               message.updatedAt = new Date(message.updatedAt);
               message.updatedAt = message.updatedAt.toISOString();
               await tx.order.create({
@@ -67,14 +70,16 @@ async function execution(message) {
                 },
               });
               break;
-            case 'orderDelete':
+            }
+            case 'orderDelete': {
               await tx.order.delete({
                 where: {
                   orderId: message.orderId,
                 },
               });
               break;
-            default:
+            }
+            default: {
               message.order.companyId = +message.order.companyId;
               message.order.orderId = +message.order.orderId;
               message.order.updatedAt = new Date(message.order.updatedAt);
@@ -237,6 +242,7 @@ async function execution(message) {
                 }
               }
               break;
+            }
           }
         }
         if (companyCurrentPrice !== -1 && companyId !== -1) {
