@@ -1,5 +1,8 @@
 import { jest } from '@jest/globals';
-import {OrderController} from '../../src/routes/order/order.controller.js';
+import { OrderController } from '../../src/routes/order/order.controller.js';
+jest.mock('../../src/utils/sendToMatchingServer/index.js', () => ({
+  sendToMatchingServer: jest.fn().mockResolvedValue({}),
+}));
 
 describe('OrderController', () => {
   let mockOrderService;
