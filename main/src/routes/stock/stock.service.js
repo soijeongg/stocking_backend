@@ -1,13 +1,10 @@
+// StockService 클래스는 주식 데이터 관련 로직을 처리합니다.
 export class StockService {
   constructor(stockrepository) {
     this.stockrepository = stockrepository;
   }
 
-  /**
-   * 사용자의 주식 정보를 가져오는 메소드
-   * @param {number} userId - 사용자 ID
-   * @returns {Promise<object>} 사용자의 주식 정보를 반환하는 프로미스
-   */
+  // 사용자의 주식 정보를 조회하고, 수익률에 따라 내림차순으로 정렬하여 반환합니다.
   getStock = async (userId) => {
     const stocks = await this.stockrepository.findStockByUserId(userId);
     if (stocks.message) {

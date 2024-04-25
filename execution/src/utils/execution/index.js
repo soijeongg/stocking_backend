@@ -232,7 +232,6 @@ async function execution(message) {
                       quantity: {
                         decrement: message.quantity,
                       },
-                      averagePrice: (stock.averagePrice * stock.quantity - message.order.price * message.quantity) / (stock.quantity - message.quantity),
                     },
                   });
                 }
