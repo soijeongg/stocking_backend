@@ -4,7 +4,7 @@ import { execution } from '../execution/index.js';
 // Kafka 클라이언트를 생성합니다.
 const kafka = new Kafka({
   clientId: 'execution-server',
-  brokers: [`${process.env.KAFKA_IP1}`, `${process.env.KAFKA_IP2}`, `${process.env.KAFKA_IP2}`],
+  brokers: [`${process.env.KAFKA_IP1}`, `${process.env.KAFKA_IP2}`, `${process.env.KAFKA_IP3}`],
 });
 const consumer = kafka.consumer({ groupId: 'execution-group' });
 
