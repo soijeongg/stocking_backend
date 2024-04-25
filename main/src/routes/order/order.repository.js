@@ -63,7 +63,7 @@ export class OrderRepository {
       const companyName = item.Company.name;
 
       // 회사이름검색
-      if (name && companyName !== name) {
+      if (name && !companyName.includes(name)) {
         return false;
       }
       // 타입검색

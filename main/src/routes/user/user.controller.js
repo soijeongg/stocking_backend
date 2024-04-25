@@ -98,36 +98,48 @@ export class userController {
     }
   };
   //회원 탈퇴를 해보자
-  deleteUseController = async (req, res, next) => {
-    let { userId } = res.locals.user;
-    let deleteOne = await this.userService.deleteUserService(userId);
-    return res.status(200).json({ message: '성공적으로 삭제 되었습니다' });
+  deleteUserController = async (req, res, next) => {
+    try {
+      let { userId } = res.locals.user;
+      let deleteOne = await this.userService.deleteUserService(userId);
+      return res.status(200).json({ message: '성공적으로 삭제 되었습니다' });
+    } catch (error) {
+      next(error);
+    }
   };
   //회원 정보조회를 해보자
   getUserController = async (req, res, next) => {
-    let { userId } = res.locals.user;
-    let getOne = await this.userService.selectUserInfo(userId);
-    // console.log('getOne: ', getOne);
-    const processedUsers = getOne.map((user) => ({
-      nickname: user.nickname,
-      currentMoney: user.currentMoney.toString(),
-      totalAsset: user.totalAsset.toString(),
-      initialSeed: user.initialSeed.toString(),
-      tradableMoney: user.tradableMoney.toString(),
-      tier: user.tier,
-      userId: user.userId,
-    }));
-    // console.log('processedUsers: ', processedUsers);
-    return res.status(200).json({ data: processedUsers });
+    try {
+      let { userId } = res.locals.user;
+      let getOne = await this.userService.selectUserInfo(userId);
+      // console.log('getOne: ', getOne);
+      const processedUsers = getOne.map((user) => ({
+        nickname: user.nickname,
+        currentMoney: user.currentMoney.toString(),
+        totalAsset: user.totalAsset.toString(),
+        initialSeed: user.initialSeed.toString(),
+        tradableMoney: user.tradableMoney.toString(),
+        tier: user.tier,
+        userId: user.userId,
+      }));
+      // console.log('processedUsers: ', processedUsers);
+      return res.status(200).json({ data: processedUsers });
+    } catch (error) {
+      next(error);
+    }
   };
   //회원의 닉네임을 받아오자.
   getUserSimpleController = async (req, res, next) => {
-    let { userId } = res.locals.user;
-    let getOne = await this.userService.selectUserSimpleInfo(userId);
-    const processedUsers = getOne.map((user) => ({
-      nickname: user.nickname,
-    }));
-    return res.status(200).json(processedUsers);
+    try {
+      let { userId } = res.locals.user;
+      let getOne = await this.userService.selectUserSimpleInfo(userId);
+      const processedUsers = getOne.map((user) => ({
+        nickname: user.nickname,
+      }));
+      return res.status(200).json(processedUsers);
+    } catch (error) {
+      next(error);
+    }
   };
   //이메일 인증 컨트롤러를 만든다 .
   getVerifyController = async (req, res, next) => {
