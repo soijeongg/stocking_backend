@@ -24,7 +24,7 @@ export class ConcludedRepository {
     // 추가적인 필터링
     const filteredStocks = stocks.filter((item) => {
       const companyName = item.Company.name;
-      if (name && companyName !== name) return false;
+      if (name && !companyName.includes(name)) return false; // 변경된 부분
       if (type && item.type !== type) return false;
       return true;
     });
