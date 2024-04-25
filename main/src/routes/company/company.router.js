@@ -4,6 +4,7 @@ import { CompanyRepository } from './company.repository.js';
 import { CompanyService } from './company.service.js';
 import { CompanyController } from './company.controller.js';
 import authMiddleware from '../../middlewares/authMiddleware.js';
+
 const router = express.Router({ mergeParams: true });
 const companyRepository = new CompanyRepository(prisma);
 const companyService = new CompanyService(companyRepository);
