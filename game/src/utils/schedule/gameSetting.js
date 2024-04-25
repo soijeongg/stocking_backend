@@ -1,5 +1,5 @@
 import { resetUserMoney, createDummyUser, createCompany, createDummyOrderAndStock, sendMatchingServerGameStart } from './gameStart.js';
-import { deleteDummyUser, deleteCompany, updateStockToCash, updateRankBoard, updateMMR, sendMatchingServerGameEnd } from './gameEnd.js';
+import { deleteDummyUser, deleteCompany, sendMatchingServerGameEnd } from './gameEnd.js';
 
 async function gameSetting() {
   await deleteDummyUser();
