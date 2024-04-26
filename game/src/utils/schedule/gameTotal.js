@@ -1,6 +1,6 @@
-import { resetUserMoney, createDummyUser, createCompany, createDummyOrderAndStock } from './gameStart.js';
+import { resetUserMoney, createDummyUser, createCompany, createDummyOrderAndStock, sendMatchingServerGameStart } from './gameStart.js';
 import { createDummyEvent } from './gameMiddle.js';
-import { deleteDummyUser, deleteCompany, updateStockToCash, updateRankBoard, updateMMR } from './gameEnd.js';
+import { deleteDummyUser, deleteCompany, updateStockToCash, updateRankBoard, updateMMR, sendMatchingServerGameEnd } from './gameEnd.js';
 import { sendNoticesToAllClients } from '../socketConnecter/socketConnecter.js';
 /**
  * @description 지정된 분의 나머지에 도달할 때까지 대기하는 비동기 함수
@@ -56,6 +56,7 @@ const notifyTimeRemaining = () => {
   sendNoticesToAllClients(`게임종료까지 남은 시간 : ${timeRemainingMinutes}분 ${timeRemainingSeconds}초`);
 };
 async function gameTotal() {
+  await sendMatchingServerGameEnd();
   await deleteDummyUser(); //더미 유저 삭제
   await deleteCompany(); //회사 삭제
   sendNoticesToAllClients('게임 세팅 중...1분뒤 시작입니다!'); //게임 세팅 알림
@@ -63,6 +64,7 @@ async function gameTotal() {
   await createDummyUser(); //더미 유저 생성
   await createCompany(); //회사 생성
   await createDummyOrderAndStock(); //주식 생성
+  await sendMatchingServerGameStart();
   await waitForMinuteRemainder(1); //1분까지 기다림
   sendNoticesToAllClients('게임 시작!...게임 시간은 5분간 진행됩니다!'); //게임 시작 알림
   // 게임 이벤트 생성 (5초마다)
@@ -85,6 +87,6 @@ async function gameTotal() {
   await updateRankBoard(); //랭킹 업데이트
   await deleteCompany(); //회사 삭제
   await updateMMR(); //MMR 업데이트
-  sendNoticesToAllClients('랭킹이 업데이트 되었습니다!'); //랭킹 업데이트 알림
+  await sendMatchingServerGameEnd();
 }
 export { gameTotal };
