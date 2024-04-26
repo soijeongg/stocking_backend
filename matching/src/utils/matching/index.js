@@ -253,7 +253,7 @@ async function orderValidCheckAndReturnFinalPrice(messageList, reqType, userId, 
  * @param {number} price - 주문 가격.
  * @returns {Array} 생성된 주문 목록을 반환
  */
-async function makeOrderList(reqType, userId, companyId, orderId, type, quantity, price) {
+function makeOrderList(reqType, userId, companyId, orderId, type, quantity, price) {
   const orderList = [];
   switch (reqType) {
     case 'orderCreate':
