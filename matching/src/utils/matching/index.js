@@ -138,7 +138,8 @@ async function orderValidCheckAndReturnFinalPrice(messageList, reqType, userId, 
   if (reqType === 'orderDelete') return; // 주문 삭제 요청인 경우 함수 종료
   let nowQuantity, finalPrice, needMoney; // 현재 까지의 주문 수량, 최종 가격, 필요 금액
   const reverseType = type === 'buy' ? 'sell' : 'buy';
-  const totalQuantity = await redis.get(`totalQuantity:companyId:${companyId}:type:${reverseType}`);
+  let totalQuantity = await redis.get(`totalQuantity:companyId:${companyId}:type:${reverseType}`);
+  totalQuantity = +totalQuantity;
   if (totalQuantity <= quantity) {
     messageList.push({ reqType: 'messageToClient', userId: userId, message: `최대 ${totalQuantity - 1}개까지만 주문할 수 있습니다.` }); //최대 주문 수량 초과시 메시지 전송
     throw new Error(`최대 ${totalQuantity - 1}개까지만 주문할 수 있습니다.`);
@@ -525,7 +526,7 @@ async function matching(message) {
           // 주문 유효성 검증 및 최종 구매 금액 계산 함수 호출
           const finalPrice = await orderValidCheckAndReturnFinalPrice(messageList, reqType, userId, companyId, orderId, type, quantity, price);
           // 생성/정정/삭제 주문을 생성/삭제 주문으로 변경 후 orderList에 추가
-          const orderList = await makeOrderList(orderData);
+          const orderList = makeOrderList(reqType, userId, companyId, orderId, type, quantity, price);
           // 생성/삭제 주문 처리 파트
           for (let order of orderList) {
             if (order.reqType === 'delete') {
