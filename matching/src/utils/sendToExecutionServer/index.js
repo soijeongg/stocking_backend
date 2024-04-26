@@ -25,7 +25,7 @@ async function sendToExecutionServer(message) {
       topic: 'executionQueue',
       messages: [{ value: message }],
     });
-    // console.log('Successfully sent message to executionQueue:', message);
+    console.log('Successfully sent message to executionQueue:', message);
   } catch (error) {
     console.error('Error sending message to executionQueue:', error);
   }
