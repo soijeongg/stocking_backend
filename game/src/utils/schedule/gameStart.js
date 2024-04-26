@@ -141,7 +141,7 @@ async function createDummyOrderAndStock() {
         // 최대 주문량을 현재 가격을 기준으로 설정
         // 계수는 테스트시에는 1000, 배포시에는 1
         let maxOrder = Math.round(1000 / currentPrice);
-        for (let i = currentPrice / 2; i < currentPrice; ++i) {
+        for (let i = Math.floor(currentPrice) / 2; i < currentPrice; ++i) {
           let random = Math.floor(Math.random() * maxOrder) + 1;
           // 더미 매수 주문 생성
           await prisma.order.create({
