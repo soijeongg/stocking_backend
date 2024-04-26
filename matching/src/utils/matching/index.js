@@ -523,7 +523,7 @@ async function matching(message) {
           });
           let { userId, companyId, orderId, type, quantity, price } = orderData;
           // 주문 유효성 검증 및 최종 구매 금액 계산 함수 호출
-          const finalPrice = await orderValidCheckAndReturnFinalPrice(messageList, userId, companyId, orderId, type, quantity, price);
+          const finalPrice = await orderValidCheckAndReturnFinalPrice(messageList, reqType, userId, companyId, orderId, type, quantity, price);
           // 생성/정정/삭제 주문을 생성/삭제 주문으로 변경 후 orderList에 추가
           const orderList = await makeOrderList(orderData);
           // 생성/삭제 주문 처리 파트
