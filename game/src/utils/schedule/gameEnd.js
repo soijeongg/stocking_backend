@@ -1,5 +1,6 @@
 import { prisma } from '../prisma/index.js';
 import { sendToMatchingServer } from '../sendToMatchingServer/index.js';
+import { sendNoticesToAllClients } from '../socketConnecter/socketConnecter.js';
 
 /**
  * @description User 테이블에서 `dummy` 속성이 `true`로 설정된 모든 사용자를 대상으로 삭제 작업을 수행
@@ -121,6 +122,7 @@ async function updateRankBoard() {
       const bProfitRate = (BigInt(b.totalAsset) - BigInt(b.initialSeed)) / BigInt(b.initialSeed);
       return Number(bProfitRate - aProfitRate); // BigInt 비교 후, 숫자로 변환
     });
+    sendNoticesToAllClients('랭킹이 업데이트 되었습니다!'); //랭킹 업데이트 알림
     // 상위 5명의 사용자 정보를 랭킹 보드에 저장
     for (let i = 0; i < Math.min(users.length, 5); i++) {
       let diff = BigInt(users[i].totalAsset) - BigInt(users[i].initialSeed);
@@ -134,6 +136,7 @@ async function updateRankBoard() {
           nickname: users[i].nickname,
         },
       });
+      sendNoticesToAllClients(`${i + 1}등 : ${users[i].nickname}님 수익률 : ${rate}%`); //랭킹 알림
     }
   } catch (err) {
     console.error('랭킹보드 업데이트 중 오류가 발생했습니다:', err);
