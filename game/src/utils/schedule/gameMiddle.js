@@ -85,7 +85,7 @@ async function createDummyEvent() {
     let random = Math.random();
     // 주문 뼈대 데이터 생성
     const jsonOrderData = {
-      orderType: 'create',
+      reqType: 'orderCreate',
       userId: dummyUser.userId,
       companyId: company.companyId,
       orderId: null,
