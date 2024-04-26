@@ -270,6 +270,7 @@ async function makeOrderList(reqType, userId, companyId, orderId, type, quantity
       orderList.push({ reqType: 'delete', orderId, userId, companyId, type, quantity, price });
       break;
   }
+  console.log('orderList', orderList);
   return orderList;
 }
 /**
