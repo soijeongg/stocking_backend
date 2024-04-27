@@ -1,5 +1,5 @@
 import { jest } from '@jest/globals';
-import {OrderService} from '../../src/routes/order/order.service.js';
+import { OrderService } from '../../src/routes/order/order.service.js';
 
 describe('OrderService', () => {
   let mockOrderRepository;

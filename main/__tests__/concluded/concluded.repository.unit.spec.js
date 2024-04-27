@@ -1,5 +1,5 @@
 import { jest } from '@jest/globals';
-import {ConcludedRepository} from '../../src/routes/concluded/concluded.repository.js';
+import { ConcludedRepository } from '../../src/routes/concluded/concluded.repository.js';
 
 describe('ConcludedRepository', () => {
   let mockPrisma;

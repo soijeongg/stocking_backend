@@ -3,7 +3,13 @@ import { OrderController } from '../../src/routes/order/order.controller.js';
 jest.mock('../../src/utils/sendToMatchingServer/index.js', () => ({
   sendToMatchingServer: jest.fn().mockResolvedValue({}),
 }));
-
+jest.mock('../../src/utils/redisClient/index.js', () => ({
+  redisClient: {
+    connect: jest.fn(),
+    get: jest.fn().mockResolvedValue('some value'),
+    set: jest.fn().mockResolvedValue(true),
+  },
+}));
 describe('OrderController', () => {
   let mockOrderService;
   let orderController;

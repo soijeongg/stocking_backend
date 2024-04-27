@@ -5,7 +5,6 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import passport from 'passport';
 import session from 'express-session';
-import { createClient } from 'redis';
 import RedisStore from 'connect-redis';
 import passportConfig from './utils/passportConfig/index.js';
 import { register, Counter, Histogram } from 'prom-client';
@@ -13,6 +12,7 @@ import LogMiddleware from './middlewares/log.middleware.js';
 import notFoundErrorHandler from './middlewares/notFoundError.middleware.js';
 import generalErrorHandler from './middlewares/generalError.middleware.js';
 import router from './routes/index.js';
+import redisClient from './utils/redisClient/index.js';
 
 dotenv.config();
 
@@ -31,33 +31,6 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
-const redisClient = createClient({
-  url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
-  password: `${process.env.REDIS_PASSWORD}`,
-  connectTimeout: 10000, // 연결 시도 시간을 10초로 설정
-});
-
-const connectWithRetry = async (retryCount = 0, maxRetries = 5) => {
-  if (redisClient.isOpen) {
-    return;
-  }
-  if (redisClient.isReady) {
-    return;
-  }
-  try {
-    await redisClient.connect();
-  } catch (err) {
-    console.log(err);
-    if (retryCount < maxRetries) {
-      console.log(`Retrying to connect... Attempt ${retryCount + 1}/${maxRetries}`);
-      await new Promise((resolve) => setTimeout(resolve, 1000 * (retryCount + 1)));
-      await connectWithRetry(retryCount + 1, maxRetries);
-    }
-  }
-};
-
-await connectWithRetry();
-console.log('Redis 서버에 연결되었습니다.');
 
 app.get('/metrics', async (req, res) => {
   try {
