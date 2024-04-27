@@ -32,10 +32,10 @@ async function waitForRedisConnection(redis, timeout = 1000) {
   }
 }
 //개발시 로컬에서 사용
-// const redis = new Redis({
-//   retryStrategy: (times) => Math.min(times * 50, 2000),
-//   maxRetriesPerRequest: 10,
-// });
+const redis = new Redis({
+  retryStrategy: (times) => Math.min(times * 50, 2000),
+  maxRetriesPerRequest: 10,
+});
 
 //배포시 elasticache 주소로 변경
 /**
@@ -43,12 +43,12 @@ async function waitForRedisConnection(redis, timeout = 1000) {
  * Redis 서버와의 연결, 에러 발생, 그리고 재연결 시도 시에 적절한 로그를 출력
  * @type {Redis} redis - Redis 클라이언트 객체.
  */
-const redis = new Redis({
-  host: `${process.env.MATCHING_REDIS_HOST}`, // Elasticache Redis 엔드포인트 주소
-  port: `${process.env.MATCHING_REDIS_PORT}`, // 기본 Redis 포트
-  retryStrategy: (times) => Math.min(times * 50, 2000), // 연결 재시도 전략
-  maxRetriesPerRequest: 10, // 요청당 최대 재시도 횟수
-});
+// const redis = new Redis({
+//   host: `${process.env.MATCHING_REDIS_HOST}`, // Elasticache Redis 엔드포인트 주소
+//   port: `${process.env.MATCHING_REDIS_PORT}`, // 기본 Redis 포트
+//   retryStrategy: (times) => Math.min(times * 50, 2000), // 연결 재시도 전략
+//   maxRetriesPerRequest: 10, // 요청당 최대 재시도 횟수
+// });
 
 // Redis 서버에 연결될 때 로그를 출력
 redis.on('connect', () => {
