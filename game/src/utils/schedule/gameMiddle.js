@@ -135,18 +135,45 @@ async function createDummyEvent() {
         const jsonOrderDataString = JSON.stringify(jsonOrderData);
         sendToMatchingServer(jsonOrderDataString);
       }
-    } else {
-      // 현재가 주변으로 주문이 비워지는 것을 방지하기 위해 현재가에 맞게 매도/매수 주문을 추가
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+/**
+ * @description 모든 회사에 대해 더미 매수 및 매도 주문을 생성하는 함수
+ * @returns {Promise<void>} 모든 더미 주문 생성 및 전송 작업을 완료한 후 Promise를 반환
+ * @throws {Error} 데이터베이스 조회 또는 주문 전송 중 오류가 발생할 경우, 오류 메시지를 콘솔에 출력
+ */
+async function createDummyOrderToPreventEmptyOrderBook() {
+  try {
+    const companies = await prisma.company.findMany();
+    const dummyUser = await prisma.user.findFirst({
+      where: {
+        dummy: true,
+      },
+    });
+    const jsonOrderData = {
+      reqType: 'orderCreate',
+      userId: dummyUser.userId,
+      companyId: null,
+      orderId: null,
+    };
+    for (let company of companies) {
       for (let i = -5; i < 0; ++i) {
+        jsonOrderData.companyId = company.companyId;
         jsonOrderData.type = 'buy';
-        jsonOrderData.quantity = Math.floor(Math.random() * 3);
-        jsonOrderData.price = company.currentPrice + i * 10000;
+        jsonOrderData.quantity = Math.floor(Math.random() * 5);
+        jsonOrderData.price = company.currentPrice - i * 10000;
         const jsonOrderDataString = JSON.stringify(jsonOrderData);
         sendToMatchingServer(jsonOrderDataString);
       }
+    }
+    for (let company of companies) {
       for (let i = 0; i <= 5; ++i) {
+        jsonOrderData.companyId = company.companyId;
         jsonOrderData.type = 'sell';
-        jsonOrderData.quantity = Math.floor(Math.random() * 3);
+        jsonOrderData.quantity = Math.floor(Math.random() * 5);
         jsonOrderData.price = company.currentPrice + i * 10000;
         const jsonOrderDataString = JSON.stringify(jsonOrderData);
         sendToMatchingServer(jsonOrderDataString);
@@ -157,4 +184,4 @@ async function createDummyEvent() {
   }
 }
 
-export { createDummyEvent };
+export { createDummyEvent, createDummyOrderToPreventEmptyOrderBook };
