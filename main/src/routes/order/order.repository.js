@@ -1,7 +1,14 @@
+import redisClient from '../../utils/redisClient/index.js';
+
 export class OrderRepository {
   constructor(prisma) {
     this.prisma = prisma;
   }
+  // 주문 가능 여부 확인
+  checkOrderIsPossible = async () => {
+    const result = await redisClient.get('isOrderPossible');
+    return result === 'true';
+  };
 
   // 주문 번호 + 유저 번호로 주문 조회
   findOrderByOrderId = async (userId, orderId, transaction) => {

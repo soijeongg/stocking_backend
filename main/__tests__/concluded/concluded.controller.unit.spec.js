@@ -1,5 +1,5 @@
 import { jest } from '@jest/globals';
-import {ConcludedController} from '../../src/routes/concluded/concluded.controller.js';
+import { ConcludedController } from '../../src/routes/concluded/concluded.controller.js';
 
 describe('ConcludedController', () => {
   let mockConcludedService;
