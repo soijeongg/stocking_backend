@@ -71,13 +71,24 @@ async function gameTotal() {
   const eventInterval = setInterval(createDummyEvent, 5000);
   // 현재 분을 12로 나눈뒤에  6분이 되기까지 남은 시간을 "게임종료까지 남은 시간 : 00분 00초"로 출력
   const noticeInterval = setInterval(notifyTimeRemaining, 15000);
-  // 게임 이벤트 중지 (5분 40초)
+  // 빈 주문서를 방지하기 위한 주문 생성 (1초마다)
+  const orderInterval = setInterval(createDummyOrderToPreventEmptyOrderBook, 1000);
+  // 게임 이벤트, 남은 시간 공지, 빈 주문 방지 (5분 45초까지)
   await new Promise((resolve) =>
     setTimeout(() => {
       clearInterval(eventInterval);
       clearInterval(noticeInterval);
+      clearInterval(orderInterval);
       resolve();
-    }, 280000)
+    }, 284500)
+  );
+  // 남은 시간 공지, 빈 주문 방지 (15초)
+  await new Promise((resolve) =>
+    setTimeout(() => {
+      clearInterval(noticeInterval);
+      clearInterval(orderInterval);
+      resolve();
+    }, 14000)
   );
   // 게임 정리 (6분)
   await waitForMinuteRemainder(6); //6분까지 기다림
