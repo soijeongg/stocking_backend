@@ -6,9 +6,8 @@ export class OrderRepository {
   }
   // 주문 가능 여부 확인
   checkOrderIsPossible = async () => {
-    const result = redisClient.get('isOrderPossible');
-    if (result) return true;
-    else return false;
+    const result = await redisClient.get('isOrderPossible');
+    return result === 'true';
   };
 
   // 주문 번호 + 유저 번호로 주문 조회
