@@ -6,7 +6,7 @@ const kafka = new Kafka({
   clientId: 'execution-server',
   brokers: [`${process.env.KAFKA_IP1}`, `${process.env.KAFKA_IP2}`, `${process.env.KAFKA_IP3}`],
 });
-const consumer = kafka.consumer({ groupId: 'execution-group-local' });
+const consumer = kafka.consumer({ groupId: 'execution-group' });
 
 consumer.on(consumer.events.CONNECT, () => {
   console.log('Kafka Consumer is connected and ready.');
