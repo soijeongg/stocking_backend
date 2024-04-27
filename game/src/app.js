@@ -15,13 +15,13 @@ const server = createServer(app);
 const PORT = process.env.PORT;
 
 // 실제 서비스는 아래 코드를 사용합니다.
-schedule.scheduleJob('*/12 * * * *', async function () {
-  await gameTotal();
-});
+// schedule.scheduleJob('*/12 * * * *', async function () {
+//   await gameTotal();
+// });
 
 // 테스트 시에는 아래 코드를 사용합니다.
-// await gameSetting();
-// setInterval(createDummyEvent, 5000);
+await gameSetting();
+setInterval(createDummyEvent, 5000);
 
 app.use(notFoundErrorHandler);
 app.use(generalErrorHandler);
