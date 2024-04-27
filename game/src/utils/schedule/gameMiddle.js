@@ -30,35 +30,17 @@ const events = [
 function sendToAllClient(notices) {
   sendNoticesToAllClients(notices);
 }
-
 /**
- * @description 주어진 효과 값(`effectNum`)과 확률(`effectProb`)을 기반으로 하여 랜덤 숫자를 생성
- * 계산된 최대값(`max`)과 최소값(`min`)을 사용하여 랜덤 범위를 설정하며, `max`가 `min`보다 작은 경우 두 값을 교환
- * @param {number} effectNum - 랜덤 숫자 범위의 기준이 되는 값.
- * @param {number} effectProb - `effectNum`에 적용될 확률 계수. 이 값에 따라 최소값이 조정
- * @returns {number} 계산된 랜덤 숫자를 반환합니다.
+ * @description 주어진 두 수 사이에서 균등하게 분포된 랜덤 정수를 생성하고 반환하는 함수
+ * @param {number} a - 범위의 하한값 또는 상한값.
+ * @param {number} b - 범위의 하한값 또는 상한값.
+ * @returns {number} a와 b 사이의 랜덤 정수.
  */
-function getRandomNumber(effectNum, effectProb) {
-  let max = effectNum;
-  let min = -effectNum * effectProb;
-  // max가 min보다 작으면 max와 min을 바꿔준다
-  if (max < min) [max, min] = [min, max];
-  return Math.random() * (max - min) + min;
+function getRandomIntInclusive(a, b) {
+  const min = Math.min(a, b);
+  const max = Math.max(a, b);
+  return Math.floor(Math.random() * (max - min + 1) + min);
 }
-/**
- * @description 주어진 값을 올림 처리하는 함수, 표준 `Math.ceil` 함수를 사용
- * 특수한 경우 (음수에서 -0.5로 끝날 경우)에는 올림된 결과에서 1을 빼서 반환
- * @param {number} value - 올림 처리할 숫자.
- * @returns {number} 조정된 올림 값. 음수이고 -0.5로 끝나는 경우 기본 올림 값에서 1을 뺀 값이 반환
- */
-function customCeil(value) {
-  if (value < 0 && value % 1 === -0.5) {
-    return Math.ceil(value) - 1;
-  } else {
-    return Math.ceil(value);
-  }
-}
-
 /**
  * @description 더미 이벤트를 생성하고 이에 따른 주문을 생성하여 매칭 서버로 전송
  * 함수는 먼저 더미 사용자와 회사를 데이터베이스에서 조회한 다음, 정의된 이벤트 목록에서 무작위 이벤트를 선택
@@ -79,10 +61,7 @@ async function createDummyEvent() {
     const companies = await prisma.company.findMany(); //
     const company = companies[Math.floor(Math.random() * companies.length)]; // 랜덤으로 이벤트가 발생할 회사 선택
     const event = events[Math.floor(Math.random() * events.length)]; // 랜덤으로 이벤트 선택
-    const coefficent = getRandomNumber(event[1], event[2]); // 이벤트에 따른 계수 선정
-    const quantity = customCeil(Math.random() * 10 * coefficent); // 계수 * 10* 랜덤 숫자를 올림 처리하여 주식 수량 결정
-    // 랜덤 숫자 생성
-    let random = Math.random();
+    sendToAllClient(`${company.name}, ${event[0]}`);
     // 주문 뼈대 데이터 생성
     const jsonOrderData = {
       reqType: 'orderCreate',
@@ -90,51 +69,28 @@ async function createDummyEvent() {
       companyId: company.companyId,
       orderId: null,
     };
-    if (random < 0.2) {
-      // 시장가 주문 생성
-      // 이벤트 공지
-      sendToAllClient(`${company.name}, ${event[0]}`);
-      //15초 대기
-      await new Promise((resolve) => setTimeout(resolve, 15000));
-      if (quantity == 0) return;
-      else if (quantity < 0) {
-        // 매도 주문 생성
-        jsonOrderData.type = 'sell';
-        jsonOrderData.quantity = -quantity;
-        jsonOrderData.price = null;
-        const jsonOrderDataString = JSON.stringify(jsonOrderData);
-        sendToMatchingServer(jsonOrderDataString);
+    for (let i = 0; i < 30; ++i) {
+      let buyCoefficient, sellCoefficient;
+      if (event[1] < 0) {
+        buyCoefficient = getRandomIntInclusive(6, 9);
+        sellCoefficient = getRandomIntInclusive(9, 12);
       } else {
-        // 매수 주문 생성
-        jsonOrderData.type = 'buy';
-        jsonOrderData.quantity = quantity;
-        jsonOrderData.price = null;
-        const jsonOrderDataString = JSON.stringify(jsonOrderData);
-        sendToMatchingServer(jsonOrderDataString);
+        buyCoefficient = getRandomIntInclusive(9, 12);
+        sellCoefficient = getRandomIntInclusive(6, 9);
       }
-    } else if (random < 0.4) {
-      // 지정가 주문 생성
-      // 이벤트 공지
-      sendToAllClient(`${company.name}, ${event[0]}`);
-      //15초 대기
-      await new Promise((resolve) => setTimeout(resolve, 15000));
-      const constprice = Math.floor(Math.random() * 6);
-      if (quantity == 0) return;
-      else if (quantity < 0) {
-        // 매도 주문 생성
-        jsonOrderData.type = 'sell';
-        jsonOrderData.quantity = -quantity;
-        jsonOrderData.price = company.currentPrice + constprice * 10000;
-        const jsonOrderDataString = JSON.stringify(jsonOrderData);
-        sendToMatchingServer(jsonOrderDataString);
+      let buyQuantity = Math.ceil(buyCoefficient * Math.random());
+      let sellQuantity = Math.ceil(sellCoefficient * Math.random());
+      let random = Math.random();
+      if (random < 0.5) {
+        jsonOrderData.type = 'buy';
+        jsonOrderData.quantity = buyQuantity;
       } else {
-        // 매수 주문 생성
-        jsonOrderData.type = 'buy';
-        jsonOrderData.quantity = quantity;
-        jsonOrderData.price = company.currentPrice - constprice * 10000;
-        const jsonOrderDataString = JSON.stringify(jsonOrderData);
-        sendToMatchingServer(jsonOrderDataString);
+        jsonOrderData.type = 'sell';
+        jsonOrderData.quantity = sellQuantity;
       }
+      const jsonOrderDataString = JSON.stringify(jsonOrderData);
+      sendToMatchingServer(jsonOrderDataString);
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
   } catch (err) {
     console.error(err);

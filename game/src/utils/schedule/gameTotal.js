@@ -1,5 +1,5 @@
 import { resetUserMoney, createDummyUser, createCompany, createDummyOrderAndStock, sendMatchingServerGameStart } from './gameStart.js';
-import { createDummyEvent } from './gameMiddle.js';
+import { createDummyEvent, createDummyOrderToPreventEmptyOrderBook } from './gameMiddle.js';
 import { deleteDummyUser, deleteCompany, updateStockToCash, updateRankBoard, updateMMR, sendMatchingServerGameEnd } from './gameEnd.js';
 import { sendNoticesToAllClients } from '../socketConnecter/socketConnecter.js';
 /**
