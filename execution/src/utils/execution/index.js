@@ -1,11 +1,7 @@
 import { prisma } from '../prisma/index.js';
 import { Prisma } from '@prisma/client';
-import { sendNoticesToClient, sendNoticesToAllClients } from '../socketConnecter/socketConnecter.js';
+import { sendNoticesToClient } from '../socketConnecter/socketConnecter.js';
 
-// 전체 유저에게 전송
-function sendToAllClient(notices) {
-  sendNoticesToAllClients(notices);
-}
 // 개별 유저에게 전송
 function sendToClient(userId, notices) {
   sendNoticesToClient(userId, notices);
@@ -264,7 +260,7 @@ async function execution(message) {
                 }
               }
               // 체결 처리 완료 후, 유저에게 알림 전송
-              notices.push(`${userInfo.nickname}님의 ${company.name} 종목에 대한 ${message.quantity}주, ${message.price}원 ${orderType}주문이 체결되었습니다.`);
+              notices.push(userInfo.userId, `${userInfo.nickname}님의 ${company.name} 종목에 대한 ${message.quantity}주, ${message.price}원 ${orderType}주문이 체결되었습니다.`);
               break;
             }
           }
@@ -282,7 +278,9 @@ async function execution(message) {
           });
         }
         if (notices.length > 0) {
-          sendToAllClient(notices);
+          for (let i = 0; i < notices.length; i += 2) {
+            sendToClient(notices[i], notices[i + 1]);
+          }
         }
       },
       {
