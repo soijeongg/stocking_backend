@@ -2,7 +2,7 @@ import { resetUserMoney, createDummyUser, createCompany, createDummyOrderAndStoc
 import { createDummyEvent, createDummyOrderToPreventEmptyOrderBook } from './gameMiddle.js';
 import { deleteDummyUser, deleteCompany, updateStockToCash, updateRankBoard, updateMMR, sendMatchingServerGameEnd } from './gameEnd.js';
 import { sendNoticesToAllClients } from '../socketConnecter/socketConnecter.js';
-import { redisClient } from '../redisClient/index.js';
+import redisClient from '../redisClient/index.js';
 /**
  * @description 지정된 분의 나머지에 도달할 때까지 대기하는 비동기 함수
  * 예를 들어 minute 파라미터로 5를 전달받으면, 현재 시간의 분(minute)이 12로 나눈 나머지가 5가 될 때까지 대기
