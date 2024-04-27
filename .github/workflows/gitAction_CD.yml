@@ -61,6 +61,7 @@ jobs:
           KAFKA_IP1: ${{ secrets.KAFKA_IP1}}
           KAFKA_IP2: ${{ secrets.KAFKA_IP2}}
           KAFKA_IP3: ${{ secrets.KAFKA_IP3}}
+          DATABASE_REPLICA_URL: ${{secrets.DATABASE_REPLICA_URL}}
           MATCHING_REDIS_HOST: ${{ secrets.MATCHING_REDIS_HOST}}
           MATCHING_REDIS_PORT: ${{ secrets.MATCHING_REDIS_PORT}}
         run: |
