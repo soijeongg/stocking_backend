@@ -1,6 +1,7 @@
 export class StockRepository {
-  constructor(prisma) {
+  constructor(prisma, prismaReplica) {
     this.prisma = prisma;
+    this.prismaReplica = prismaReplica;
   }
 
   /**
@@ -9,7 +10,7 @@ export class StockRepository {
    * @returns {Promise<object[]>} 사용자의 주식 목록을 반환하는 프로미스
    */
   findStockByUserId = async (userId) => {
-    const stocks = await this.prisma.stock.findMany({
+    const stocks = await this.prismaReplica.stock.findMany({
       where: {
         userId: +userId,
       },
