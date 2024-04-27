@@ -1,6 +1,12 @@
 import { jest } from '@jest/globals';
 import { OrderRepository } from '../../src/routes/order/order.repository.js';
-
+jest.mock('../../src/utils/redisClient/index.js', () => ({
+  redisClient: {
+    connect: jest.fn(),
+    get: jest.fn().mockResolvedValue('some value'),
+    set: jest.fn().mockResolvedValue(true),
+  },
+}));
 describe('OrderRepository', () => {
   let mockPrisma;
   let orderRepository;

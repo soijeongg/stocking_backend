@@ -1,5 +1,5 @@
 import { jest } from '@jest/globals';
-import {ConcludedService} from '../../src/routes/concluded/concluded.service.js';
+import { ConcludedService } from '../../src/routes/concluded/concluded.service.js';
 
 describe('ConcludedService', () => {
   let mockConcludedRepository;

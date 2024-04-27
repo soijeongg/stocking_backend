@@ -50,6 +50,11 @@ export class OrderController {
       orderData.price = 10000 * Math.floor(+orderData.price / 10000);
     }
     try {
+      //주문 가능 여부 체크
+      const isOrderPossible = await this.orderService.checkOrderIsPossible();
+      if (!isOrderPossible) {
+        return res.status(400).json({ message: '주문이 불가능한 시간입니다.' });
+      }
       const jsonOrderData = {
         reqType: 'orderCreate',
         userId: userId,
@@ -77,6 +82,11 @@ export class OrderController {
    */
   updateOrder = async (req, res) => {
     try {
+      //주문 가능 여부 체크
+      const isOrderPossible = await this.orderService.checkOrderIsPossible();
+      if (!isOrderPossible) {
+        return res.status(400).json({ message: '주문이 불가능한 시간입니다.' });
+      }
       const { userId } = res.locals.user;
       const originalOrderId = parseInt(req.query.orderId);
       const orderData = req.body;
@@ -140,6 +150,11 @@ export class OrderController {
    */
   deleteOrder = async (req, res) => {
     try {
+      //주문 가능 여부 체크
+      const isOrderPossible = await this.orderService.checkOrderIsPossible();
+      if (!isOrderPossible) {
+        return res.status(400).json({ message: '주문이 불가능한 시간입니다.' });
+      }
       const { userId } = res.locals.user;
       const orderId = parseInt(req.query.orderId);
       if (!orderId) {

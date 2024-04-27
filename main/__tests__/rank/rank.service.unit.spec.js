@@ -28,11 +28,13 @@ describe('RankService', () => {
       const result = await rankServiceInstance.allUsers();
 
       expect(mockRankRepository.userRanking).toHaveBeenCalledTimes(1);
-      expect(result).toEqual(mockUserList.map((user) => ({
-        nickname: user.nickname,
-        earningRate: user.earningRate,
-        ranking: user.ranking,
-      })));
+      expect(result).toEqual(
+        mockUserList.map((user) => ({
+          nickname: user.nickname,
+          earningRate: user.earningRate,
+          ranking: user.ranking,
+        }))
+      );
     });
 
     test('should handle errors during the user ranking fetch (Failure Case)', async () => {
@@ -58,12 +60,14 @@ describe('RankService', () => {
       const result = await rankServiceInstance.allmmrUsers();
 
       expect(mockRankRepository.usermmrRanking).toHaveBeenCalledTimes(1);
-      expect(result).toEqual(mockMmrUserList.map((user, index) => ({
-        nickname: user.nickname,
-        mmr: user.mmr,
-        tier: user.tier,
-        ranking: index + 1,
-      })));
+      expect(result).toEqual(
+        mockMmrUserList.map((user, index) => ({
+          nickname: user.nickname,
+          mmr: user.mmr,
+          tier: user.tier,
+          ranking: index + 1,
+        }))
+      );
     });
 
     test('should handle errors during the mmr ranking fetch (Failure Case)', async () => {
