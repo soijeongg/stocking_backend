@@ -6,6 +6,15 @@ export class OrderService {
   constructor(orderRepository) {
     this.orderRepository = orderRepository;
   }
+  checkOrderIsPossible = async () => {
+    try {
+      const checkOrder = await this.orderRepository.checkOrderIsPossible();
+      return checkOrder;
+    } catch (error) {
+      console.error(error.stack);
+      return { message: '주문 가능 여부 조회 과정에서 에러가 발생했습니다.' };
+    }
+  };
 
   getOrder = async (userId, name, type, order, isSold) => {
     try {

@@ -118,8 +118,8 @@ async function updateRankBoard() {
     await prisma.rank.deleteMany();
     // 수익률을 기반으로 사용자를 정렬
     users.sort((a, b) => {
-      const aProfitRate = (BigInt(a.totalAsset) - BigInt(a.initialSeed)) / BigInt(a.initialSeed);
-      const bProfitRate = (BigInt(b.totalAsset) - BigInt(b.initialSeed)) / BigInt(b.initialSeed);
+      const aProfitRate = Number(BigInt(a.totalAsset) - BigInt(a.initialSeed)) / Number(BigInt(a.initialSeed));
+      const bProfitRate = Number(BigInt(b.totalAsset) - BigInt(b.initialSeed)) / Number(BigInt(b.initialSeed));
       return Number(bProfitRate - aProfitRate); // BigInt 비교 후, 숫자로 변환
     });
     sendNoticesToAllClients('랭킹이 업데이트 되었습니다!'); //랭킹 업데이트 알림

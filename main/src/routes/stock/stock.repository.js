@@ -1,11 +1,14 @@
-// StockRepository 클래스는 데이터베이스에서 주식 관련 데이터를 직접 조회합니다.
 export class StockRepository {
   constructor(prisma, prismaReplica) {
     this.prisma = prisma;
     this.prismaReplica = prismaReplica;
   }
 
-  // 사용자의 ID를 기준으로 주식 데이터를 조회합니다.
+  /**
+   * 사용자의 ID로 주식을 조회하는 메소드
+   * @param {number} userId - 사용자 ID
+   * @returns {Promise<object[]>} 사용자의 주식 목록을 반환하는 프로미스
+   */
   findStockByUserId = async (userId) => {
     const stocks = await this.prismaReplica.stock.findMany({
       where: {
