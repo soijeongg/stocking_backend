@@ -1,11 +1,12 @@
 export class OrderRepository {
-  constructor(prisma) {
+  constructor(prisma, prismaReplica) {
     this.prisma = prisma;
+    this.prismaReplica = prismaReplica;
   }
 
   // 주문 번호 + 유저 번호로 주문 조회
   findOrderByOrderId = async (userId, orderId, transaction) => {
-    const prismaContext = transaction || this.prisma;
+    const prismaContext = transaction || this.prismaReplica;
     return await prismaContext.order.findFirst({
       where: {
         userId,
@@ -16,7 +17,7 @@ export class OrderRepository {
 
   // 형식님이 만들어주신 주문조회by 쿼리문
   filterData = async (userId, name, type, order, isSold) => {
-    const prismaContext = this.prisma;
+    const prismaContext = this.prismaReplica;
     // 주문을 가져올 변수
     let stocks;
     // console.log('Repo 도착!');

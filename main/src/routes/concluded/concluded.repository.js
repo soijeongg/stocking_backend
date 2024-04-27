@@ -1,6 +1,7 @@
 export class ConcludedRepository {
-  constructor(prisma) {
+  constructor(prisma, prismaReplica) {
     this.prisma = prisma;
+    this.prismaReplica = prismaReplica;
   }
 
   filterData = async (userId, name, type, order) => {
@@ -19,7 +20,7 @@ export class ConcludedRepository {
     }
 
     // 데이터베이스로부터 데이터를 조회
-    let stocks = await this.prisma.concluded.findMany(queryOptions);
+    let stocks = await this.prismaReplica.concluded.findMany(queryOptions);
 
     // 추가적인 필터링
     const filteredStocks = stocks.filter((item) => {

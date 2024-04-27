@@ -3,14 +3,15 @@ import { sendVerificationEmail } from '../../utils/nodemailer/index.js';
 import { sendToMatchingServer } from '../../utils/sendToMatchingServer/index.js';
 
 export class userRepository {
-  constructor(prisma) {
+  constructor(prisma, prismaReplica) {
     this.prisma = prisma;
+    this.prismaReplica = prismaReplica;
   }
   //회원 가입을 해보자
   //1. 일단 아이디 체크를 해야 한다 들어온 이메일이 중복인지 확인하자ll
 
   checkemail = async (email) => {
-    let checkEmail = await this.prisma.User.findFirst({
+    let checkEmail = await this.prismaReplica.User.findFirst({
       where: { email: email },
     });
     return checkEmail;
@@ -32,7 +33,7 @@ export class userRepository {
 
   //===================================개인의 모든 정보를 요청 한다 ================
   getUserInfo = async (userId) => {
-    let findUser = await this.prisma.User.findFirst({
+    let findUser = await this.prismaReplica.User.findFirst({
       where: { userId: userId },
     });
     return findUser;
@@ -80,7 +81,7 @@ export class userRepository {
 
   //============================이메일 인증시 들어온 토큰이 맞는 토큰인지 찾는다============
   findToken = async (token) => {
-    return await this.prisma.User.findFirst({
+    return await this.prismaReplica.User.findFirst({
       where: { token: token },
     });
   };
@@ -96,7 +97,7 @@ export class userRepository {
 
   //=======================================들어온 userId를 사용해 전채 정보를 보내준다====
   userinfo = async (userId) => {
-    return await this.prisma.User.findMany({
+    return await this.prismaReplica.User.findMany({
       where: {
         userId: +userId,
       },
@@ -104,7 +105,7 @@ export class userRepository {
   };
   //유저가 가지고 있는 주식의 회사명과 주식수를 보내준다.
   userStocks = async (userId) => {
-    const stocks = await this.prisma.Stock.findMany({
+    const stocks = await this.prismaReplica.Stock.findMany({
       where: {
         userId: +userId,
       },
@@ -117,7 +118,7 @@ export class userRepository {
   };
   //회사의 id를 가지고 회사의 현재 주가를 보내준다ll
   getCompany = async (companyId) => {
-    return await this.prisma.Company.findFirst({
+    return await this.prismaReplica.Company.findFirst({
       where: {
         companyId: +companyId,
       },
