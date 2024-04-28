@@ -100,7 +100,9 @@ async function createCompany() {
     const companies = ['항해 전자', '항해 자동차', '항해 화학'];
     const companyPrices = [];
     for (let i = 0; i < 3; i++) {
-      companyPrices.push(getRandomPrice(10, 50) * 10000);
+      let currentPrice = getRandomPrice(10, 50);
+      if (currentPrice % 2 === 1) currentPrice++;
+      companyPrices.push(currentPrice * 10000);
     }
     // 더미 회사 생성
     for (let i = 0; i < companies.length; i++) {
