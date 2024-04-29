@@ -7,6 +7,13 @@ jest.mock('../../src/utils/sendToMatchingServer/index.js', () => ({
 }));
 let mockPrisma = {
   User: {
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  },
+};
+let mockPrismaReplica = {
+  User: {
     findMany: jest.fn(),
     findFirst: jest.fn(),
     create: jest.fn(),
@@ -21,7 +28,7 @@ let mockPrisma = {
     findMany: jest.fn(),
   },
 };
-let userRepositoryInstance = new userRepository(mockPrisma);
+let userRepositoryInstance = new userRepository(mockPrisma, mockPrismaReplica);
 
 describe('User Repository Unit Test', () => {
   // 각 test가 실행되기 전에 실행됩니다.
@@ -39,8 +46,8 @@ describe('User Repository Unit Test', () => {
       userId: 1,
       email: mockEmail,
     };
-    mockPrisma.User.findFirst.mockResolvedValue(mockReturn);
-    mockPrisma.Company.findFirst.mockResolvedValue(mockReturn);
+    mockPrismaReplica.User.findFirst.mockResolvedValue(mockReturn);
+    mockPrismaReplica.Company.findFirst.mockResolvedValue(mockReturn);
     //userRepositoryInstance 의 checkemail 호출한다
     const checkEmail = await userRepositoryInstance.checkemail(mockEmail);
     const getUserInfos = await userRepositoryInstance.getUserInfo(userId);
@@ -52,19 +59,19 @@ describe('User Repository Unit Test', () => {
     expect(getToken).toEqual(mockReturn);
     expect(getCompanyId).toEqual(mockReturn);
     //User.FindFist가 정확히 한번 호출됐는지 확인한다
-    expect(mockPrisma.User.findFirst).toHaveBeenCalledTimes(3);
-    expect(mockPrisma.Company.findFirst).toHaveBeenCalledTimes(1);
+    expect(mockPrismaReplica.User.findFirst).toHaveBeenCalledTimes(3);
+    expect(mockPrismaReplica.Company.findFirst).toHaveBeenCalledTimes(1);
     //userRepositorInstance의 User.find특정인자로 호출되었는지 확인한다
-    expect(mockPrisma.User.findFirst).toHaveBeenCalledWith({
+    expect(mockPrismaReplica.User.findFirst).toHaveBeenCalledWith({
       where: { email: mockEmail },
     });
-    expect(mockPrisma.User.findFirst).toHaveBeenCalledWith({
+    expect(mockPrismaReplica.User.findFirst).toHaveBeenCalledWith({
       where: { userId: userId },
     });
-    expect(mockPrisma.User.findFirst).toHaveBeenCalledWith({
+    expect(mockPrismaReplica.User.findFirst).toHaveBeenCalledWith({
       where: { token: token },
     });
-    expect(mockPrisma.Company.findFirst).toHaveBeenCalledWith({
+    expect(mockPrismaReplica.Company.findFirst).toHaveBeenCalledWith({
       where: { companyId: +companyId },
       select: {
         currentPrice: true,
@@ -91,18 +98,18 @@ describe('User Repository Unit Test', () => {
   test('find many Method', async () => {
     const mockReturn = 'find many String';
     let userId = 1;
-    mockPrisma.User.findMany.mockResolvedValue(mockReturn);
-    mockPrisma.Stock.findMany.mockResolvedValue(mockReturn);
+    mockPrismaReplica.User.findMany.mockResolvedValue(mockReturn);
+    mockPrismaReplica.Stock.findMany.mockResolvedValue(mockReturn);
     const userInfo = await userRepositoryInstance.userinfo(userId);
     const userStock = await userRepositoryInstance.userStocks(userId);
     expect(userInfo).toEqual(mockReturn);
     expect(userStock).toEqual(mockReturn);
-    expect(mockPrisma.User.findMany).toHaveBeenCalledTimes(1);
-    expect(mockPrisma.Stock.findMany).toHaveBeenCalledTimes(1);
-    expect(mockPrisma.User.findMany).toBeCalledWith({
+    expect(mockPrismaReplica.User.findMany).toHaveBeenCalledTimes(1);
+    expect(mockPrismaReplica.Stock.findMany).toHaveBeenCalledTimes(1);
+    expect(mockPrismaReplica.User.findMany).toBeCalledWith({
       where: { userId: +userId },
     });
-    expect(mockPrisma.User.findMany).toBeCalledWith({
+    expect(mockPrismaReplica.User.findMany).toBeCalledWith({
       where: { userId: +userId },
     });
   });
