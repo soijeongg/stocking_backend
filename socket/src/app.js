@@ -7,7 +7,7 @@ dotenv.config();
 
 const app = express();
 const server = createServer(app);
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 
 setupWebSocketServer(server);
 // 로드밸런싱 헬스 체크를 위해 루트 경로에 간단한 텍스트를 응답합니다.
