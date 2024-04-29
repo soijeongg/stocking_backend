@@ -1,4 +1,5 @@
 import { prisma } from '../../utils/prisma/index.js';
+import { prismaReplica } from '../../utils/prisma/index.js';
 import express from 'express';
 import passport from 'passport';
 import isNotLogin from '../../middlewares/checkLoginMiddleware.js';
@@ -9,7 +10,7 @@ import authMiddleware from '../../middlewares/authMiddleware.js';
 
 let router = express.Router();
 
-const UserRepository = new userRepository(prisma);
+const UserRepository = new userRepository(prisma, prismaReplica);
 const UserService = new userService(UserRepository);
 const UserController = new userController(UserService);
 

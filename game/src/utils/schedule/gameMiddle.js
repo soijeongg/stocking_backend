@@ -69,28 +69,38 @@ async function createDummyEvent() {
       companyId: company.companyId,
       orderId: null,
     };
-    for (let i = 0; i < 30; ++i) {
+    for (let i = 0; i < 6; ++i) {
       let buyCoefficient, sellCoefficient;
       if (event[1] < 0) {
         buyCoefficient = getRandomIntInclusive(6, 9);
-        sellCoefficient = getRandomIntInclusive(9, 12);
+        sellCoefficient = getRandomIntInclusive(9, 15);
       } else {
-        buyCoefficient = getRandomIntInclusive(9, 12);
+        buyCoefficient = getRandomIntInclusive(9, 15);
         sellCoefficient = getRandomIntInclusive(6, 9);
       }
       let buyQuantity = Math.ceil(buyCoefficient * Math.random());
       let sellQuantity = Math.ceil(sellCoefficient * Math.random());
       let random = Math.random();
-      if (random < 0.5) {
-        jsonOrderData.type = 'buy';
-        jsonOrderData.quantity = buyQuantity;
+      if (event[1] < 0) {
+        if (random < 0.3) {
+          jsonOrderData.type = 'buy';
+          jsonOrderData.quantity = buyQuantity;
+        } else {
+          jsonOrderData.type = 'sell';
+          jsonOrderData.quantity = sellQuantity;
+        }
       } else {
-        jsonOrderData.type = 'sell';
-        jsonOrderData.quantity = sellQuantity;
+        if (random < 0.7) {
+          jsonOrderData.type = 'buy';
+          jsonOrderData.quantity = buyQuantity;
+        } else {
+          jsonOrderData.type = 'sell';
+          jsonOrderData.quantity = sellQuantity;
+        }
       }
       const jsonOrderDataString = JSON.stringify(jsonOrderData);
       sendToMatchingServer(jsonOrderDataString);
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
     }
   } catch (err) {
     console.error(err);
@@ -103,7 +113,6 @@ async function createDummyEvent() {
  */
 async function createDummyOrderToPreventEmptyOrderBook() {
   try {
-    const companies = await prisma.company.findMany();
     const dummyUser = await prisma.user.findFirst({
       where: {
         dummy: true,
@@ -115,21 +124,50 @@ async function createDummyOrderToPreventEmptyOrderBook() {
       companyId: null,
       orderId: null,
     };
+    const companies = await prisma.company.findMany();
     for (let company of companies) {
+      let currentPrice = company.currentPrice;
+      let groupedOrders = await prisma.order.groupBy({
+        by: ['price'],
+        where: {
+          companyId: +company.companyId,
+          price: { gte: currentPrice - 50000, lte: currentPrice + 50000 },
+        },
+        _count: true,
+      });
+      let companyInfo = {}; // companyInfo 객체를 초기화합니다.
+
+      groupedOrders.forEach((order) => {
+        companyInfo[order.price] = order._count;
+      });
+      // console.log('companyInfo:', companyInfo);
       for (let i = -5; i < 0; ++i) {
+        let nowPrice = currentPrice + i * 10000;
+        if (nowPrice <= 0) {
+          continue;
+        }
+        if (companyInfo[nowPrice]) {
+          continue;
+        }
+        // console.log('nowPrice:', nowPrice, 'type:', 'buy');
+
         jsonOrderData.companyId = company.companyId;
         jsonOrderData.type = 'buy';
-        jsonOrderData.quantity = Math.floor(Math.random() * 5);
-        jsonOrderData.price = company.currentPrice - i * 10000;
+        jsonOrderData.quantity = 10 + 2 * Math.floor(Math.random() * 5);
+        jsonOrderData.price = company.currentPrice + i * 10000;
         const jsonOrderDataString = JSON.stringify(jsonOrderData);
         sendToMatchingServer(jsonOrderDataString);
       }
-    }
-    for (let company of companies) {
-      for (let i = 0; i <= 5; ++i) {
+      for (let i = 1; i <= 5; ++i) {
+        let nowPrice = currentPrice + i * 10000;
+        if (companyInfo[nowPrice]) {
+          continue;
+        }
+        // console.log('nowPrice:', nowPrice, 'type:', 'sell');
+
         jsonOrderData.companyId = company.companyId;
         jsonOrderData.type = 'sell';
-        jsonOrderData.quantity = Math.floor(Math.random() * 5);
+        jsonOrderData.quantity = 10 + 2 * Math.floor(Math.random() * 5);
         jsonOrderData.price = company.currentPrice + i * 10000;
         const jsonOrderDataString = JSON.stringify(jsonOrderData);
         sendToMatchingServer(jsonOrderDataString);
