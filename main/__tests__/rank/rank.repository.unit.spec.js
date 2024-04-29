@@ -1,7 +1,7 @@
 import { jest } from '@jest/globals';
 import { RankRepository } from '../../src/routes/rank/rank.repository.js';
-
-let mockPrisma = {
+let mockPrisma;
+let mockPrismaReplica = {
   rank: {
     findMany: jest.fn(),
   },
@@ -10,7 +10,7 @@ let mockPrisma = {
   },
 };
 
-let rankRepositoryInstance = new RankRepository(mockPrisma);
+let rankRepositoryInstance = new RankRepository(mockPrisma, mockPrismaReplica);
 
 describe('Rank Repository', () => {
   beforeEach(() => {
@@ -27,23 +27,23 @@ describe('Rank Repository', () => {
     ];
 
     test('should successfully fetch user rankings', async () => {
-      mockPrisma.rank.findMany.mockResolvedValue(mockRankingReturn);
+      mockPrismaReplica.rank.findMany.mockResolvedValue(mockRankingReturn);
 
       const result = await rankRepositoryInstance.userRanking();
 
-      expect(mockPrisma.rank.findMany).toHaveBeenCalledTimes(1);
-      expect(mockPrisma.rank.findMany).toHaveBeenCalledWith({ orderBy: { ranking: 'asc' } });
+      expect(mockPrismaReplica.rank.findMany).toHaveBeenCalledTimes(1);
+      expect(mockPrismaReplica.rank.findMany).toHaveBeenCalledWith({ orderBy: { ranking: 'asc' } });
       expect(result).toEqual(mockRankingReturn);
     });
 
     test('should handle errors when fetching user rankings', async () => {
       const errorMessage = 'Error fetching rankings';
-      mockPrisma.rank.findMany.mockRejectedValue(new Error(errorMessage));
+      mockPrismaReplica.rank.findMany.mockRejectedValue(new Error(errorMessage));
 
       await expect(rankRepositoryInstance.userRanking()).rejects.toThrow(errorMessage);
 
-      expect(mockPrisma.rank.findMany).toHaveBeenCalledTimes(1);
-      expect(mockPrisma.rank.findMany).toHaveBeenCalledWith({ orderBy: { ranking: 'asc' } });
+      expect(mockPrismaReplica.rank.findMany).toHaveBeenCalledTimes(1);
+      expect(mockPrismaReplica.rank.findMany).toHaveBeenCalledWith({ orderBy: { ranking: 'asc' } });
     });
   });
 
@@ -57,12 +57,12 @@ describe('Rank Repository', () => {
     ];
 
     test('should successfully fetch MMR rankings', async () => {
-      mockPrisma.user.findMany.mockResolvedValue(mockUsermmrRankingReturn);
+      mockPrismaReplica.user.findMany.mockResolvedValue(mockUsermmrRankingReturn);
 
       const result = await rankRepositoryInstance.usermmrRanking();
 
-      expect(mockPrisma.user.findMany).toHaveBeenCalledTimes(1);
-      expect(mockPrisma.user.findMany).toHaveBeenCalledWith({
+      expect(mockPrismaReplica.user.findMany).toHaveBeenCalledTimes(1);
+      expect(mockPrismaReplica.user.findMany).toHaveBeenCalledWith({
         orderBy: { mmr: 'desc' },
         take: 5,
       });
@@ -71,12 +71,12 @@ describe('Rank Repository', () => {
 
     test('should handle errors when fetching MMR rankings', async () => {
       const errorMessage = 'Error fetching MMR rankings';
-      mockPrisma.user.findMany.mockRejectedValue(new Error(errorMessage));
+      mockPrismaReplica.user.findMany.mockRejectedValue(new Error(errorMessage));
 
       await expect(rankRepositoryInstance.usermmrRanking()).rejects.toThrow(errorMessage);
 
-      expect(mockPrisma.user.findMany).toHaveBeenCalledTimes(1);
-      expect(mockPrisma.user.findMany).toHaveBeenCalledWith({
+      expect(mockPrismaReplica.user.findMany).toHaveBeenCalledTimes(1);
+      expect(mockPrismaReplica.user.findMany).toHaveBeenCalledWith({
         orderBy: { mmr: 'desc' },
         take: 5,
       });
