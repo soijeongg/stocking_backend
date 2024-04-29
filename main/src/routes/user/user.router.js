@@ -7,7 +7,7 @@ import { userController } from './user.controller.js';
 import { userRepository } from './user.repository.js';
 import { userService } from './user.service.js';
 import authMiddleware from '../../middlewares/authMiddleware.js';
-
+import { sendNoticesToClient } from '../../utils/socketConnecter/socketConnecter.js';
 let router = express.Router();
 
 const UserRepository = new userRepository(prisma, prismaReplica);
@@ -30,10 +30,36 @@ router.post('/login', isNotLogin, (req, res, next) => {
       if (!user.isVerified) {
         return res.status(401).json({ message: info });
       }
+      const existingSessionId = await new Promise((resolve, reject) => {
+        req.sessionStore.get(`user_${user.userId}`, (err, session) => {
+          if (err) reject(err);
+          resolve(session);
+        });
+      });
+
+      if (existingSessionId) {
+        // 이전 사용자에게 로그아웃 알림 전송
+
+        sendNoticesToClient(user.userId, ['다른 장치에서 로그인되었습니다. 자동으로 로그아웃됩니다.']);
+
+        // 레디스에서 이전 세션 삭제
+        await new Promise((resolve, reject) => {
+          req.sessionStore.destroy(existingSessionId, (err) => {
+            if (err) reject(err);
+            resolve();
+          });
+        });
+      }
       req.login(user, async (err) => {
         if (err) {
           return next(err);
         }
+        await new Promise((resolve, reject) => {
+          req.sessionStore.set(`user_${user.userId}`, req.sessionID, (err) => {
+            if (err) reject(err);
+            resolve();
+          });
+        });
 
         return res.json({ message: `${user.nickname}님 환영합니다!~` });
       });
@@ -59,7 +85,7 @@ router.delete('/user', authMiddleware, UserController.deleteUserController);
 router.get('/verify', UserController.getVerifyController);
 router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/auth/google/callback', (req, res, next) => {
-  passport.authenticate('google', (err, user, info) => {
+  passport.authenticate('google', async (err, user, info) => {
     if (err) {
       // 일반 에러 처리
       return res.status(500).json({ error: '인증 과정에서 시스템 에러가 발생했습니다.' });
@@ -74,19 +100,47 @@ router.get('/auth/google/callback', (req, res, next) => {
         return res.redirect(`${process.env.FRONTEND_URL}/login?error=error`);
       }
     }
-    req.logIn(user, (loginErr) => {
+    const existingSessionId = await new Promise((resolve, reject) => {
+      req.sessionStore.get(`user_${user.userId}`, (err, session) => {
+        if (err) reject(err);
+        resolve(session);
+      });
+    });
+
+    if (existingSessionId) {
+      // 이전 사용자에게 로그아웃 알림 전송
+
+      sendNoticesToClient(user.userId, ['다른 장치에서 로그인되었습니다. 자동으로 로그아웃됩니다.']);
+
+      // 레디스에서 이전 세션 삭제
+      await new Promise((resolve, reject) => {
+        req.sessionStore.destroy(existingSessionId, (err) => {
+          if (err) reject(err);
+          resolve();
+        });
+      });
+    }
+    req.logIn(user, async (loginErr) => {
       if (loginErr) {
         // 로그인 프로세스 에러 처리
         return res.redirect(`${process.env.FRONTEND_URL}/login?error=error`);
       }
-      // 인증 및 로그인 성공
+      // Redis에 사용자 ID와 세션 ID를 저장
+      await new Promise((resolve, reject) => {
+        req.sessionStore.set(`user_${user.id}`, req.sessionID, (err) => {
+          if (err) reject(err);
+          resolve();
+        });
+      });
+
+      // 로그인 성공, 사용자를 홈페이지로 리디렉션
       return res.redirect(`${process.env.FRONTEND_URL}`);
     });
   })(req, res, next);
 });
 router.get('/auth/naver', passport.authenticate('naver', { authType: 'reprompt' }));
 router.get('/auth/naver/callback', (req, res, next) => {
-  passport.authenticate('naver', (err, user, info) => {
+  passport.authenticate('naver', async (err, user, info) => {
     if (err) {
       // 일반 에러 처리
       return res.redirect(`${process.env.FRONTEND_URL}/login?error=error`);
@@ -101,20 +155,48 @@ router.get('/auth/naver/callback', (req, res, next) => {
         return res.redirect(`${process.env.FRONTEND_URL}/login?error=error`);
       }
     }
+    const existingSessionId = await new Promise((resolve, reject) => {
+      req.sessionStore.get(`user_${user.userId}`, (err, session) => {
+        if (err) reject(err);
+        resolve(session);
+      });
+    });
 
-    req.logIn(user, (loginErr) => {
+    if (existingSessionId) {
+      // 이전 사용자에게 로그아웃 알림 전송
+
+      sendNoticesToClient(user.userId, ['다른 장치에서 로그인되었습니다. 자동으로 로그아웃됩니다.']);
+
+      // 레디스에서 이전 세션 삭제
+      await new Promise((resolve, reject) => {
+        req.sessionStore.destroy(existingSessionId, (err) => {
+          if (err) reject(err);
+          resolve();
+        });
+      });
+    }
+
+    req.logIn(user, async (loginErr) => {
       if (loginErr) {
         // 로그인 프로세스 에러 처리
-        return res.status(500).json({ message: { message: '로그인 처리 중 에러가 발생했습니다.' } });
+        return res.redirect(`${process.env.FRONTEND_URL}/login?error=error`);
       }
-      // 인증 및 로그인 성공
+      // Redis에 사용자 ID와 세션 ID를 저장
+      await new Promise((resolve, reject) => {
+        req.sessionStore.set(`user_${user.id}`, req.sessionID, (err) => {
+          if (err) reject(err);
+          resolve();
+        });
+      });
+
+      // 로그인 성공, 사용자를 홈페이지로 리디렉션
       return res.redirect(`${process.env.FRONTEND_URL}`);
     });
   })(req, res, next);
 });
 router.get('/auth/kakao', passport.authenticate('kakao', { authType: 'reprompt' }));
 router.get('/auth/kakao/callback', (req, res, next) => {
-  passport.authenticate('kakao', (err, user, info) => {
+  passport.authenticate('kakao', async (err, user, info) => {
     if (err) {
       // 일반 에러 처리
       return res.redirect(`${process.env.FRONTEND_URL}/login?error=error`);
@@ -129,13 +211,41 @@ router.get('/auth/kakao/callback', (req, res, next) => {
         return res.redirect(`${process.env.FRONTEND_URL}/login?error=error`);
       }
     }
+    const existingSessionId = await new Promise((resolve, reject) => {
+      req.sessionStore.get(`user_${user.userId}`, (err, session) => {
+        if (err) reject(err);
+        resolve(session);
+      });
+    });
 
-    req.logIn(user, (loginErr) => {
+    if (existingSessionId) {
+      // 이전 사용자에게 로그아웃 알림 전송
+
+      sendNoticesToClient(user.userId, ['다른 장치에서 로그인되었습니다. 자동으로 로그아웃됩니다.']);
+
+      // 레디스에서 이전 세션 삭제
+      await new Promise((resolve, reject) => {
+        req.sessionStore.destroy(existingSessionId, (err) => {
+          if (err) reject(err);
+          resolve();
+        });
+      });
+    }
+
+    req.logIn(user, async (loginErr) => {
       if (loginErr) {
         // 로그인 프로세스 에러 처리
         return res.redirect(`${process.env.FRONTEND_URL}/login?error=error`);
       }
-      // 인증 및 로그인 성공
+      // Redis에 사용자 ID와 세션 ID를 저장
+      await new Promise((resolve, reject) => {
+        req.sessionStore.set(`user_${user.id}`, req.sessionID, (err) => {
+          if (err) reject(err);
+          resolve();
+        });
+      });
+
+      // 로그인 성공, 사용자를 홈페이지로 리디렉션
       return res.redirect(`${process.env.FRONTEND_URL}`);
     });
   })(req, res, next);
