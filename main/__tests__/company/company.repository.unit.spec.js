@@ -1,13 +1,14 @@
 import { jest } from '@jest/globals';
 import { CompanyRepository } from '../../src/routes/company/company.repository';
 
-let mockPrisma = {
+let mockPrisma;
+let mockPrismaReplica = {
   company: {
     findMany: jest.fn(),
   },
 };
 
-let companyRepositoryInstance = new CompanyRepository(mockPrisma);
+let companyRepositoryInstance = new CompanyRepository(mockPrisma, mockPrismaReplica);
 
 describe('Company Repository', () => {
   beforeEach(() => {
@@ -22,21 +23,21 @@ describe('Company Repository', () => {
     ];
 
     test('should successfully fetch companies', async () => {
-      mockPrisma.company.findMany.mockResolvedValue(mockCompaniesReturn);
+      mockPrismaReplica.company.findMany.mockResolvedValue(mockCompaniesReturn);
 
       const result = await companyRepositoryInstance.getCompanies();
 
-      expect(mockPrisma.company.findMany).toHaveBeenCalledTimes(1);
+      expect(mockPrismaReplica.company.findMany).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockCompaniesReturn);
     });
 
     test('should handle errors when fetching companies', async () => {
       const errorMessage = 'Error fetching companies';
-      mockPrisma.company.findMany.mockRejectedValue(new Error(errorMessage));
+      mockPrismaReplica.company.findMany.mockRejectedValue(new Error(errorMessage));
 
       await expect(companyRepositoryInstance.getCompanies()).rejects.toThrow(errorMessage);
 
-      expect(mockPrisma.company.findMany).toHaveBeenCalledTimes(1);
+      expect(mockPrismaReplica.company.findMany).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -45,11 +46,11 @@ describe('Company Repository', () => {
 
     test('should successfully fetch company name by companyId', async () => {
       const companyId = 1;
-      mockPrisma.company.findMany.mockResolvedValue(mockCompanyNameReturn);
+      mockPrismaReplica.company.findMany.mockResolvedValue(mockCompanyNameReturn);
 
       const result = await companyRepositoryInstance.getCompanyName(companyId);
 
-      expect(mockPrisma.company.findMany).toHaveBeenCalledWith({
+      expect(mockPrismaReplica.company.findMany).toHaveBeenCalledWith({
         select: { name: true },
         where: { companyId: companyId },
       });
@@ -58,11 +59,11 @@ describe('Company Repository', () => {
 
     test('should return an empty array if the company does not exist', async () => {
       const companyId = 999;
-      mockPrisma.company.findMany.mockResolvedValue([]);
+      mockPrismaReplica.company.findMany.mockResolvedValue([]);
 
       const result = await companyRepositoryInstance.getCompanyName(companyId);
 
-      expect(mockPrisma.company.findMany).toHaveBeenCalledWith({
+      expect(mockPrismaReplica.company.findMany).toHaveBeenCalledWith({
         select: { name: true },
         where: { companyId: companyId },
       });
@@ -72,11 +73,11 @@ describe('Company Repository', () => {
     test('should handle errors when fetching company name', async () => {
       const companyId = 1;
       const errorMessage = 'Error fetching company name';
-      mockPrisma.company.findMany.mockRejectedValue(new Error(errorMessage));
+      mockPrismaReplica.company.findMany.mockRejectedValue(new Error(errorMessage));
 
       await expect(companyRepositoryInstance.getCompanyName(companyId)).rejects.toThrow(errorMessage);
 
-      expect(mockPrisma.company.findMany).toHaveBeenCalledWith({
+      expect(mockPrismaReplica.company.findMany).toHaveBeenCalledWith({
         select: { name: true },
         where: { companyId: companyId },
       });
