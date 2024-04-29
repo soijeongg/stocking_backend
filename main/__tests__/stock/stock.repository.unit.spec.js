@@ -1,13 +1,13 @@
 import { jest } from '@jest/globals';
 import { StockRepository } from '../../src/routes/stock/stock.repository.js';
-
-let mockPrisma = {
+let mockPrisma;
+let mockPrismaReplica = {
   stock: {
     findMany: jest.fn(),
   },
 };
 
-let stockRepositoryInstance = new StockRepository(mockPrisma);
+let stockRepositoryInstance = new StockRepository(mockPrisma, mockPrismaReplica);
 
 describe('Stock Repository', () => {
   beforeEach(() => {
@@ -21,12 +21,12 @@ describe('Stock Repository', () => {
     ];
 
     test('should successfully fetch user stocks', async () => {
-      mockPrisma.stock.findMany.mockResolvedValue(mockStocksReturn);
+      mockPrismaReplica.stock.findMany.mockResolvedValue(mockStocksReturn);
 
       const result = await stockRepositoryInstance.findStockByUserId(1);
 
-      expect(mockPrisma.stock.findMany).toHaveBeenCalledTimes(1);
-      expect(mockPrisma.stock.findMany).toHaveBeenCalledWith({
+      expect(mockPrismaReplica.stock.findMany).toHaveBeenCalledTimes(1);
+      expect(mockPrismaReplica.stock.findMany).toHaveBeenCalledWith({
         where: { userId: 1 },
         include: { Company: true },
       });
@@ -35,19 +35,19 @@ describe('Stock Repository', () => {
 
     test('should handle errors when fetching user stocks', async () => {
       const errorMessage = 'Error fetching user stocks';
-      mockPrisma.stock.findMany.mockRejectedValue(new Error(errorMessage));
+      mockPrismaReplica.stock.findMany.mockRejectedValue(new Error(errorMessage));
 
       await expect(stockRepositoryInstance.findStockByUserId(1)).rejects.toThrow(errorMessage);
 
-      expect(mockPrisma.stock.findMany).toHaveBeenCalledTimes(1);
-      expect(mockPrisma.stock.findMany).toHaveBeenCalledWith({
+      expect(mockPrismaReplica.stock.findMany).toHaveBeenCalledTimes(1);
+      expect(mockPrismaReplica.stock.findMany).toHaveBeenCalledWith({
         where: { userId: 1 },
         include: { Company: true },
       });
     });
 
     test('should return a message if no stocks found', async () => {
-      mockPrisma.stock.findMany.mockResolvedValue([]);
+      mockPrismaReplica.stock.findMany.mockResolvedValue([]);
 
       const result = await stockRepositoryInstance.findStockByUserId(999);
 
