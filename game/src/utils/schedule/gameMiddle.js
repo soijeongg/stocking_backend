@@ -73,16 +73,16 @@ async function createDummyEvent() {
       let buyCoefficient, sellCoefficient;
       if (event[1] < 0) {
         buyCoefficient = getRandomIntInclusive(6, 9);
-        sellCoefficient = getRandomIntInclusive(9, 15);
+        sellCoefficient = getRandomIntInclusive(12, 18);
       } else {
-        buyCoefficient = getRandomIntInclusive(9, 15);
+        buyCoefficient = getRandomIntInclusive(12, 18);
         sellCoefficient = getRandomIntInclusive(6, 9);
       }
       let buyQuantity = Math.ceil(buyCoefficient * Math.random());
       let sellQuantity = Math.ceil(sellCoefficient * Math.random());
       let random = Math.random();
       if (event[1] < 0) {
-        if (random < 0.3) {
+        if (random < 0.1) {
           jsonOrderData.type = 'buy';
           jsonOrderData.quantity = buyQuantity;
         } else {
@@ -90,7 +90,7 @@ async function createDummyEvent() {
           jsonOrderData.quantity = sellQuantity;
         }
       } else {
-        if (random < 0.7) {
+        if (random < 0.9) {
           jsonOrderData.type = 'buy';
           jsonOrderData.quantity = buyQuantity;
         } else {
