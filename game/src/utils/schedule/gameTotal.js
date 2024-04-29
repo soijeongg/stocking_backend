@@ -93,17 +93,15 @@ async function gameTotal() {
   await redisClient.set('isOrderPossible', 'true'); //주문 가능하도록 설정
   sendNoticesToAllClients('게임 시작!...게임 시간은 5분간 진행됩니다!'); //게임 시작 알림
   // 게임 이벤트 생성 (5초마다)
-  const eventInterval = setInterval(createDummyEvent, 5000);
+  const eventInterval = setInterval(createDummyEvent, 10000);
   // 현재 분을 12로 나눈뒤에  6분이 되기까지 남은 시간을 "게임종료까지 남은 시간 : 00분 00초"로 출력
   const noticeInterval = setInterval(notifyTimeRemaining, 15000);
   // 빈 주문서를 방지하기 위한 주문 생성 (1초마다)
-  const orderInterval = setInterval(createDummyOrderToPreventEmptyOrderBook, 1000);
+  const orderInterval = setInterval(createDummyOrderToPreventEmptyOrderBook, 2000);
   // 게임 이벤트, 남은 시간 공지, 빈 주문 방지 (5분 45초까지)
   await new Promise((resolve) =>
     setTimeout(() => {
       clearInterval(eventInterval);
-      clearInterval(noticeInterval);
-      clearInterval(orderInterval);
       resolve();
     }, 284500)
   );

@@ -1,11 +1,12 @@
 import express from 'express';
 import { prisma } from '../../utils/prisma/index.js';
+import { prismaReplica } from '../../utils/prisma/index.js';
 import authMiddleware from '../../middlewares/authMiddleware.js';
 import { OrderService } from './order.service.js';
 import { OrderController } from './order.controller.js';
 import { OrderRepository } from './order.repository.js';
 
-const orderRepository = new OrderRepository(prisma);
+const orderRepository = new OrderRepository(prisma, prismaReplica);
 const orderService = new OrderService(orderRepository, prisma);
 const orderController = new OrderController(orderService);
 

@@ -4,6 +4,7 @@ import { Kafka } from 'kafkajs'; // kafkajs 패키지에서 Kafka를 import합�
 const kafka = new Kafka({
   clientId: 'matching-server',
   brokers: [`${process.env.KAFKA_IP1}`, `${process.env.KAFKA_IP2}`, `${process.env.KAFKA_IP3}`],
+  idempotent: true,
 });
 const producer = kafka.producer();
 

@@ -36,6 +36,7 @@ services:
         KAFKA_IP3: $KAFKA_IP3
         MATCHING_REDIS_HOST: $MATCHING_REDIS_HOST
         MATCHING_REDIS_PORT: $MATCHING_REDIS_PORT
+        DATABASE_REPLICA_URL: $DATABASE_REPLICA_URL
     image: ${ECR_REGISTRY}/stocking:latest
     environment:
       PORT: $PORT
@@ -69,6 +70,7 @@ services:
       KAFKA_IP3: $KAFKA_IP3
       MATCHING_REDIS_HOST: $MATCHING_REDIS_HOST
       MATCHING_REDIS_PORT: $MATCHING_REDIS_PORT
+      DATABASE_REPLICA_URL: $DATABASE_REPLICA_URL
   node-exporter:
     build:
       context: .
@@ -113,6 +115,7 @@ services:
         KAFKA_IP3: $KAFKA_IP3
         MATCHING_REDIS_HOST: $MATCHING_REDIS_HOST
         MATCHING_REDIS_PORT: $MATCHING_REDIS_PORT
+        DATABASE_REPLICA_URL: $DATABASE_REPLICA_URL
     image: ${ECR_REGISTRY}/stocking-socket:latest
     environment:
       PORT: $PORT
@@ -146,6 +149,7 @@ services:
       KAFKA_IP3: $KAFKA_IP3
       MATCHING_REDIS_HOST: $MATCHING_REDIS_HOST
       MATCHING_REDIS_PORT: $MATCHING_REDIS_PORT
+      DATABASE_REPLICA_URL: $DATABASE_REPLICA_URL
   stocking_execution:
     build:
       context: .
@@ -182,6 +186,7 @@ services:
         KAFKA_IP3: $KAFKA_IP3
         MATCHING_REDIS_HOST: $MATCHING_REDIS_HOST
         MATCHING_REDIS_PORT: $MATCHING_REDIS_PORT
+        DATABASE_REPLICA_URL: $DATABASE_REPLICA_URL
     image: ${ECR_REGISTRY}/stocking-execution:latest
     environment:
       PORT: $PORT
@@ -215,6 +220,7 @@ services:
       KAFKA_IP3: $KAFKA_IP3
       MATCHING_REDIS_HOST: $MATCHING_REDIS_HOST
       MATCHING_REDIS_PORT: $MATCHING_REDIS_PORT
+      DATABASE_REPLICA_URL: $DATABASE_REPLICA_URL
   stocking_matching:
     build:
       context: .
@@ -251,6 +257,7 @@ services:
         KAFKA_IP3: $KAFKA_IP3
         MATCHING_REDIS_HOST: $MATCHING_REDIS_HOST
         MATCHING_REDIS_PORT: $MATCHING_REDIS_PORT
+        DATABASE_REPLICA_URL: $DATABASE_REPLICA_URL
     image: ${ECR_REGISTRY}/stocking-matching:latest
     environment:
       PORT: $PORT
@@ -284,6 +291,7 @@ services:
       KAFKA_IP3: $KAFKA_IP3
       MATCHING_REDIS_HOST: $MATCHING_REDIS_HOST
       MATCHING_REDIS_PORT: $MATCHING_REDIS_PORT
+      DATABASE_REPLICA_URL: $DATABASE_REPLICA_URL
   stocking_game:
     build:
       context: .
@@ -320,6 +328,7 @@ services:
         KAFKA_IP3: $KAFKA_IP3
         MATCHING_REDIS_HOST: $MATCHING_REDIS_HOST
         MATCHING_REDIS_PORT: $MATCHING_REDIS_PORT
+        DATABASE_REPLICA_URL: $DATABASE_REPLICA_URL
     image: ${ECR_REGISTRY}/stocking-game:latest
     environment:
       PORT: $PORT
@@ -353,3 +362,4 @@ services:
       KAFKA_IP3: $KAFKA_IP3
       MATCHING_REDIS_HOST: $MATCHING_REDIS_HOST
       MATCHING_REDIS_PORT: $MATCHING_REDIS_PORT
+      DATABASE_REPLICA_URL: $DATABASE_REPLICA_URL

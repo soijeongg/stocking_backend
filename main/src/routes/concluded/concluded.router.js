@@ -1,5 +1,6 @@
 import express from 'express';
 import { prisma } from '../../utils/prisma/index.js';
+import { prismaReplica } from '../../utils/prisma/index.js';
 import { ConcludedController } from './concluded.controller.js';
 import { ConcludedService } from './concluded.service.js';
 import { ConcludedRepository } from './concluded.repository.js';
@@ -8,7 +9,7 @@ import authMiddleware from '../../middlewares/authMiddleware.js';
 const router = express.Router();
 
 // 레포지토리, 서비스, 컨트롤러 초기화
-const concludedRepository = new ConcludedRepository(prisma);
+const concludedRepository = new ConcludedRepository(prisma, prismaReplica);
 const concludedService = new ConcludedService(concludedRepository);
 const concludedController = new ConcludedController(concludedService);
 
