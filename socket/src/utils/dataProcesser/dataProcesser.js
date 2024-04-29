@@ -35,8 +35,9 @@ function setupWebSocketServer(server) {
         const userInfo = await prisma.user.findUnique({ where: { userId: data.userId } });
         const broadcastMessage = {
           type: 'chat',
+          userId: data.userId,
+          nickname: userInfo.nickname,
           text: data.text,
-          nickname: userInfo.nickname, // 닉네임 추가
           timestamp: new Date().toLocaleTimeString(),
         };
         clients.forEach((client) => {
