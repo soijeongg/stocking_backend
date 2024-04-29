@@ -158,7 +158,7 @@ async function createDummyOrderToPreventEmptyOrderBook() {
         const jsonOrderDataString = JSON.stringify(jsonOrderData);
         sendToMatchingServer(jsonOrderDataString);
       }
-      for (let i = 1; i <= 5; ++i) {
+      for (let i = 0; i <= 5; ++i) {
         let nowPrice = currentPrice + i * 10000;
         if (companyInfo[nowPrice]) {
           continue;
