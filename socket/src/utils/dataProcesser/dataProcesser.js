@@ -31,21 +31,21 @@ function setupWebSocketServer(server) {
             client.send(JSON.stringify({ type: 'notices', notices: data.notices }));
           }
         });
+      } else {
+        const userInfo = await prisma.user.findUnique({ where: { userId: data.userId } });
+        const broadcastMessage = {
+          type: 'chat',
+          userId: data.userId,
+          nickname: userInfo.nickname,
+          text: data.text,
+          timestamp: new Date().toLocaleTimeString(),
+        };
+        clients.forEach((client) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(broadcastMessage));
+          }
+        });
       }
-      // else {
-      //   const userInfo = await prisma.user.findUnique({ where: { userId: data.userId } });
-      //   const broadcastMessage = {
-      //     type: 'chat',
-      //     text: data.text,
-      //     nickname: userInfo.nickname, // 닉네임 추가
-      //     timestamp: new Date().toLocaleTimeString(),
-      //   };
-      //   clients.forEach((client) => {
-      //     if (client.readyState === WebSocket.OPEN) {
-      //       client.send(JSON.stringify(broadcastMessage));
-      //     }
-      //   });
-      // }
     });
 
     const path = req.url.split('/')[2];
