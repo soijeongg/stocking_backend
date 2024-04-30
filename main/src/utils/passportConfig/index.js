@@ -5,6 +5,7 @@ import { Strategy as KakaoStrategy } from 'passport-kakao';
 import { Strategy as NaverStrategy } from 'passport-naver-v2';
 import argon2 from 'argon2';
 import { prisma } from '../prisma/index.js';
+import { prismaReplica } from '../prisma/index.js';
 import crypto from 'crypto';
 
 function generateRandomPassword() {
@@ -19,7 +20,7 @@ export default function passportConfig() {
   //세션을 검사해 사용자 식별 후 req.user에 저장함
   passport.deserializeUser(async (userId, done) => {
     try {
-      const user = await prisma.User.findFirst({ where: { userId } });
+      const user = await prismaReplica.User.findFirst({ where: { userId } });
       done(null, user);
     } catch (error) {
       done(error);
@@ -36,7 +37,7 @@ export default function passportConfig() {
       async (email, password, done) => {
         try {
           // 사용자 데이터베이스에서 이메일로 사용자 찾기
-          const user = await prisma.User.findFirst({ where: { email: email } });
+          const user = await prismaReplica.User.findFirst({ where: { email: email } });
           if (!user) {
             return done(null, false, { message: '유저를 찾을 수 없습니다.' });
           }
@@ -65,7 +66,7 @@ export default function passportConfig() {
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
-          const user = await prisma.User.findFirst({
+          const user = await prismaReplica.User.findFirst({
             where: { email: profile.emails[0].value },
           });
 
@@ -109,7 +110,7 @@ export default function passportConfig() {
         try {
           const email = profile._json.kakao_account.email;
           const nickname = profile._json.properties.nickname;
-          const user = await prisma.User.findFirst({
+          const user = await prismaReplica.User.findFirst({
             where: { email: email },
           });
 
@@ -151,7 +152,7 @@ export default function passportConfig() {
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
-          const user = await prisma.User.findFirst({
+          const user = await prismaReplica.User.findFirst({
             where: { email: profile.email },
           });
 

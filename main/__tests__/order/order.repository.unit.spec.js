@@ -8,16 +8,16 @@ jest.mock('../../src/utils/redisClient/index.js', () => ({
   },
 }));
 describe('OrderRepository', () => {
-  let mockPrisma;
-  let orderRepository;
+  let mockPrisma, mockPrismaReplica, orderRepository;
 
   beforeEach(() => {
-    mockPrisma = {
+    mockPrismaReplica = {
       order: {
+        findFirst: jest.fn(),
         findMany: jest.fn(),
       },
     };
-    orderRepository = new OrderRepository(mockPrisma);
+    orderRepository = new OrderRepository(mockPrisma, mockPrismaReplica);
   });
 
   describe('filterData', () => {
@@ -31,11 +31,11 @@ describe('OrderRepository', () => {
         { id: 1, type: 'buy', Company: { name: 'testCompany' } },
         { id: 2, type: 'buy', Company: { name: 'testCompany' } },
       ];
-      mockPrisma.order.findMany.mockResolvedValue(expectedData);
+      mockPrismaReplica.order.findMany.mockResolvedValue(expectedData);
 
       const result = await orderRepository.filterData(userId, name, type, order, isSold);
 
-      expect(mockPrisma.order.findMany).toHaveBeenCalledWith(
+      expect(mockPrismaReplica.order.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { userId },
           include: { Company: true },
@@ -55,11 +55,11 @@ describe('OrderRepository', () => {
         { id: 3, type: 'sell', Company: { name: 'testCompany' } },
         { id: 4, type: 'sell', Company: { name: 'testCompany' } },
       ];
-      mockPrisma.order.findMany.mockResolvedValue(expectedData);
+      mockPrismaReplica.order.findMany.mockResolvedValue(expectedData);
 
       const result = await orderRepository.filterData(userId, name, type, order, isSold);
 
-      expect(mockPrisma.order.findMany).toHaveBeenCalledWith(
+      expect(mockPrismaReplica.order.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { userId },
           include: { Company: true },
@@ -80,11 +80,11 @@ describe('OrderRepository', () => {
         { id: 2, type: 'buy', Company: { name: 'testCompany' } },
         { id: 3, type: 'buy', Company: { name: 'otherCompany' } },
       ];
-      mockPrisma.order.findMany.mockResolvedValue(expectedData);
+      mockPrismaReplica.order.findMany.mockResolvedValue(expectedData);
 
       const result = await orderRepository.filterData(userId, name, type, order, isSold);
 
-      expect(mockPrisma.order.findMany).toHaveBeenCalledWith(
+      expect(mockPrismaReplica.order.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { userId },
           include: { Company: true },
@@ -101,7 +101,7 @@ describe('OrderRepository', () => {
       const isSold = true;
       const errorMessage = 'Error fetching order data';
       const error = new Error(errorMessage);
-      mockPrisma.order.findMany.mockRejectedValue(error);
+      mockPrismaReplica.order.findMany.mockRejectedValue(error);
 
       await expect(orderRepository.filterData(userId, name, type, order, isSold)).rejects.toThrow(error);
     });
@@ -116,11 +116,11 @@ describe('OrderRepository', () => {
         { id: 1, type: 'buy', Company: { name: 'testCompany' } },
         { id: 2, type: 'buy', Company: { name: 'testCompany' } },
       ];
-      mockPrisma.order.findMany.mockResolvedValue(expectedData);
+      mockPrismaReplica.order.findMany.mockResolvedValue(expectedData);
 
       const result = await orderRepository.filterData(userId, name, type, order, isSold);
 
-      expect(mockPrisma.order.findMany).toHaveBeenCalledWith(
+      expect(mockPrismaReplica.order.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { userId },
           include: { Company: true },
