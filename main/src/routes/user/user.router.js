@@ -127,7 +127,7 @@ router.get('/auth/google/callback', (req, res, next) => {
       }
       // Redis에 사용자 ID와 세션 ID를 저장
       await new Promise((resolve, reject) => {
-        req.sessionStore.set(`user_${user.id}`, req.sessionID, (err) => {
+        req.sessionStore.set(`user_${user.userId}`, req.sessionID, (err) => {
           if (err) reject(err);
           resolve();
         });
@@ -183,7 +183,7 @@ router.get('/auth/naver/callback', (req, res, next) => {
       }
       // Redis에 사용자 ID와 세션 ID를 저장
       await new Promise((resolve, reject) => {
-        req.sessionStore.set(`user_${user.id}`, req.sessionID, (err) => {
+        req.sessionStore.set(`user_${user.userId}`, req.sessionID, (err) => {
           if (err) reject(err);
           resolve();
         });
@@ -239,7 +239,7 @@ router.get('/auth/kakao/callback', (req, res, next) => {
       }
       // Redis에 사용자 ID와 세션 ID를 저장
       await new Promise((resolve, reject) => {
-        req.sessionStore.set(`user_${user.id}`, req.sessionID, (err) => {
+        req.sessionStore.set(`user_${user.userId}`, req.sessionID, (err) => {
           if (err) reject(err);
           resolve();
         });
