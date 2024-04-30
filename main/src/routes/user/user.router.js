@@ -40,7 +40,7 @@ router.post('/login', isNotLogin, (req, res, next) => {
       if (existingSessionId) {
         // 이전 사용자에게 로그아웃 알림 전송
 
-        sendNoticesToClient(user.userId, ['다른 장치에서 로그인되었습니다. 자동으로 로그아웃됩니다.']);
+        sendNoticesToClient(user.userId, '다른 장치에서 로그인되었습니다. 자동으로 로그아웃됩니다.');
 
         // 레디스에서 이전 세션 삭제
         await new Promise((resolve, reject) => {
@@ -110,7 +110,7 @@ router.get('/auth/google/callback', (req, res, next) => {
     if (existingSessionId) {
       // 이전 사용자에게 로그아웃 알림 전송
 
-      sendNoticesToClient(user.userId, ['다른 장치에서 로그인되었습니다. 자동으로 로그아웃됩니다.']);
+      sendNoticesToClient(user.userId, '다른 장치에서 로그인되었습니다. 자동으로 로그아웃됩니다.');
 
       // 레디스에서 이전 세션 삭제
       await new Promise((resolve, reject) => {
@@ -165,7 +165,7 @@ router.get('/auth/naver/callback', (req, res, next) => {
     if (existingSessionId) {
       // 이전 사용자에게 로그아웃 알림 전송
 
-      sendNoticesToClient(user.userId, ['다른 장치에서 로그인되었습니다. 자동으로 로그아웃됩니다.']);
+      sendNoticesToClient(user.userId, '다른 장치에서 로그인되었습니다. 자동으로 로그아웃됩니다.');
 
       // 레디스에서 이전 세션 삭제
       await new Promise((resolve, reject) => {
