@@ -88,6 +88,8 @@ export default function passportConfig() {
                 provider: 'google', // 사용자가 Google을 통해 인증되었음을 나타내는 필드 추가
                 isVerified: true,
                 token: generateRandomPassword(),
+                currentMoney: 10000000,
+                initialSeed: 10000000,
               },
             });
             return done(null, user);
@@ -132,6 +134,8 @@ export default function passportConfig() {
                 provider: 'kakao',
                 isVerified: true,
                 token: generateRandomPassword(),
+                currentMoney: 10000000,
+                initialSeed: 10000000,
               },
             });
             done(null, user);
@@ -174,6 +178,8 @@ export default function passportConfig() {
                 provider: 'naver', // 사용자가 네이버 통해 인증되었음을 나타내는 필드 추가
                 isVerified: true,
                 token: generateRandomPassword(),
+                currentMoney: 10000000,
+                initialSeed: 10000000,
               },
             });
             return done(null, user);
