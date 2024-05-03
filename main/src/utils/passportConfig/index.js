@@ -7,7 +7,7 @@ import argon2 from 'argon2';
 import { prisma } from '../prisma/index.js';
 import { prismaReplica } from '../prisma/index.js';
 import crypto from 'crypto';
-
+import { sendToMatchingServer } from '../sendToMatchingServer/index.js';
 function generateRandomPassword() {
   return crypto.randomBytes(16).toString('hex');
 }
@@ -92,6 +92,12 @@ export default function passportConfig() {
                 initialSeed: 10000000,
               },
             });
+            const jsonData = {
+              reqType: `userCreate`,
+              userId: user.userId,
+            };
+            const jsonDataString = JSON.stringify(jsonData);
+            sendToMatchingServer(jsonDataString);
             return done(null, user);
           }
         } catch (error) {
@@ -138,6 +144,12 @@ export default function passportConfig() {
                 initialSeed: 10000000,
               },
             });
+            const jsonData = {
+              reqType: `userCreate`,
+              userId: user.userId,
+            };
+            const jsonDataString = JSON.stringify(jsonData);
+            sendToMatchingServer(jsonDataString);
             done(null, user);
           }
         } catch (error) {
@@ -182,6 +194,12 @@ export default function passportConfig() {
                 initialSeed: 10000000,
               },
             });
+            const jsonData = {
+              reqType: `userCreate`,
+              userId: user.userId,
+            };
+            const jsonDataString = JSON.stringify(jsonData);
+            sendToMatchingServer(jsonDataString);
             return done(null, user);
           }
         } catch (error) {
