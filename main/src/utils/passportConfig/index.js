@@ -7,9 +7,12 @@ import argon2 from 'argon2';
 import { prisma } from '../prisma/index.js';
 import { prismaReplica } from '../prisma/index.js';
 import crypto from 'crypto';
+import { sendToMatchingServer } from '../sendToMatchingServer/index.js';
 
-function generateRandomPassword() {
-  return crypto.randomBytes(16).toString('hex');
+async function generateRandomPassword() {
+  let password = await crypto.randomBytes(16).toString('hex');
+  let hash_password = await argon2.hash(password);
+  return hash_password;
 }
 
 // 사용자 정보를 세션에 저장
@@ -49,6 +52,9 @@ export default function passportConfig() {
           if (!user.isVerified) {
             return done(null, false, { message: '이메일 인증이 필요합니다' });
           }
+          if (user.provider != null) {
+            return done(null, false, { message: '이 이메일은 이미 가입되어 있습니다 다른 메일을 이용하시거나 원래 사용하셨던 방식으로 로그인해주세요.' });
+          }
           return done(null, user);
         } catch (error) {
           return done(error);
@@ -83,15 +89,21 @@ export default function passportConfig() {
             const user = await prisma.User.create({
               data: {
                 email: profile.emails[0].value,
-                password: generateRandomPassword(), // 가상의 비밀번호 할당
+                password: await generateRandomPassword(), // 가상의 비밀번호 할당
                 nickname: profile.displayName,
                 provider: 'google', // 사용자가 Google을 통해 인증되었음을 나타내는 필드 추가
                 isVerified: true,
-                token: generateRandomPassword(),
+                token: await generateRandomPassword(),
                 currentMoney: 10000000,
                 initialSeed: 10000000,
               },
             });
+            const jsonData = {
+              reqType: `userCreate`,
+              userId: user.userId,
+            };
+            const jsonDataString = JSON.stringify(jsonData);
+            sendToMatchingServer(jsonDataString);
             return done(null, user);
           }
         } catch (error) {
@@ -129,15 +141,21 @@ export default function passportConfig() {
             const user = await prisma.User.create({
               data: {
                 email: email,
-                password: generateRandomPassword(),
+                password: await generateRandomPassword(),
                 nickname: nickname,
                 provider: 'kakao',
                 isVerified: true,
-                token: generateRandomPassword(),
+                token: await generateRandomPassword(),
                 currentMoney: 10000000,
                 initialSeed: 10000000,
               },
             });
+            const jsonData = {
+              reqType: `userCreate`,
+              userId: user.userId,
+            };
+            const jsonDataString = JSON.stringify(jsonData);
+            sendToMatchingServer(jsonDataString);
             done(null, user);
           }
         } catch (error) {
@@ -173,15 +191,21 @@ export default function passportConfig() {
             const user = await prisma.User.create({
               data: {
                 email: profile.email,
-                password: generateRandomPassword(), // 가상의 비밀번호 할당
+                password: await generateRandomPassword(), // 가상의 비밀번호 할당
                 nickname: profile.name,
                 provider: 'naver', // 사용자가 네이버 통해 인증되었음을 나타내는 필드 추가
                 isVerified: true,
-                token: generateRandomPassword(),
+                token: await generateRandomPassword(),
                 currentMoney: 10000000,
                 initialSeed: 10000000,
               },
             });
+            const jsonData = {
+              reqType: `userCreate`,
+              userId: user.userId,
+            };
+            const jsonDataString = JSON.stringify(jsonData);
+            sendToMatchingServer(jsonDataString);
             return done(null, user);
           }
         } catch (error) {
