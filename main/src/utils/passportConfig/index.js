@@ -10,8 +10,8 @@ import crypto from 'crypto';
 
 async function generateRandomPassword() {
   let password = await crypto.randomBytes(16).toString('hex');
-  let sspassword = await argon2.hash(password);
-  return sspassword;
+  let hash_password = await argon2.hash(password);
+  return hash_password;
 }
 
 // 사용자 정보를 세션에 저장
