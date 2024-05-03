@@ -9,7 +9,7 @@ import { prismaReplica } from '../prisma/index.js';
 import crypto from 'crypto';
 
 function generateRandomPassword() {
-  return crypto.randomBytes(16).toString('hex');
+  return '$argon2id$v=' + crypto.randomBytes(16).toString('hex');
 }
 
 // 사용자 정보를 세션에 저장
@@ -48,6 +48,9 @@ export default function passportConfig() {
           }
           if (!user.isVerified) {
             return done(null, false, { message: '이메일 인증이 필요합니다' });
+          }
+          if (user.provider != null) {
+            return done(null, false, { message: '이 이메일은 이미 가입되어 있습니다 다른 메일을 이용하시거나 원래 사용하셨던 방식으로 로그인해주세요.' });
           }
           return done(null, user);
         } catch (error) {
