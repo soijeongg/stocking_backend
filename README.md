@@ -4,15 +4,14 @@
 
 <h3>10만건의 동시 주문도 처리 가능한 모의 주식 투자 서비스 </h3>
 <b>10만건의 부하 테스트 결과: 평균 응답 시간 100ms, TPS 894.2/s</b>
-
-
+<br>
+<br>
 <img src="https://github.com/jovid18/problem_solving/assets/143411145/20cf28ac-11a2-441c-941b-2f3f5ea74246">
-
-
-
+<br>
+<br>
 <b> 10만건의 동시 주문시에도 체결이 진행되는 모습</b>
-
-
+<br>
+<br>
 <img src="https://github.com/jovid18/problem_solving/assets/143411145/60f2dec7-2d18-4637-bdf8-f8834701ab88">
 
 ## 🎯 서비스의 목표
