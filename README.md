@@ -169,7 +169,7 @@
 | 팀원 | 윤형식 | BE/FE | fly010905@gmail.com   | [nyeongsik13](https://github.com/nyeongsik13)         |
 
 <details>
-  <summary><h1>📜개발 기획 및 진행</h1></summary>
+  <summary><h2>📜개발 기획 및 진행</h2></summary>
   <div markdown="1">
     <h2>✍🏻기획</h2>
     <img src="https://github.com/hh99-stock/Stocking_Backend/assets/143411145/f80575de-a987-4a24-8cef-5405c70b15aa" alt="todoist" width="12"> 
@@ -308,7 +308,7 @@
 
 <details>
     <summary>
-        <h1>❗트러블 슈팅(성능 개선/대규모 트래픽 처리)</h1>
+        <h2>❗트러블 슈팅(성능 개선/대규모 트래픽 처리)</h2>
     </summary>
     <details>
         <summary>
@@ -685,7 +685,7 @@ postOrder = async (req, res) => {
 
 <details>
     <summary>
-        <h1>🔧장애 대응</h1>
+        <h2>🔧장애 대응</h2>
     </summary>
     <details>
         <summary>
@@ -722,7 +722,7 @@ postOrder = async (req, res) => {
 
 <details>
     <summary>
-        <h1>❓기타 트러블 슈팅(각종 버그들)</h1>
+        <h2>❓기타 트러블 슈팅(각종 버그들)</h2>
     </summary>
     <a
         href="https://www.notion.so/STOCKING-BROCHURE-ae607d3fdfbb4814bd7ca68939320177?pvs=4#0df8f56f1cda48a9ac4e3dc08c7a26ef">전체
