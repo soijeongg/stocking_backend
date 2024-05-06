@@ -1,391 +1,150 @@
-# stock_backend 프로젝트
-
-## 프로젝트 내용
-
-## ERD 작성
-
-[ERDlink]
-
-## 프로젝트 링크
-
-[Monstory]
-
-## 프로젝트 진행
-
-- **main repository**에서 `main`(개발) 및 `production`(배포) 브랜치를 만들고, `production` 브랜치는 상시 배포상태 유지.
-- `main`에서 일정 기능이 구현될 때마다 `production` 브랜치로 pull.
-
-### Main repository 관리자
-
-- 프로젝트 세팅
-- 기능 개발(`main branch`에 업데이트)
-- 배포 업데이트(`production branch` 업데이트 및 EC2 인스턴스 업데이트)
-
-### Fork repository 관리자
-
-- `main repository` 포크
-- 기능 개발(`main repository`에 pull-request)
-
-## 코드 컨벤션
-
-### 기능 개발
-
-- `main branch`에 직접 개발하지 않고, 예: `feat/addlogin`와 같은 branch를 생성하여 해당 브랜치에서 작업.
-- **Main repository 관리자**는 `main repository(main)`에 push하고 팀원에게 보고.
-- **Fork repository 관리자**는 `fork repository(main)`에 push하고 `main repository(main)`에 pull-request하고 main repo 관리자에게 보고.
-
-### 브랜치 개발 방식
-
-1 .feat/api 브랜치 만들기
-
-```bash
-# main 브랜치로 이동하여 최신 상태 업데이트
-git checkout main
-# Fork respositor 관리자는 해당 repository가 synk fork 되어있는지 확인
-git pull origin main
-# main 브랜치에서 feat/api 브랜치 생성
-git checkout -b feat/api
-```
-
-2. feat/api 브랜치에서 작업하기
-
-```bash
-git add .
-git commit -m '${type}/{content}`
-```
-
-3. 주기적으로 main 브랜치의 내용을 `feat/api` 브랜치로 merge하기
-
-```bash
-# main 브랜치로 이동해 최신 변경 사항 가져오기
-git checkout main
-# Fork respositor 관리자는 해당 repository가 synk fork 되어있는지 확인
-git pull origin main
-# feat/api 브랜치로 이동하여 main 브랜치 변경사항 merge
-git checkout feat/api
-git merge main
-```
-
-4. 개발 완료 후 'main`브랜치로`feat/api` 브랜치의 변경 사항 merge 하기
-
-```bash
-git checkout main
-# Fork respositor 관리자는 해당 repository가 synk fork 되어있는지 확인
-#만약 synkfork가 안되어 있다면
-git pull origin main
-#최신 버전으로 main이 맞춰졌으면
-git merge feat/api
-git push origin main
-```
-
-5. `feat/api` 브랜치 삭제하기
-
-```bash
-# 로컬에서 feat/api 브랜치 삭제
-git branch -d feat/api
-# 원격에서 feat/api 브랜치 삭제
-git push origin --delete feat/api
-```
-
-### 원격 production branch update
-
-```bash
-#일정 기능이 구현된 이후
-git checkout production
-#production branch를 main의 내용으로 update
-git merge main
-#자동으로 원격 저장소와 같은 이름의 브랜치에 pull
-git pull
-# 이후 aws 배포하고 추후 개발을 위해 다시 main 브랜치로 복귀
-git checkout man
-```
-
-### 커밋 메시지 형식
-
-- 커밋 시 명칭: `${type}: ${changes}` (예: `FEAT: add login UI`, `STYLE: remove empty line`)
-- `type`은 대문자로 작성, 같은 `type`은 `,`로 이어서 작성, 다른 `type`은 줄을 나눠 구분.
-- `type` 예시
-  - `FEAT` : 새로운 기능의 추가
-  - `FIX`: 버그 수정
-  - `DOCS`: 문서 수정
-  - `STYLE`: 스타일 관련 기능(코드 포맷팅, 세미콜론 누락, 코드 자체의 변경이 없는 경우)
-  - `REFACTOR`: 코드 리펙토링
-  - `MERGE`: 병합
-  - `CONFLICT`: 병합 시 충돌 해결
-  - `TEST`: 테스트 코트, 리펙토링 테스트 코드 추가
-  - `PERF`: 성능 개선에 관련된 커밋입니다. 예를 들어, 알고리즘의 효율성 개선이나 렌더링 속도 향상 등이 이에 해당합니다.
-  - `CI` : CI 설정이나 스크립트와 관련된 변경사항
-  - `CONFIG` : 프로젝트 설정이나 구성 파일에 대한 변경, e.g.)eslintrc, .prettierrc 파일의 변경이나 프로젝트 설정 변경
-  - `DEPS` : 프로젝트의 종속성 추가, 업데이트, 제거와 같은 변경사항 e.g.) npm이나 yarn을 통한 패키지 변경 사항
-  - `SEC` : 보안 이슈의 수정
-  - `HOTFIX`: 긴급하게 배포해야 하는 중대한 버그 수정
-
-## 프로젝트 세팅
-
-### 로컬 프로젝트 세팅
-
-1. **Private 리포지토리 생성 및 clone**
-2. **필요한 패키지 및 prisma 초기화**
-
-```bash
-# Project init
-yarn init
-
-# Dependencies
-yarn add @prisma/client express prisma bcrypt cookie-parser express-mysql-session jsonwebtoken joi express-session
-
-# DevDependencies
-yarn add dotenv nodemon --dev
-
-# Prisma init
-npx prisma init
-```
-
-- **package.json**
-
-```json
-{
-  "name": "nodejs_assignment_level5",
-  "version": "1.0.0",
-  "main": "index.js",
-  "repository": "https://github.com/soijeongg/nodejs_assignment_level5.git",
-  "author": "soijeongg <010127js@gmail.com>",
-  "license": "MIT",
-  "type": "module",
-  "dependencies": {
-    "@prisma/client": "^5.10.2",
-    "bcrypt": "^5.1.1",
-    "cookie-parser": "^1.4.6",
-    "express": "^4.18.2",
-    "express-mysql-session": "^3.0.0",
-    "express-session": "^1.18.0",
-    "joi": "^17.12.2",
-    "jsonwebtoken": "^9.0.2",
-    "prisma": "^5.10.2",
-    "winston": "^3.11.0"
-  },
-  "devDependencies": {
-    "dotenv": "^16.4.5",
-    "nodemon": "^3.1.0"
-  }
-}
-```
-
-3. **폴더 및 파일 수정**
-
-   - schema.prisma 파일 수정
-     ```plaintext
-     datasource db {
-       provider = "mysql"
-       url      = env("DATABASE_URL")
-     }
-     ```
-   - .env 파일 작성
-
-     ```plaintext
-     DATABASE_URL="mysql://[사용자 이름]:[암호]@[RDS 엔드포인트]:3306/nodejslv5"
-     PORT=3000
-     JWT_SECRET="nodejslv5"
-     ```
-
-   - 과제 요구사항에 맞게 프로젝트 폴더 및 파일 생성
-
-     - lv5 과제에서는 기존의 lv4 프로젝트의 내용을 복사해서 사용
-     - 기존의 코드에 소프트삭제 추가
-
-   - app.js 파일 작성
-
-   ```javascript
-   import express from 'express';
-   import cookieParser from 'cookie-parser';
-   import expressSession from 'express-session';
-   import expressMysqlSession from 'express-mysql-session';
-   import dotenv from 'dotenv';
-   import CategoryRouter from './routes/category.router.js';
-   import MenuRouter from './routes/menu.router.js';
-   import UserRouter from './routes/user.router.js';
-   import notFoundErrorHandler from './middlewares/notFoundError.middleware.js';
-   import generalErrorHandler from './middlewares/generalError.middleware.js';
-
-   dotenv.config();
-
-   const app = express();
-   const PORT = process.env.PORT;
-
-   app.use(express.json());
-   app.use(cookieParser());
-   app.use(express.urlencoded({ extended: false }));
-   app.get('/', (req, res) => {
-     res.send('<h1>5차과제</h1>');
-   });
-
-   app.use('/api', UserRouter);
-   app.use('/api/categories', [CategoryRouter, MenuRouter]);
-
-   app.use(notFoundErrorHandler);
-   app.use(generalErrorHandler);
-
-   app.listen(PORT, () => {
-     console.log(PORT, '포트로 서버가 열렸어요!');
-   });
-   ```
-
-   - .prettierrc 파일 추가
-
-   ```json
-   {
-     "singleQuote": true,
-     "trailingComma": "es5",
-     "tapWidth": 2,
-     "semi": true,
-     "arrowParens": "always"
-   }
-   ```
-
-4. **main/production branch push**
-
-```bash
-# main repository에서 production branch 생성
-git checkout -b production
-
-#main과 merge
-git merge main
-
-#원격 저장소에 production branch 추가
-git push -u origin production
-
-# 로컬 및 원격 브랜치 모두 보기
-git branch -a
-
-
-```
-
-### EC2 배포
-
-1. **EC2 인스턴스 생성**
-
-- 이름 : nodejslv5
-- OS image : Ubuntu
-- 인스턴스 유형: t2.micro
-- 기존 키페어 사용: pem 파일
-
-[Windows 환경]
-
-2. **AWS EC2 접속**
-
-```bash
-# Git bash 실행
-ssh -i [key-pair file] ubuntu@[public ip]
-# AWS EC2 Node.js 설치
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt-get install -y nodejs
-# 버전 확인
-node -v
-npm -v
-```
-
-3. **프로젝트 클론**
-
-```bash
-# 프로젝트 클론
-git clone https://github.com/jovid18/nodejs_assignment_level5.git
-# yarn 설치
-sudo npm install -g yarn
-# 패키지 설치
-yarn
-```
-
-4. **production 브랜치 변경**
-
-```bash
-# production branch로 변경
-git checkout production
-# branch 목록 확인
-git branch
-```
-
-5. **추가 세팅**
-
-   - Instance 포트 설정
-
-     - 인바운드 규칙 편집
-     - 규칙 추가
-     - 사용자 지정 TCP
-     - 포트 범위:3000
-
-   - .env 파일 설정
-
-     ```bash
-     # .env 파일 생성
-     vim .env
-     # 입력 모드로 전환
-     i (입력 모드로 전환)
-     # .env 내용 붙여넣기
-     # DATABASE_URL="mysql://[사용자 이름]:[암호]@[RDS 엔드포인트]:3306/nodejslv5"
-     # PORT=3000
-     #명령 모드로 전환
-     esc(명령 모드로 전환)
-     # 저장 및 종료
-     :wq
-     # .env 생성 확인
-     ls -a
-     ```
-
-   - pm2 설치
-     ```bash
-     # 관리자 모드
-     sudo -s
-     # pm2 전역 설치
-     yarn global add pm2
-     ```
-
-6. **배포**
-
-```bash
-pm2 start src/app.js
-```
-
-7. **수정 사항 반영**
-
-```bash
-# 만약 schema.prisma 파일이 추가됐다면
-npx prisma db push
-# 원격 저장소의 내용 받기
-git pull
-# pm2로 서버 다시 시작
-pm2 start src/app.js
-```
-
-## git 커맨드 정리
-
-```bash
-# 전체 저장소 클론하기
-git clone <repository-url>
-
-# 특정 브랜치로 체크아웃하기
-git checkout <branch-name>
-
-# main repository에서  원격 저장소에 production branch 추가
-git checkout -b production
-git push -u origin production
-
-# 로컬 브런치 보기
-git branch
-
-# 원격 브런치 보기
-git branch -r
-
-# 로컬 및 원격 브랜치 모두 보기
-git branch -a
-
-# a브런치에서 b브런치의 내용을 받고 싶은 경우
-git checkout a
-git merge b
-
-# git 저장소에 등록된 원격 저장소 확인
-git remote -v
-
-#Fork repository에서 원본 repository upstream 추가
-git remote add upstream [원본_저장소_URL]
-
-```
+# 📈 서비스 소개
+
+<details>
+  <summary><h2>10만건의 동시 주문도 처리 가능한 모의 주식 투자 서비스 </h2> </summary>
+  <div markdown="1">
+    <h3>10만건의 부하 테스트 결과: 평균 응답 시간 100ms, TPS 894.2/s</h3>
+    <h3>동시 주문 10만건의 부하 테스트 결과 요약</h3>
+    <img src ="https://github.com/jovid18/problem_solving/assets/143411145/20cf28ac-11a2-441c-941b-2f3f5ea74246">
+    <h3> 10만건의 동시 주문시에도 체결이 진행되는 모습</h3>
+    <img src="https://github.com/jovid18/problem_solving/assets/143411145/60f2dec7-2d18-4637-bdf8-f8834701ab88">
+  </div>
+</details>
+
+## 🎯 서비스의 목표
+
+- 처음 해보는 유저들도 쉽게 참여가 가능한 모의 주식 투자 서비스
+- 대용량 트래픽에서도 안전하게 체결이 진행되는 서버
+- 주문의 순서가 보장되는 메시지 체결(동시성 제어)
+- 실시간 모니터링으로 서버의 상태 확인 및 서버 이상 시 슬랙으로 알람
+
+## 🖇️ 프로젝트 링크
+
+<table width="80%;">
+  <tr align="center">
+    <td><strong>구분</strong></td>
+    <td><strong>링크</strong></td>
+  </tr>
+  <tr align="center">
+    <td><img src="https://github.com/jovid18/problem_solving/assets/143411145/2d627fc6-71ea-4854-a19e-5c2c7d1f1cc7" alt="스톡킹 로고" style="width: 23px;"></td>
+    <td><a target="_blank" rel="noopener noreferrer nofollow" href="https://www.nodejstrello.site/">STOCKING</a></td>
+  </tr>
+  <tr align="center">
+    <td><img src="https://github.com/norwegianwood97/project_trello_backend_personal/blob/dev/icons/FeGithub.png" alt="FE Github 아이콘" style="width: 23px;"></td>
+    <td><a target="_blank" rel="noopener noreferrer nofollow" href="https://github.com/hh99-stock/Stocking_Frontend">FE Github</a></td>
+  </tr>
+  <tr align="center">
+    <td><img src="https://github.com/norwegianwood97/project_trello_backend_personal/blob/dev/icons/BeGithub.png" alt="BE Github 아이콘" style="width: 23px;"></td>
+    <td><a target="_blank" rel="noopener noreferrer nofollow" href="https://github.com/hh99-stock/Stocking_Backend">BE Github</td>
+  </tr>
+  <tr align="center">
+    <td><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Notion-logo.svg/1024px-Notion-logo.svg.png" alt="노션 아이콘" style="width: 23px;"></td>
+    <td><a target="_blank" rel="noopener noreferrer nofollow" href="https://airy-ounce-83b.notion.site/STOCKING-BROCHURE-ae607d3fdfbb4814bd7ca68939320177?pvs=4">브로슈어</a></td>
+  </tr>
+</table>
+
+## 📚기술 스택 정리
+
+<div align=center>
+
+  <img src="https://img.shields.io/badge/node.js-5FA04E?style=for-the-badge&logo=node.js&logoColor=white"> 
+  <img src="https://img.shields.io/badge/express-000000?style=for-the-badge&logo=express&logoColor=white"> 
+  <img src="https://img.shields.io/badge/websocket-000000?style=for-the-badge&logo=websocket&logoColor=white"> 
+  <img src="https://img.shields.io/badge/jest-C21325?style=for-the-badge&logo=jest&logoColor=white">
+  <img src="https://img.shields.io/badge/passport-34E27A?style=for-the-badge&logo=passport&logoColor=white">
+  
+  <br>
+  <img src="https://img.shields.io/badge/html5-E34F26?style=for-the-badge&logo=html5&logoColor=white"> 
+  <img src="https://img.shields.io/badge/css-1572B6?style=for-the-badge&logo=css3&logoColor=white"> 
+  <img src="https://img.shields.io/badge/javascript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black"> 
+  <img src="https://img.shields.io/badge/react-61DAFB?style=for-the-badge&logo=react&logoColor=white">
+  <img src="https://img.shields.io/badge/Axios-5A29E4?style=for-the-badge&logo=axios&logoColor=white">  
+  <img src="https://img.shields.io/badge/Echarts-AA344D?style=for-the-badge&logo=apacheecharts&logoColor=white">   
+  <img src="https://img.shields.io/badge/vercel-000000?style=for-the-badge&logo=vercel&logoColor=white">
+  <br>
+
+  <img src="https://img.shields.io/badge/amazonaws-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white"> 
+  <img src="https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white"> 
+  <img src="https://img.shields.io/badge/AWS EC2-FF9900?style=for-the-badge&logo=amazonec2&logoColor=white">  
+  <img src="https://img.shields.io/badge/AWS Route 53-8C4FFF?style=for-the-badge&logo=amazonroute53&logoColor=white">   
+  <img src="https://img.shields.io/badge/AWS Alb-FF9900?style=for-the-badge&logo=awselasticloadbalancing&logoColor=white">  
+  <img src="https://img.shields.io/badge/AWS ECR-FF9900?style=for-the-badge&logo=awsecr&logoColor=white">   
+  <img src="https://img.shields.io/badge/AWS ECS-FF9900?style=for-the-badge&logo=amazonecs&logoColor=white">   
+  
+  
+  <br>
+  
+  
+  <img src="https://img.shields.io/badge/AWS RDS-527FFF?style=for-the-badge&logo=amazonrds&logoColor=white"> 
+  <img src="https://img.shields.io/badge/mysql-4479A1?style=for-the-badge&logo=mysql&logoColor=white"> 
+  <img src="https://img.shields.io/badge/prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white"> 
+  <img src="https://img.shields.io/badge/AWS elasticcache-2D3748?style=for-the-badge&logo=amazonelasticache&logoColor=white"> 
+  <img src="https://img.shields.io/badge/redis-DC382D?style=for-the-badge&logo=redis&logoColor=white"> 
+  <br>
+
+  <img src="https://img.shields.io/badge/prettier-F7B93E?style=for-the-badge&logo=prettier&logoColor=white">
+  <img src="https://img.shields.io/badge/eslint-4B32C3?style=for-the-badge&logo=prettier&logoColor=white">
+  <img src="https://img.shields.io/badge/prometheus-E6522C?style=for-the-badge&logo=prometheus&logoColor=white"> 
+  <img src="https://img.shields.io/badge/grafana-F46800?style=for-the-badge&logo=grafana&logoColor=white">
+  <img src="https://img.shields.io/badge/kafka-231F20?style=for-the-badge&logo=apachekafka&logoColor=white">
+  <img src="https://img.shields.io/badge/jmeter-D22128?style=for-the-badge&logo=apachejmeter&logoColor=white">
+  <br>
+  
+  <img src="https://img.shields.io/badge/git-F05032?style=for-the-badge&logo=git&logoColor=white">
+  <img src="https://img.shields.io/badge/github-181717?style=for-the-badge&logo=github&logoColor=white">
+  <img src="https://img.shields.io/badge/github actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white">
+  <img src="https://img.shields.io/badge/docker-2496ED?style=for-the-badge&logo=docker&logoColor=white">
+  <img src="https://img.shields.io/badge/docker compose-2496ED?style=for-the-badge&logo=dockercomposer&logoColor=white">
+  <img src="https://img.shields.io/badge/slack-4A154B?style=for-the-badge&logo=slack&logoColor=white">
+  <img src="https://img.shields.io/badge/notion-000000?style=for-the-badge&logo=notion&logoColor=white">
+
+</div>
+
+## 🪶 주요 기능
+
+<details>
+  <summary><h2>📌로그인 &회원가입 </h2> </summary>
+  <div markdown="1">
+    <ul>
+      <li>로컬 회원가입 가능 및 카카오, 네이버, 구글의 소셜 로그인 가능</li>
+      <li>redis를 활용해 세션 저장</li>
+      <li>중복로그인시 웹 소켓을 사용해 로그아웃 됩니다 라는 메세지 전송 후 세션 삭제</li>
+      <img src="https://github.com/hh99-stock/Stocking_Backend/assets/143411145/664c5c5b-8ff1-48b9-a511-86773c7fbf1e">
+    </ul>
+  </div>
+</details>
+<details>
+  <summary><h2>📌게임 시스템 </h2> </summary>
+  <div markdown="1">
+    <ul>
+      <li>12분 마다 게임 시작 게임의 시작은 채팅에서 알려주며 각종 이벤트의 정보를 보여줌</li>
+      <li>이벤트가 호재인지 악재인지에 따라 더미의 주문이 달라짐 → 보다 실감나는 모의 주식이 가능</li>
+      <li>시장가/지정가, 매수/매도 주문의 생성 및 주문 정정, 삭제 가능</li>
+      <li>종목별/ 매수/매도, 최신순/ 오래된순과 같이 원하는 조건으로 주문 조회 가능</li>
+      <li>차트와 호가창을 이용해 시각적으로 주식의 흐름 파악가능</li>
+      <li>게임이 진행되는 동안 가장 많은 수익률을 낸 사람이 우승</li>
+      <img src="https://github.com/hh99-stock/Stocking_Backend/assets/143411145/7f9c4559-34af-41c0-9e24-c5a27114d844">
+    </ul>
+  </div>
+</details>
+<details>
+  <summary><h2>📌랭크 시스템 </h2> </summary>
+  <div markdown="1">
+    <ul>
+      <li>게임에서의 수익률에 따라 순위가 공지</li>
+      <li>수익률에 따라 MMR 점수가 올라가고 MMR에 따라 티어가 변동</li>
+      <img src="https://github.com/hh99-stock/Stocking_Backend/assets/143411145/583a6a0a-df96-44e5-99dd-9fed13c87f34">
+    </ul>
+  </div>
+</details>
+<details>
+  <summary><h2>📌채팅 시스템 </h2> </summary>
+  <div markdown="1">
+    <ul>
+      <li>메인페이지, 회사 페이지, 주문페이지에 채팅창 존재 </li>
+      <li>각 사용자들의 채팅 뿐만이 아니라 게임의 시작과 종료, 각종 이벤트들이 수신됨</li>
+      <li>체결 성공 및 실패 여부를 채팅으로 전달</li>
+      <img src="https://github.com/hh99-stock/Stocking_Backend/assets/143411145/1e8ccfb4-bb3a-45bb-be75-bb953835742d">
+    </ul>
+  </div>
+</details>
