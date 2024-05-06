@@ -523,7 +523,7 @@ postOrder = async (req, res) => {
     </details>
     <details>
         <summary>
-            <h3>메인 서버에서 API 통신과 체결을 동시에 담당해서 CPU 부하가 너무 심해지는 문제 (ver 2.0 ⇒ ver 3.0)</h3>
+            <h3>메인 서버에서 API 통신과 체결을 동시에 담당하는 문제 (ver 2.0 ⇒ ver 3.0)</h3>
         </summary>
         <ul>
             <li>문제 상황</li>
@@ -714,7 +714,7 @@ postOrder = async (req, res) => {
     </details>
     <details>
         <summary>
-            <h3>능동적인 인스턴스 관리 부재 && 블루-그린 배포로 인해 낭비되는 리소스 문제 (ver 5.0 ⇒ ver final)</h3>
+            <h3>능동적인 인스턴스 관리 부재와 블루-그린 배포로 인한 비용 문제 (ver 5.0 ⇒ ver final)</h3>
         </summary>
         <ul>
             <li>문제 상황</li>
