@@ -788,7 +788,7 @@ postOrder = async (req, res) => {
     </summary>
     <details>
         <summary>
-            <h2>카프카에서 문제가 발생 시</h2>
+            <h3>카프카에서 문제가 발생 시</h3>
         </summary>
         <ul>
             <li>만일 하나의 브로커에 장애가 생겨 역할을 못하게 된다면 서버 자체를 사용할 수 없게 됨</li>
@@ -800,7 +800,7 @@ postOrder = async (req, res) => {
     </details>
     <details>
         <summary>
-            <h2>AWS RDS에서 문제가 발생 시</h2>
+            <h3>AWS RDS에서 문제가 발생 시</h3>
         </summary>
         <ul>
             <li>RDS의 muiti-AZ 배포 옵션을 사용해 RDS의 에러에 대비 가능</li>
@@ -810,7 +810,7 @@ postOrder = async (req, res) => {
     </details>
     <details>
         <summary>
-            <h2>카프카 중복 메시지 방지</h2>
+            <h3>카프카 중복 메시지 방지</h3>
         </summary>
         <ul>
             <li>카프카에 중복 메시지가 들어가게 되면 중복된 메시지로 인해 동일한 데이터를 여러번 처리하거나 이벤트 순서를 무시하게 됨</li>
