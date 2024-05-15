@@ -1,5 +1,7 @@
 <img src="https://github.com/hh99-stock/Stocking_Backend/assets/143411145/9a26918c-3c08-4bfa-98cd-afe2f31ab513"/>
 
+<img src="https://github.com/hh99-stock/Stocking_Backend/assets/143411145/f61556da-d931-44bb-9402-ee44c6021b70"/>
+
 ## 📈 서비스 소개
 
 <h3>10만건의 동시 주문도 처리 가능한 모의 주식 투자 서비스 </h3>
